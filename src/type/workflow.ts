@@ -1,0 +1,261 @@
+/**
+ * 节点位置坐标
+ */
+export interface Position {
+  x: number // X坐标
+  y: number // Y坐标
+}
+
+/**
+ * 节点输入参数数据
+ */
+export interface InputData {
+  paramName: string // 参数名称
+  type: string // 参数类型
+  subType?: string // 参数子类型
+  defaultValue?: any // 默认值
+  source: string // 来源节点ID 或者输入框的字符串
+  sourceType?: 'input' | 'node' // 来源类型
+  sourceIndex?: string // 来源索引
+  portId?: string // 唯一端口ID
+  widgetType?: string // 控件类型
+  attributes?: any // 控件属性
+  options?: Array<{ label: string; value: string, desc?: string }> // 下拉选择选项
+  dynamicOptions?: Record<string, Array<{ label: string; value: string }>> // 动态选项配置
+  linkedParams?: string[] // 联动参数列表，当此参数变化时会影响哪些其他参数
+  linkedSource?: string // 联动源参数，标识此参数的选项来源
+}
+
+/**
+ * 节点输出参数数据
+ */
+export interface OutputData {
+  paramName: string // 参数名称
+  type: string // 参数类型
+  subType?: string // 参数子类型
+  value?: any // 参数值
+  conditionCheck?: string // 条件检查
+  portId?: string // 唯一端口ID
+}
+
+export enum LogicType {
+  IFELSE = 'ifelse',
+  AGGREGATE = 'aggregate',
+  GLOBAL_PARAM = 'global_param',
+  SUB_PROPERTY_EXTRACTOR = 'sub_property_extractor',
+  GLOBAL_VARIABLE = 'global_variable',
+  TYPE_CONVERTER = 'type_converter',
+  DIMENSION_CONVERTER = 'dimension_converter',
+  CUSTOM_FUNCTION = 'custom_function',
+  ITERATOR = 'iterator',
+  ITERATOR_START = 'iterator_start',
+  DECISION_TABLES_FUNCTION = 'decision_tables_function',
+  EXTERNAL_DATA_TABLE = 'external_data_table',
+  CALCULATOR = 'calculator'
+}
+
+/**
+ * 逻辑节点数据
+ */
+export interface LogicData {
+  logicType: LogicType
+  source?: string
+  condition?: string
+}
+
+/**
+ * 工作流节点
+ */
+export interface WorkflowNode {
+  id: string
+  funcId: string
+  funcType: 'func' | 'logic'
+  title: string
+  remark?: string
+  pos?: Position
+  inputData?: InputData[]
+  outputData?: OutputData[]
+  config?: string
+  condition?: string
+  logicData?: LogicData
+  path?: string
+  className?: string
+  func?: string
+  width?: number
+  height?: number
+  children?: string[]
+  isCollapsed?: boolean
+  version?: string
+  decisionTableData?: DecisionTableData//决策表数据
+
+}
+
+/**
+ * 决策表数据
+ */
+export interface DecisionTableData {
+  /**
+   * 行列表
+   */
+  rowList: DecisionTableRowData[],
+  expressionConfig: DecisionTableExpressionConfig
+
+}
+
+export interface DecisionTableExpressionConfig {
+  /**
+   * 名称
+   */
+  name: string
+  /**
+   * 代码
+   */
+  code: string
+  /**
+   * 唯一ID
+   */
+  id: string
+  /**
+   * 层级
+   */
+  level: number
+  /**
+   * 子节点
+   */
+  children: DecisionTableExpressionConfigItem[]
+
+}
+
+export interface DecisionTableExpressionConfigItem {
+  /**
+   * 代码
+   */
+  code: string,
+  /**
+   * 层级
+   */
+  level: number
+}
+
+/**
+ * 决策表行数据
+ */
+export interface DecisionTableRowData {
+  /**
+   * 行ID
+   */
+  id: string
+  /**
+   * 行索引
+   */
+  index: number
+  /**
+   * 输入参数列表
+   */
+  inputList: DecisionTableParamData[]
+  /**
+   * 输出参数列表
+   */
+  outputList: DecisionTableParamData[]
+  /**
+   * 备注参数列表
+   */
+  annotationList: DecisionTableParamData[]
+}
+
+/**
+ * 决策表参数数据
+ */
+export interface DecisionTableParamData {
+  /**
+   * 参数名称
+   */
+  paramName: string
+  /**
+   * 参数值
+   */
+  paramValue: string
+  /**
+   * 参数类型
+   */
+  paramType: string
+  /**
+   * 参数代码
+   */
+  paramCode: string
+  /**
+   * 是否自定义
+   */
+  isCustom: number
+  /**
+   * lua表达式
+   */
+  luaExpression?: string
+  /**
+   * lua表达式结果类型
+   */
+  luaExpressionResultType?: string
+}
+
+
+
+export interface GroupNodeData {
+  id: string
+  title: string
+  children: string[]
+  isCollapsed: boolean
+  pos: Position
+  width: number
+  height: number
+}
+
+/**
+ * 工作流边（连接）
+ */
+export interface WorkflowEdge {
+  id: string
+  type: string
+  source: string
+  target: string
+  sourcePort?: string
+  targetPort?: string
+}
+
+/**
+ * 搜索相关类型定义
+ */
+export interface SearchHistoryItem {
+  name: string
+  funcId: string
+  funcType: string
+}
+
+export interface SearchResult {
+  keyword: string
+  results: any[]
+  timestamp: number
+}
+
+/**
+ * 工作流数据
+ */
+export interface WorkflowData {
+  id: string
+  nodeList: WorkflowNode[]
+  edges: WorkflowEdge[]
+  groupList: GroupNodeData[]
+  lua: string
+  ruleName: string
+}
+
+/**
+ * 节点类型定义
+ */
+export interface NodeType {
+  type: string
+  funcId: string
+  title: string
+  icon: string
+  show?: boolean
+  text?: string
+}

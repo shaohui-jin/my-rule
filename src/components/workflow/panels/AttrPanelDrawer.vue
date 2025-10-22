@@ -1,0 +1,355 @@
+<template>
+  <!-- 自定义属性面板抽屉 -->
+  <!-- <div class="attr-panel-drawer" :class="{ 'drawer-open': visible, 'attr-panel-drawer-wujie': isWujie }"> -->
+  <div class="attr-panel-drawer" :class="{ 'drawer-open': visible }">
+    <!-- 抽屉头部 -->
+    <div class="drawer-header">
+      <div class="drawer-title-container">
+        <div class="drawer-title">
+          <template v-if="nodeData">
+            <span class="node-id">{{ nodeData?.id || '' }}</span>
+            <div class="node-title-container" @click="startEditTitle">
+              <p class="node-title" v-if="props.disabled">{{ nodeData?.title || '节点名称' }}</p>
+              <template v-else-if="!isEditingTitle" >
+                <el-tooltip
+                  class="box-item"
+                  effect="dark"
+                  content="单击编辑标题"
+                  placement="top"
+                >
+                  <p class="node-title">{{ nodeData?.title || '节点名称' }}</p>
+                </el-tooltip>
+              </template>
+              <!-- <el-input v-model="input" placeholder="Please input" /> -->
+              <el-input
+                v-else
+                ref="titleInputRef"
+                class="node-title-input"
+                v-model="nodeData.title"
+                @blur="finishEditTitle"
+                @keydown.enter.prevent="finishEditTitle"
+                @keydown.esc.prevent="cancelEditTitle"
+                size="default"
+                placeholder="节点名称"
+              />
+            </div>
+          </template>
+        </div>
+      </div>
+      <div class="drawer-actions">
+        <div class="node-type-icon">
+          <NodeTypeIcon
+            :type="nodeData?.funcType"
+            :logic-type="nodeData?.logicData?.logicType"
+            :size="24"
+          />
+        </div>
+        <el-button size="small" circle @click="handleClose" class="close-btn">
+          <el-icon><Close /></el-icon>
+        </el-button>
+      </div>
+    </div>
+
+    <!-- 抽屉内容 -->
+    <div class="drawer-content">
+      <component
+        v-if="currentPanelComponent"
+        :is="currentPanelComponent"
+        :key="nodeData?.id"
+        :nodeData="nodeData"
+        :workflowData="workflowData"
+        :disabled="props.disabled"
+        @update:addPortData="handleAddPortData"
+        @update:removePortData="handleRemovePortData"
+        @update:nodeBaseData="handleNodeBaseDataUpdate"
+        :getAvailableSourceOptions="getAvailableSourceOptions"
+        :getAvailableTargetOptions="getAvailableTargetOptions"
+        :getAllAvailableOptions="getAllAvailableOptions"
+      />
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, computed, nextTick } from 'vue'
+import { LogicType, type WorkflowData } from '@/type/workflow'
+import FuncNodePanel from './FuncNodePanel.vue'
+import ConditionNodePanel from './ConditionNodePanel.vue'
+import CalculatorNodePanel from './CalculatorNodePanel.vue'
+import { Close } from '@element-plus/icons-vue'
+import NodeTypeIcon from '@/components/NodeTypeIcon/index.vue'
+
+const isWujie = window.__POWERED_BY_WUJIE__
+
+/**
+ * 组件属性定义
+ */
+interface Props {
+  visible: boolean
+  disabled: boolean
+  nodeData: any
+  workflowData: WorkflowData
+  getAvailableSourceOptions: (param: any) => any[]
+  getAvailableTargetOptions: () => any[]
+  getAllAvailableOptions: (param: any) => any[]
+}
+
+const props = defineProps<Props>()
+
+/**
+ * 组件事件定义
+ */
+const emit = defineEmits<{
+  close: []
+  addPortData: [newData: any, nodeId: string]
+  removePortData: [index: number, nodeId: string, type?: string]
+  nodeBaseDataUpdate: [nodeId: string]
+}>()
+
+/**
+ * 组件状态
+ */
+const isEditingTitle = ref(false)
+const titleInputRef = ref<HTMLInputElement | null>(null)
+const originalTitle = ref('')
+
+/**
+ * 面板组件映射
+ */
+const panelMap = {
+  func: FuncNodePanel,
+  logic_condition: ConditionNodePanel,
+  logic_calculator: CalculatorNodePanel
+}
+
+/**
+ * 当前面板组件
+ */
+const currentPanelComponent = computed(() => {
+  if (!props.nodeData) return null
+  if (props.nodeData.funcType === 'logic') {
+    if (props.nodeData.logicData?.logicType === LogicType.IFELSE) {
+      return panelMap.logic_condition
+    } else if (props.nodeData.logicData?.logicType === LogicType.CALCULATOR) {
+      return panelMap.logic_calculator
+    }
+  }
+  return panelMap.func
+})
+
+/**
+ * 开始编辑标题
+ */
+function startEditTitle() {
+  if (!props.nodeData) return
+
+  // 保存原始标题，以便取消时恢复
+  originalTitle.value = props.nodeData.title || ''
+  isEditingTitle.value = true
+
+  // 在下一个事件循环中聚焦输入框
+  nextTick(() => {
+    if (titleInputRef.value) {
+      titleInputRef.value.focus()
+    }
+  })
+}
+
+/**
+ * 完成编辑标题
+ */
+function finishEditTitle() {
+  if (!props.nodeData) return
+  isEditingTitle.value = false
+
+  // 更新节点基本数据
+  emit('nodeBaseDataUpdate', props.nodeData.id)
+}
+
+/**
+ * 取消编辑标题
+ */
+function cancelEditTitle() {
+  if (!props.nodeData) return
+
+  // 恢复原始标题
+  props.nodeData.title = originalTitle.value
+  isEditingTitle.value = false
+}
+
+/**
+ * 关闭抽屉
+ */
+function handleClose() {
+  isEditingTitle.value = false
+  emit('close')
+}
+
+/**
+ * 添加端口数据
+ */
+function handleAddPortData(newData: any, nodeId: string) {
+  emit('addPortData', newData, nodeId)
+}
+
+/**
+ * 删除端口数据
+ */
+function handleRemovePortData(index: number, nodeId: string, type?: string) {
+  emit('removePortData', index, nodeId, type)
+}
+
+/**
+ * 更新节点基本数据
+ */
+function handleNodeBaseDataUpdate(nodeId: string) {
+  emit('nodeBaseDataUpdate', nodeId)
+}
+</script>
+
+<style scoped>
+/* 自定义抽屉样式 */
+.attr-panel-drawer {
+  position: absolute;
+  top: 60px;
+  right: -500px;
+  width: 450px;
+  height: calc(100% - 70px);
+  background: #fff;
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
+  z-index: 2001;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform: translateX(0);
+  will-change: right, transform;
+  border-radius: 12px;
+}
+
+/* .attr-panel-drawer-wujie {
+  top: 100px;
+  height: calc(100% - 100px);
+} */
+
+.attr-panel-drawer.drawer-open {
+  right: 10px; /* 打开时滑入屏幕 */
+  transform: translateX(0);
+}
+
+/* 抽屉内容动画 */
+.drawer-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 20px;
+  background: #fff;
+  opacity: 0;
+  transform: translateX(20px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition-delay: 0.1s;
+}
+
+.drawer-open .drawer-content {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* 抽屉头部样式 */
+.drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: #fff;
+  border-bottom: 1px solid #e4e7ed;
+  flex-shrink: 0;
+}
+
+.drawer-title-container {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  overflow: hidden;
+}
+
+.drawer-title {
+  display: flex;
+  align-items: center;
+  font-size: 18px;
+  font-weight: 500;
+  color: #303133;
+  width: 100%;
+}
+
+.drawer-actions {
+  display: flex;
+  align-items: center;
+  margin-left: 16px;
+}
+
+.node-id {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  border: 2px solid #409EFF;
+  color: #409EFF;
+  font-weight: 600;
+  font-size: 14px;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+
+.node-title-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  cursor: pointer;
+  padding: 0 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+  max-width: calc(100% - 40px);
+}
+
+.node-title-container:hover {
+  background-color: rgba(64, 158, 255, 0.05);
+}
+
+.node-title {
+  font-size: 18px;
+  line-height: 30px;
+  height: 30px;
+  font-weight: 500;
+  color: #303133;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-block;
+}
+
+.node-title-input {
+  width: 100%;
+  font-size: 18px;
+  font-weight: 500;
+  color: #303133;
+}
+
+.node-type-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 6px;
+}
+
+.close-btn {
+  color: #909399;
+}
+
+.close-btn:hover {
+  color: #409eff;
+}
+</style>
