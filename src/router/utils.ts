@@ -24,7 +24,8 @@ import { sessionKey, appendRoles, type DataInfo } from '@/utils/auth'
 import { usePermissionStoreHook } from '@/store/modules/permission'
 import { getMenuConfig } from '@/utils/permission'
 
-const IFrame = () => import('@/layout/frameView.vue')
+const IFrame = () => {}
+// const IFrame = () => import('@/layout/frameView.vue')
 // https://cn.vitejs.dev/guide/features.html#glob-import
 const modulesRoutes = import.meta.glob('/src/views/**/*.{vue,tsx}')
 

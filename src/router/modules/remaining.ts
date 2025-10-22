@@ -13,23 +13,6 @@ export default [
     }
   },
   {
-    path: '/redirect',
-    component: Layout,
-    meta: {
-      icon: 'homeFilled',
-      title: $t('menus.hshome'),
-      showLink: false,
-      rank: 102
-    },
-    children: [
-      {
-        path: '/redirect/:path(.*)',
-        name: 'Redirect',
-        component: () => import('@/layout/redirect.vue')
-      }
-    ]
-  },
-  {
     path: "/brand/priority",
     name: "Priority",
     component: Layout,

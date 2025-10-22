@@ -125,7 +125,6 @@ import { useParamStoreHook } from '@/store/modules/params'
 // const DecisionTableEditPanelNode = defineAsyncComponent(() => import('./panels/DecisionTableEditPanelNode.vue'))
 import DecisionTableEditPanelNode from './panels/DecisionTableEditPanelNode.vue'
 import { useRouter } from 'vue-router'
-import { useTags } from '@/layout/hooks/useTag'
 // 引入工具栏图片
 import Reset from '@/assets/ruleEditToolSvg/reset.svg'
 import Add from '@/assets/ruleEditToolSvg/add.svg'
@@ -195,7 +194,7 @@ const showMiniMap = ref(false)
 
 const {
   multiTags
-} = useTags();
+} = []
 
 const canAdd = computed(() => {
   return !multiTags.value.find(tag => tag.path === '/ruleEdit')

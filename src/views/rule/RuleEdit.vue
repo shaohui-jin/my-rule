@@ -156,11 +156,11 @@
       @nodeBaseDataUpdate="onNodeBaseDataUpdate"
     />
 
-    <BaseFuncHelpDialog
-      :visible="helpDialogVisible"
-      :onClose="() => (helpDialogVisible = false)"
-      :funcList="dndPageFuncData"
-    />
+<!--    <BaseFuncHelpDialog-->
+<!--      :visible="helpDialogVisible"-->
+<!--      :onClose="() => (helpDialogVisible = false)"-->
+<!--      :funcList="dndPageFuncData"-->
+<!--    />-->
 
     <!-- 另存对话框 -->
     <el-dialog
@@ -247,7 +247,7 @@ import { useRuleStore, useCanvasStore } from '@/store/modules/routerCache'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { nodeIdFactory } from '@/utils/workflow/NodeIdFactory'
 import { compressParamData, expandParamData } from '@/utils/workflow/DataOptimizer'
-import BaseFuncHelpDialog from '@/components/workflow/BaseFuncHelpDialog.vue'
+// import BaseFuncHelpDialog from '@/components/workflow/BaseFuncHelpDialog.vue'
 import RuleDetail from '@/views/rule/RuleDetail.vue'
 import { http } from '@/utils/http'
 import { RestResult } from '@/utils/http/types'
