@@ -7,7 +7,6 @@ import LuaEditor from '@/components/LuaEditor/index.vue'
 import SimpleFormRenderer from '@/components/funcForm/SimpleFormRenderer.vue'
 import { Bottom, Right, QuestionFilled } from '@element-plus/icons-vue'
 import { ElMessage, ElNotification } from 'element-plus'
-import { useLuaTemplates } from '@/data/funcModel/useLuaTemplates'
 import { ElMessageBox } from 'element-plus'
 import { useFunctionStore } from '@/store/modules/routerCache'
 import { http } from '@/utils/http/index.js'
@@ -18,7 +17,35 @@ defineOptions({
 })
 
 // 使用 Lua 模板 hook备注
-const { getTemplate } = useLuaTemplates()
+const getTemplate = () => {
+  return `local _M = {}
+
+local table = require("core.table")
+local part = require("scene.part")
+
+-- 参数示例
+-- @param expression function 表达式
+-- @param input_parts table 复杂对象 # default:{}
+-- @field input_parts.id string Part对象ID
+-- @field input_parts.name string Part对象名称
+-- @param ids table 简单数组 # default:[]
+-- @field ids[] number id值
+-- @param op string 单选列表 # options:["IN","NOTIN",">","<",">=","<=","=","<>"] default:"IN"
+-- @param value string 简单字符串 # default:""
+-- @param deep number 简单数值 # default:1
+-- @param dir table 多选列表 # options:["up","down","left","right"] default:["up"] componentType:select-multi
+-- @field dir[] string 方向值
+-- @param mode boolean 强制选择框 # options:[{"使用实体模型":true},{"使用obb包围盒":false}] default:true componentType:select
+-- @return table 返回符合条件的对象列表
+-- @field return[].part table Part对象
+-- @field return[].parent table 符合条件的父级Part对象列表
+function _M.get_parent(expression, input_parts, ids, op, value, deep, dir, mode)
+
+end
+
+return _M
+`
+}
 
 const functionStore = useFunctionStore()
 

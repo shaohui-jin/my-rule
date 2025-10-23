@@ -1,6 +1,5 @@
 import axios, { type AxiosError } from 'axios'
 import { defaultRequestInterceptors, defaultResponseInterceptors } from './config'
-import { useUserStoreHook } from '@/store/modules/user'
 
 import type {
   AxiosInstance,
@@ -10,7 +9,10 @@ import type {
   AxiosResponse
 } from './types'
 import { ElMessage } from 'element-plus'
-import { REQUEST_TIMEOUT } from '@/constants'
+import { CODE_KEY, REQUEST_TIMEOUT, SUCCESS_CODE, TRANSFORM_REQUEST_DATA } from '@/constants'
+import { useUserStoreHook } from '@/store/modules/user'
+import qs from 'qs'
+import { objToFormData } from '@/utils'
 
 export const PATH_URL = import.meta.env.VITE_API_BASE_PATH
 
@@ -21,37 +23,65 @@ const axiosInstance: AxiosInstance = axios.create({
   baseURL: PATH_URL
 })
 
-axiosInstance.interceptors.request.use((res: InternalAxiosRequestConfig) => {
+axiosInstance.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const controller = new AbortController()
-  const url = res.url || ''
-  res.signal = controller.signal
+  const url = config.url || ''
+  config.signal = controller.signal
   abortControllerMap.set(url, controller)
-  return res
+
+  if (
+    config.method === 'post' &&
+    config.headers['Content-Type'] === 'application/x-www-form-urlencoded'
+  ) {
+    config.data = qs.stringify(config.data)
+  } else if (
+    TRANSFORM_REQUEST_DATA &&
+    config.method === 'post' &&
+    config.headers['Content-Type'] === 'multipart/form-data'
+  ) {
+    config.data = objToFormData(config.data)
+  }
+  if (config.method === 'get' && config.params) {
+    let url = config.url as string
+    url += '?'
+    const keys = Object.keys(config.params)
+    for (const key of keys) {
+      if (config.params[key] !== void 0 && config.params[key] !== null) {
+        url += `${key}=${encodeURIComponent(config.params[key])}&`
+      }
+    }
+    url = url.substring(0, url.length - 1)
+    config.params = {}
+    config.url = url
+  }
+
+  return config
 })
 
 axiosInstance.interceptors.response.use(
   (res: AxiosResponse) => {
     const url = res.config.url || ''
     abortControllerMap.delete(url)
-    // 这里不能做任何处理，否则后面的 interceptors 拿不到完整的上下文了
-    return res
+    if (res?.config?.fetchOptions?.skipResponseInterceptors) {
+      return res
+    }
+    if (res?.config?.responseType === 'blob') {
+      // 如果是文件流，直接过
+      return res
+    } else if (res.data[CODE_KEY] === SUCCESS_CODE || res.data.access_token) {
+      return res.data
+    } else {
+      ElMessage.error(response?.data?.error?.message)
+    }
   },
   (error: AxiosError) => {
     console.log('err： ' + error) // for debug
     // 登陆超时
-    if (error.response?.status === 422) {
-      const userStore = useUserStoreHook()
-      userStore.logOut()
-    }
-
     const message = (error.response?.data as any)?.error?.message || error.message
     ElMessage.error(message)
     return Promise.reject(error)
   }
 )
-
-axiosInstance.interceptors.request.use(defaultRequestInterceptors)
-axiosInstance.interceptors.response.use(defaultResponseInterceptors)
 
 const service = {
   request: (config: RequestConfig) => {
@@ -97,17 +127,24 @@ interface ApiSchemaItem extends RequestConfig {
 
 export type ApiSchema = Record<string, ApiSchemaItem>
 
+type GetParams<T extends ApiSchema, K extends keyof T> =
+  T[K]['params'] extends undefined | object ? T[K]['params'] : void
+
+type PostParams<T extends ApiSchema, K extends keyof T> =
+  T[K]['data'] extends undefined | object ? T[K]['data'] : void
+
+
+type ApiMethods<T extends ApiSchema> = {
+  [K in keyof T]: T[K]['method'] extends 'get'
+    ? GetParams<T, K>
+    : PostParams<T, K>
+}
+
 export const generateApiMethods = <T extends ApiSchema>(
   config: T,
   transformResConfig?: Record<string, (res: any) => any>
 ): {
-  [K in keyof T]: T[K]['method'] extends 'get'
-    ? (
-        dataOrParams: T[K]['params'] extends undefined | object ? T[K]['params'] : void
-      ) => Promise<T[K]['response']>
-    : (
-        dataOrParams: T[K]['data'] extends undefined | object ? T[K]['data'] : void
-      ) => Promise<T[K]['response']>
+  [K in keyof T]: (dataOrParams: ApiMethods<T>) => Promise<T[K]['response']>
 } => {
   const apiMethods = {} as {
     [K in keyof T]: (dataOrParams: any) => Promise<T[K]['response']>
@@ -157,9 +194,7 @@ export const generateApiMethods = <T extends ApiSchema>(
             res.data = responseTransform(res.data) // 前端可以通过 responseTransform 返回自己想要的格式数据
           }
           delete res?.config?.fetchOptions?.skipResponseInterceptors
-          const resData = defaultResponseInterceptors(res)
-          // console.log('res, resData', res, resData)
-          return resData as T[keyof T]['response']
+          return res as T[keyof T]['response']
         })
     }
   })
