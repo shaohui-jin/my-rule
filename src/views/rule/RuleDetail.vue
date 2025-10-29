@@ -57,8 +57,7 @@
 <script setup lang="ts">
 import { ref, reactive, watch, onMounted } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
-import { http } from '@/utils/http'
-import { RestResult } from '@/utils/http/types'
+import { http } from '@/axios'
 
 const props = defineProps({
   detail: {
@@ -107,7 +106,8 @@ const rules = {
 }
 
 async function fetchDict(): Promise<void> {
-  const { data } = await http.post<any, RestResult>('/umas/common/dict/get', {
+  const { data } = await http.post({
+    url: '/umas/common/dict/get',
     data: {
       codes: ['RULE_TYPE', 'RULE_BUSINESS']
     }
@@ -175,7 +175,7 @@ defineExpose({
 <style lang="scss" scoped>
 .rule-detail {
   padding: 20px;
-  
+
   .rule-form {
     max-width: 800px;
     margin: 0 auto;
@@ -194,4 +194,4 @@ defineExpose({
     z-index: 999999 !important;
   }
 }
-</style> 
+</style>

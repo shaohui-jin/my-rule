@@ -8,8 +8,8 @@ import SimpleFormRenderer from '@/components/funcForm/SimpleFormRenderer.vue'
 import { Bottom, Right, QuestionFilled } from '@element-plus/icons-vue'
 import { ElMessage, ElNotification } from 'element-plus'
 import { ElMessageBox } from 'element-plus'
-import { useFunctionStore } from '@/store/modules/routerCache'
-import { http } from '@/utils/http/index.js'
+import { useFunctionStore } from '@/store/modules/ruleCache'
+import { http } from '@/axios'
 import { compressFunctionConfig, expandFunctionConfig } from '@/utils/workflow/DataOptimizer'
 
 defineOptions({
@@ -54,7 +54,7 @@ const formDisabled = ref(false)
 
 const inputFormRendererRef = ref()
 const outputFormRendererRef = ref()
-const LuaEditorRef = ref()
+const JsEditorRef = ref()
 // 识别到的函数的参数数量
 const curFuncParamLen = ref(0)
 
@@ -176,21 +176,20 @@ const saveFuncData = () => {
   // 压缩函数配置数据以减少存储空间
   const compressedConfigData = compressFunctionConfig(configData)
   // 函数列表数据
-  const query = {
-    data: {
-      id: state.id,
-      funcName: state.funcName,
-      funcCode: state.funcCode,
-      functionStatus: state.functionStatus,
-      funcDesc: state.funcDesc,
-      luaScript: state.luaScript,
-      configData: JSON.stringify(compressedConfigData)
-    }
-  }
-  console.log('submit data:', query)
 
   http
-    .post<any, any>('/rule-config/func/update', query)
+    .post({
+      url: '/rule-config/func/update',
+      data: {
+        id: state.id,
+        funcName: state.funcName,
+        funcCode: state.funcCode,
+        functionStatus: state.functionStatus,
+        funcDesc: state.funcDesc,
+        luaScript: state.luaScript,
+        configData: JSON.stringify(compressedConfigData)
+      }
+    })
     .then(res => {
       if (res.data === true) {
         ElMessage.success({
@@ -455,8 +454,8 @@ onActivated(() => {
           <el-button :icon="Right" type="primary" @click="Lua2FormJson">更新表单配置</el-button>
         </div>
       </h3>
-      <div class="lua-editor-container">
-        <LuaEditor ref="LuaEditorRef" language="lua" v-model="state.luaScript" />
+      <div class="js-editor-container">
+        <LuaEditor ref="JsEditorRef" v-model="state.luaScript" />
       </div>
     </div>
     <div class="right">
@@ -525,7 +524,7 @@ onActivated(() => {
     margin-bottom: 16px;
     font-size: 14px;
   }
-  .lua-editor-container {
+  .js-editor-container {
     flex: 1;
     display: flex;
     min-height: 0;

@@ -2,19 +2,19 @@ import { useParamStore } from '@/store/modules/params'
 import { WorkflowNode } from '@/type/workflow'
 import { Json2LuaUtil } from './Json2LuaUtil'
 
+const paramStore = useParamStore()
 /**
  * 外部数据表代码生成器
  */
 export class ExternalDataTable {
   public paramNameResolver: (nodeId: string, branchContext?: any) => string
-  
+
   constructor() {}
 
   /**
    * 生成外部数据表节点代码
    */
   public generateExternalDataTableCode(node: WorkflowNode, indent: number, expressionLuaCodeMap: any): string {
-    const paramStore = useParamStore()
     let code = ''
 
     // 获取输入参数

@@ -1,4 +1,4 @@
-import { http } from '@/utils/http'
+import { http } from '@/axios'
 import { ElMessage } from 'element-plus'
 
 
@@ -8,13 +8,13 @@ import { ElMessage } from 'element-plus'
  * @returns Promise<FunctionListResponse>
  */
 export async function getLuaByExpression(expression: string) {
-  const requestParams = {
+  const res = await http.post({
+    url: '/rule-config/rule/expr/toLua',
     data: {
       expression,
       addVariablePrefix: !expression.includes('rst') && !expression.includes('row')
     }
-  }
-  const res = await http.post<any, any>('/rule-config/rule/expr/toLua', requestParams)
+  })
   if (res.success) {
     return res.data
   } else {
@@ -36,10 +36,10 @@ export async function batchGetLuaByExpressions(expressions: string[]) {
       addVariablePrefix: !String(expression).includes('rst')
     })
   }
-  const requestParams = {
+  const res = await http.post({
+    url: '/rule-config/rule/expr/toLua/batch',
     data: expressionParams
-  }
-  const res = await http.post<any, any>('/rule-config/rule/expr/toLua/batch', requestParams)
+  })
   if (res.success) {
     return res.data
   } else {

@@ -1,7 +1,6 @@
 import { nodeIdFactory } from './NodeIdFactory'
 import { type WorkflowNode, LogicType, GroupNodeData } from '@/type/workflow'
 import { CustomNode, getCustomNodeConfig } from '@/utils/workflow/CustomNode'
-import { DecisionTablesNode, getDecisionTablesNodeConfig } from '@/utils/workflow/DecisionTablesNode'
 import { GroupNode } from './GroupNode'
 import { IteratorNode } from './IteratorNode'
 import { LOGIC_NODE_TEMPLATES } from './BaseLogicConfig'
@@ -9,6 +8,7 @@ import { getIteratorData } from './IteratorManager'
 import { useParamStore } from '@/store/modules/params'
 const { VITE_PUBLIC_PATH } = import.meta.env
 
+const paramStore = useParamStore()
 // 创建逻辑节点
 export function createLogicNode(type: keyof typeof LOGIC_NODE_TEMPLATES, funcId?:  string): WorkflowNode {
   const base = LOGIC_NODE_TEMPLATES[type]
@@ -64,7 +64,7 @@ export function createFuncNode(funcMeta: any): WorkflowNode {
 }
 
 function setExteranlData(nodeData: WorkflowNode){
-  const paramStore = useParamStore()
+
   const tableList = paramStore.tableList
   console.log('nodeData====', tableList)
   const sourceData = nodeData.inputData?.find((item: any) => item.paramName === 'source')

@@ -1,9 +1,6 @@
 <template>
   <div class="workflow-editor-outer" id="workflowEditorOuter">
     <div class="workflow-editor">
-      <div v-if="!props.hasEdit" class="rule-status">
-        预览模式-仅供浏览和测试
-      </div>
       <!-- 规则名展示区：左下角，始终显示 -->
       <div class="rule-name-indicator">
         当前编辑规则：{{
@@ -24,7 +21,6 @@
         :node-data="currentDecisionTableNode"
         :decision-table-data="currentDecisionTableData"
         :workflow-data="workflowData"
-        :disabled="!props.hasEdit"
         @close="closeDecisionTableEditPanel"
         @confirm="handleDecisionTableConfirm"
         class="decision-table-panel-overlay"
@@ -69,23 +65,19 @@
         </el-tooltip>
       </div>
       <div class="workflow-actions">
-        <template v-if="props.hasEdit">
+
           <el-button link @click="handleUndo" :disabled="!canUndo || props.isTesting"><Reset />撤销</el-button>
           <el-button link @click="handleRedo" :disabled="!canRedo || props.isTesting"><Recover />恢复</el-button>
           <el-button link @click="handleNew" :disabled="props.isTesting"><Clear />清空</el-button>
-          <el-button link @click="handleNewTab" :disabled="!canAdd || props.isTesting"><Add />新建</el-button>
+          <el-button link @click="handleNewTab" :disabled="props.isTesting"><Add />新建</el-button>
           <el-button link @click="handleSaveAs" :disabled="props.isTesting"><SaveAs />另存为</el-button>
           <el-button link @click="handleImport" :disabled="props.isTesting"><Import />导入</el-button>
           <el-button link @click="handleExport" :disabled="props.isTesting"><Export />导出</el-button>
-        </template>
 <!--        <el-button link disabled><Setting />版本管理</el-button>-->
         <el-button link @click="handleTest" :disabled="!props.data.id"><Test />测试</el-button>
 <!--        <el-button link disabled><Check />检查</el-button>-->
         <template v-if="props.data.id">
-          <el-tooltip v-if="!props.hasEdit" content="进入编辑模式" placement="top">
-            <el-button  type="primary" @click="handleEdit">编辑</el-button>
-          </el-tooltip>
-          <el-button v-else type="primary" @click="handleSave">保存</el-button>
+          <el-button type="primary" @click="handleSave">保存</el-button>
         </template>
         <template v-else>
           <el-button type="primary" disabled>保存</el-button>
@@ -121,7 +113,7 @@ import { EdgeCorrectionManager } from '@/utils/workflow/EdgeCorrectionManager'
 import { GroupManager } from '@/utils/workflow/GroupManager'
 import { IteratorManager } from '@/utils/workflow/IteratorManager'
 import { getLuaCodeMapByExpression } from '@/utils/expression'
-import { useParamStoreHook } from '@/store/modules/params'
+import { useParamStore } from '@/store/modules/params'
 // const DecisionTableEditPanelNode = defineAsyncComponent(() => import('./panels/DecisionTableEditPanelNode.vue'))
 import DecisionTableEditPanelNode from './panels/DecisionTableEditPanelNode.vue'
 import { useRouter } from 'vue-router'
@@ -143,9 +135,10 @@ import Decrease from '@/assets/ruleEditToolSvg/decrease.svg'
 import Expand from '@/assets/ruleEditToolSvg/expand.svg'
 import Increase from '@/assets/ruleEditToolSvg/increase.svg'
 import Layout from '@/assets/ruleEditToolSvg/layout.svg'
-import { useRuleStore } from "@/store/modules/routerCache";
+import { useRuleStore } from "@/store/modules/ruleCache";
 
 
+const paramStore = useParamStore()
 /**
  * 组件属性定义
  * @property {WorkflowData} data - 工作流数据
@@ -156,7 +149,6 @@ const props = defineProps<{
   functionNodes: Map<string, FunctionNode>;
   nodeId: number;
   isTesting: boolean;
-  hasEdit: boolean
 }>()
 const emit = defineEmits([
   'update:data',
@@ -180,7 +172,6 @@ const canUndo = ref(false)
 const canRedo = ref(false)
 const selectedNodeData = ref<any>(null)
 const workflowData = ref(props.data)
-const paramStore = useParamStoreHook()
 const router = useRouter()
 const isDecode = ref(false)
 
@@ -192,18 +183,6 @@ const ruleStore = useRuleStore()
 
 const showMiniMap = ref(false)
 
-const {
-  multiTags
-} = []
-
-const canAdd = computed(() => {
-  return !multiTags.value.find(tag => tag.path === '/ruleEdit')
-})
-
-const handleEdit = () => {
-  ruleStore.setReadonly(workflowData.value.id)
-  handleRegister()
-}
 
 // 移除重复的搜索相关状态，由父组件统一管理
 // const showSearchModal = ref(false)
@@ -250,8 +229,11 @@ watch(
 watch(
   () => props.nodeId,
   val => {
+    if (val) {
+      selectNodeOnly(val+'')
+
+    }
     // graph.centerContent()
-    selectNodeOnly(val+'')
   }
 )
 /**
@@ -432,7 +414,7 @@ function registerGraphBaseEvents() {
         node.attr('border/strokeOpacity', 1, { ignoreHistory: true })
       }
 
-      if (props.hasEdit && node.attr('copyButton/width') !== 28) {
+      if (node.attr('copyButton/width') !== 28) {
         node.attr('copyButton/width', 28, { ignoreHistory: true })
         node.attr('delButton/width', 28, { ignoreHistory: true })
         if (outPortCount <= 1 && outPortEdgeCount <= 1) {
@@ -619,9 +601,9 @@ function registerGraphBaseEvents() {
 
     edge.attr('line/strokeWidth', 3)
     // 添加箭头
-    if (props.hasEdit) {
 
-      edge.addTools([
+
+    edge.addTools([
         {
           name: 'target-arrowhead',
           args: { attrs: { fill: edge.hasCorrectionText ? '#ff6b6b' : '#1890ff' } }
@@ -678,7 +660,7 @@ function registerGraphBaseEvents() {
         //   },
         // }
       ])
-    }
+
   })
 
   graph.on('edge:mouseleave', ({ edge }: { edge: any }) => {
@@ -1121,9 +1103,6 @@ const initGraph = () => {
       createEdge: () => new Shape.Edge(),
       allowMulti: true,
       validateConnection(args) {
-        if (!props.hasEdit) {
-          return false
-        }
         if(edgeCorrectionManager) {
           edgeCorrectionManager.edgePreviewColor(args)
         }
@@ -1239,9 +1218,7 @@ const initGraph = () => {
 
   setTimeout(() => {
     handleFit()
-    if (props.hasEdit) {
-      handleRegister()
-    }
+    handleRegister()
   }, 100)
 }
 /**
@@ -1704,10 +1681,6 @@ onActivated(() => {
  * 组件卸载时清理
  */
 onDeactivated(() => {
-  const item =  multiTags.value.find(e => e.path === `/ruleEdit?ruleId=${workflowData.value.id}`)
-  if (!item) {
-    ruleStore.setReadonly(workflowData.value.id, false)
-  }
   iteratorManager?.destroy()
   graph?.dispose()
   dnd?.dispose()
@@ -2383,7 +2356,6 @@ function handleValidationNodeSelect(nodeId: string) {
 
 defineExpose({
   handleFit,
-  handleRegister,
   handleLayout,
   resetWorkflowData,
   startDragPreview,

@@ -1,5 +1,4 @@
 import { WorkflowNode } from "@/type/workflow"
-import RoleDrawer from "@/views/RoleDrawer.vue"
 import { Json2LuaUtil } from "./Json2LuaUtil"
 
 

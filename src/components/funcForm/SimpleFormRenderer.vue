@@ -174,8 +174,9 @@ import {
 } from 'element-plus'
 import { Switch as SwitchIcon } from '@element-plus/icons-vue'
 import BaseFunctionExpression from '@/components/BaseFunctionExpression/index.vue'
-import { useParamStoreHook } from '@/store/modules/params'
+import { useParamStore } from '@/store/modules/params'
 
+const paramStore = useParamStore()
 const props = defineProps({
   formJson: {
     type: Object,
@@ -236,7 +237,6 @@ const getComponent = type => {
   return componentMap[type] || ElInput
 }
 
-const paramStore = useParamStoreHook()
 const paramList = ref([])
 
 onMounted(async () => {

@@ -352,7 +352,7 @@ import { ref, defineEmits, defineExpose, watch, onUnmounted, computed, onMounted
 import { ElMessage, ElMessageBox } from 'element-plus'
 import * as monaco from 'monaco-editor'
 import { DocumentCopy, FullScreen, Close, Check, Download, ArrowDown, ArrowRight } from '@element-plus/icons-vue'
-import { http } from '@/utils/http'
+import { http } from '@/axios'
 import { getFormSign, FormSignRequestParams, FormSignResponse, debugRule, RuleDebugRequestParams, RuleDebugResponse, RuleItem, SimpleRuleItem, getAllRule, getSimpleRuleById, addExecutionRecord, AddExecutionRecordRequestParams, RuleDebugResponseResult, ExecutionRecordData, getTestCaseList, deleteTestCaseApi, TestCaseListRequestParams, saveAsExpectedResult as saveAsExpectedResultApi, SaveAsExpectedResultRequestParams, getSimpleRuleList } from '@/api/test'
 import { LuaGenerator } from '@/utils/json2lua/LuaGenerator'
 import { getFunctionListByIds, transformFunctionData } from '@/api/workflow/WorkFlowApi'
@@ -1055,7 +1055,8 @@ const fetchXmlContent = async () => {
   if (!uploadedOssPath.value) return
   try {
     // 获取签名URL
-    const signData = await http.post<any, any>('/cloudstorage/sign', {
+    const signData = await http.post({
+      url: '/cloudstorage/sign',
       data: { signType: 1, key: uploadedOssPath.value }
     })
 

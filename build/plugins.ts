@@ -12,7 +12,6 @@ import removeConsole from 'vite-plugin-remove-console'
 import themePreprocessorPlugin from '@pureadmin/theme'
 import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite'
 import DefineOptions from 'unplugin-vue-define-options/vite'
-import { genScssMultipleScopeVars } from '../src/layout/theme'
 import monacoEditorPlugin from 'vite-plugin-monaco-editor';
 
 export function getPluginsList(
@@ -40,26 +39,15 @@ export function getPluginsList(
     removeConsole({ external: ['src/assets/iconfont/iconfont.js'] }),
     viteBuildInfo(),
     // 自定义主题
-    themePreprocessorPlugin({
-      scss: {
-        multipleScopeVars: genScssMultipleScopeVars(),
-        extract: true
-      }
-    }),
+    // themePreprocessorPlugin({
+    //   scss: {
+    //     multipleScopeVars: genScssMultipleScopeVars(),
+    //     extract: true
+    //   }
+    // }),
     // svg组件化支持
     svgLoader(),
     // ElementPlus({}),
-    // mock支持
-    viteMockServe({
-      mockPath: 'mock',
-      localEnabled: command === 'serve',
-      prodEnabled: command !== 'serve' && prodMock,
-      injectCode: `
-          import { setupProdMockServer } from './mockProdServer';
-          setupProdMockServer();
-        `,
-      logger: false
-    }),
     monacoEditorPlugin({
       languageWorkers: ['editorWorkerService', 'json', 'typescript', 'html', 'css'],
       publicPath: 'https://unpkg.com/vite-plugin-monaco-editor@1.0.5/cdn'

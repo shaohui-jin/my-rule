@@ -1,3 +1,41 @@
+<template>
+  <!-- 全屏编辑器覆盖层 -->
+  <Teleport to="body">
+    <div v-if="isFullscreen" class="fullscreen-editor-overlay">
+      <div class="fullscreen-editor-container">
+        <div class="editor-toolbar">
+          <el-button type="primary" size="small" circle @click.stop="handleDownload">
+            <el-icon><Download /></el-icon>
+          </el-button>
+          <el-button type="primary" size="small" circle @click.stop="copyContent">
+            <el-icon><DocumentCopy /></el-icon>
+          </el-button>
+          <el-button type="primary" size="small" circle @click.stop="toggleFullscreen">
+            <el-icon><Close /></el-icon>
+          </el-button>
+        </div>
+        <div ref="fullscreenContainer" class="monaco-editor-container"></div>
+      </div>
+    </div>
+  </Teleport>
+
+  <!-- 主编辑器容器 -->
+  <div class="editor-wrapper">
+    <div class="editor-toolbar">
+      <el-button type="primary" size="small" circle @click.stop="handleDownload">
+        <el-icon><Download /></el-icon>
+      </el-button>
+      <el-button type="primary" size="small" circle @click.stop="copyContent">
+        <el-icon><DocumentCopy /></el-icon>
+      </el-button>
+      <el-button type="primary" size="small" circle @click.stop="toggleFullscreen">
+        <el-icon><FullScreen /></el-icon>
+      </el-button>
+    </div>
+    <div ref="editorContainer" class="editorContainer"/>
+  </div>
+</template>
+
 <script setup lang="ts">
 import * as monaco from 'monaco-editor'
 import { onMounted, ref, defineExpose, watch } from 'vue'
@@ -26,7 +64,7 @@ const emit = defineEmits(['update:modelValue'])
 const props = defineProps({
   language: {
     type: String,
-    default: 'lua'
+    default: 'typescript'
   },
   modelValue: {
     type: String,
@@ -84,28 +122,28 @@ const handleDownload = () => {
       ElMessage.warning('代码内容为空')
       return
     }
-    
+
     // 创建 Blob 对象
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
-    
+
     // 创建下载链接
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    
+
     // 设置文件名，包含时间戳
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5)
     const extension = props.language === 'lua' ? '.lua' : '.txt'
     link.download = `${props.fileName}_${timestamp}${extension}`
-    
+
     // 触发下载
     document.body.appendChild(link)
     link.click()
-    
+
     // 清理
     document.body.removeChild(link)
     window.URL.revokeObjectURL(url)
-    
+
     ElMessage.success('代码文件下载成功')
   } else {
     ElMessage.warning('没有可下载的代码内容')
@@ -129,11 +167,11 @@ const copyContent = () => {
 // 切换全屏
 const toggleFullscreen = () => {
   isFullscreen.value = !isFullscreen.value
-  
+
   if (isFullscreen.value) {
     // 进入全屏
     document.body.style.overflow = 'hidden'
-    
+
     // 延迟创建全屏编辑器
     setTimeout(() => {
       createFullscreenEditor()
@@ -141,7 +179,7 @@ const toggleFullscreen = () => {
   } else {
     // 退出全屏
     document.body.style.overflow = ''
-    
+
     // 销毁全屏编辑器
     if (fullscreenEditor) {
       fullscreenEditor.dispose()
@@ -153,7 +191,7 @@ const toggleFullscreen = () => {
 // 创建全屏编辑器
 const createFullscreenEditor = () => {
   if (fullscreenEditor || !fullscreenContainer.value) return
-  
+
   fullscreenEditor = monaco.editor.create(fullscreenContainer.value, {
     value: codeEditor?.getValue() || '',
     language: props.language,
@@ -167,7 +205,7 @@ const createFullscreenEditor = () => {
     folding: true,
     wordWrap: 'on'
   })
-  
+
   // 监听编辑器内容变更
   fullscreenEditor.onDidChangeModelContent(() => {
     const content = fullscreenEditor?.getValue() || ''
@@ -177,7 +215,7 @@ const createFullscreenEditor = () => {
       codeEditor.setValue(content)
     }
   })
-  
+
   // 布局编辑器
   setTimeout(() => {
     fullscreenEditor?.layout()
@@ -230,43 +268,7 @@ defineExpose({
 })
 </script>
 
-<template>
-  <!-- 全屏编辑器覆盖层 -->
-  <Teleport to="body">
-    <div v-if="isFullscreen" class="fullscreen-editor-overlay">
-      <div class="fullscreen-editor-container">
-        <div class="editor-toolbar">
-          <el-button type="primary" size="small" circle @click.stop="handleDownload">
-            <el-icon><Download /></el-icon>
-          </el-button>
-          <el-button type="primary" size="small" circle @click.stop="copyContent">
-            <el-icon><DocumentCopy /></el-icon>
-          </el-button>
-          <el-button type="primary" size="small" circle @click.stop="toggleFullscreen">
-            <el-icon><Close /></el-icon>
-          </el-button>
-        </div>
-        <div ref="fullscreenContainer" class="monaco-editor-container"></div>
-      </div>
-    </div>
-  </Teleport>
 
-  <!-- 主编辑器容器 -->
-  <div class="editor-wrapper">
-    <div class="editor-toolbar">
-      <el-button type="primary" size="small" circle @click.stop="handleDownload">
-        <el-icon><Download /></el-icon>
-      </el-button>
-      <el-button type="primary" size="small" circle @click.stop="copyContent">
-        <el-icon><DocumentCopy /></el-icon>
-      </el-button>
-      <el-button type="primary" size="small" circle @click.stop="toggleFullscreen">
-        <el-icon><FullScreen /></el-icon>
-      </el-button>
-    </div>
-    <div ref="editorContainer" class="editorContainer"/>
-  </div>
-</template>
 
 <style lang="scss" scoped>
 .editor-wrapper {
@@ -316,7 +318,7 @@ defineExpose({
   position: relative;
   display: flex;
   flex-direction: column;
-  
+
   .editor-toolbar {
     position: absolute;
     top: 20px;
@@ -325,7 +327,7 @@ defineExpose({
     display: flex;
     gap: 0px;
   }
-  
+
   .monaco-editor-container {
     width: 100%;
     height: 100%;

@@ -131,13 +131,12 @@
 
 <script setup lang="tsx">
 import { ref, onMounted, reactive, computed,nextTick  } from 'vue'
-import { http } from '@/utils/http'
-import { PageResult, RestResult } from '@/utils/http/types'
+import { http } from '@/axios'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Edit, ArrowDown, ArrowUp, Rank, Clock, Refresh, Search } from '@element-plus/icons-vue'
 import RuleDetail from './RuleDetail.vue'
 import { useRouter, useRoute } from 'vue-router'
-import { useRuleStore } from '@/store/modules/routerCache'
+import { useRuleStore } from '@/store/modules/ruleCache'
 import BaseSearch from '@/components/BaseTable/BaseSearch.vue'
 import BaseTable from '@/components/BaseTable/BaseTable.vue'
 
@@ -370,7 +369,7 @@ async function getList() {
     params.modifyTimeEnd = search.value.modifyTime?.[1] || undefined
   }
 
-  const data = await http.post<any, PageResult>('rule-config/rule/page', { data: params })
+  const data = await http.post({ url: 'rule-config/rule/page', data: params })
   tableData.value = data.data?.rows || []
   total.value = data.data?.total || 0
   loadingList.value = false
@@ -423,7 +422,8 @@ onMounted(() => {
 })
 
 async function fetchDict(): Promise<void> {
-  const { data } = await http.post<any, RestResult>('/umas/common/dict/get', {
+  const { data } = await http.post({
+    url: '/umas/common/dict/get',
     data: {
       codes: ['RULE_TYPE', 'RULE_BUSINESS']
     }
@@ -483,7 +483,8 @@ function publish(row: any) {
   })
     .then(async () => {
       await http
-        .post<any, RestResult>('/rule-config/rule/publish', {
+        .post({
+          url: '/rule-config/rule/publish',
           data: { id: row.id }
         })
         .then(res => {
@@ -501,7 +502,8 @@ function publish(row: any) {
 async function updateStatus(row: any) {
   const newStatus = row.ruleStatus === 'ENABLED' ? 'DISABLED' : 'ENABLED'
   await http
-    .post<any, RestResult>('/rule-config/rule/update/enable', {
+    .post({
+      url: '/rule-config/rule/update/enable',
       data: {
         id: row.id,
         ruleStatus: newStatus
@@ -523,7 +525,8 @@ function add() {
       return
     }
     await http
-      .post<any, RestResult>('/rule-config/rule/add', {
+      .post({
+        url: '/rule-config/rule/add',
         data: {
           ruleCode: detail.value.ruleCode,
           ruleName: detail.value.ruleName,
@@ -558,7 +561,8 @@ function add() {
 // 监听子组件提交事件
 const handleSubmit = async (formData: any) => {
   await http
-    .post<any, RestResult>('/rule-config/rule/add', {
+    .post({
+      url: '/rule-config/rule/add',
       data: formData
     })
     .then((res: any) => {
@@ -579,7 +583,8 @@ function update() {
       return
     }
     await http
-      .post<any, RestResult>('/rule-config/rule/update/basic', {
+      .post({
+        url: '/rule-config/rule/update/basic',
         data: detail.value
       })
       .then(() => {
@@ -615,7 +620,7 @@ const toggleRuleStatus = (row: any) => {
           ruleStatus: newStatus
         }
       }
-      http.post<any, RestResult>('/rule-config/rule/update/enable', params).then(res => {
+      http.post({ url: '/rule-config/rule/update/enable', data: params }).then(res => {
         if (res.data === true) {
           ElMessage.success(`${actionText}成功`)
           getList()
@@ -657,7 +662,7 @@ function refreshCache() {
   })
     .then(() => {
       http
-        .post('/rule-config/rule/cache/refresh')
+        .post({ url: '/rule-config/rule/cache/refresh' })
         .then((res: any) => {
           if (res.data === true) {
             ElMessage.success('缓存刷新成功')
@@ -679,7 +684,8 @@ async function showHistory(row: any) {
   historyLoading.value = true
 
   try {
-    const { data } = await http.post<any, RestResult>('/rule-config/rule/history', {
+    const { data } = await http.post({
+      url: '/rule-config/rule/history',
       data: { id: row.id }
     })
 
@@ -719,7 +725,8 @@ async function handleDelete(row: any) {
     })
 
     // 执行删除
-    const deleteResult = await http.post<any, RestResult>('/rule-config/rule/delete', {
+    const deleteResult = await http.post({
+      url: '/rule-config/rule/delete',
       data: { id: row.id }
     })
 

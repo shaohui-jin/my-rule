@@ -32,7 +32,7 @@
 import { ref, onMounted, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
 import TestDrawer from '@/components/TestDrawer/index.vue'
-import { http } from '@/utils/http'
+import { http } from '@/axios'
 import { getExecutionRecordPage, ExecutionRecordRequestParams, ExecutionRecordResponse, ExecutionRecordData, getDictData, DictItem, deleteExecutionRecord, DeleteExecutionRecordResponse } from '@/api/test'
 import { formatMilliseconds } from '@/utils'
 import BaseSearch from '@/components/BaseTable/BaseSearch.vue'
@@ -307,7 +307,7 @@ function getExecutionMessage(executionResult: string): string {
 function formatPartIdDisplay(row: ExecutionRecordData): string {
   const partName = row.partName || ''
   const partId = row.partId || ''
-  
+
   if (partName && partId) {
     return `${partName} / ${partId}`
   } else if (partId) {
@@ -346,7 +346,8 @@ async function handleDownload(row: ExecutionRecordData) {
   if (row.ossPath) {
     try {
       // 获取签名URL
-      const signData = await http.post<any, any>('/cloudstorage/sign', {
+      const signData = await http.post({
+        url: '/cloudstorage/sign',
         data: { signType: 1, key: row.ossPath }
       })
 

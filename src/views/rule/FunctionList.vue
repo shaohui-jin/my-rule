@@ -194,32 +194,21 @@
 
 <script setup lang="tsx">
 import { ref, onMounted, reactive, computed, nextTick } from 'vue'
-import { http } from '@/utils/http'
-import { PageResult, RestResult } from '@/utils/http/types'
+import { http } from '@/axios'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  Edit,
-  ArrowDown,
-  ArrowUp,
-  Rank,
-  Refresh,
   Document,
   View,
   Close
 } from '@element-plus/icons-vue'
-import { useRenderIcon } from '@/components/ReIcon/src/hooks'
-import IconSearch from '@iconify-icons/ep/search'
-import IconGoBack from '@iconify-icons/ri/arrow-go-back-line'
-import IconAdd from '@iconify-icons/ri/add-circle-line'
-import IconRefresh from '@iconify-icons/ep/refresh-right'
-import IconSetting from '@iconify-icons/ep/setting'
 import FunctionDetail from './FunctionDetail.vue'
 import { useRouter } from 'vue-router'
-import { useFunctionStore, useRuleStore } from '@/store/modules/routerCache'
+import { useFunctionStore, useRuleStore } from '@/store/modules/ruleCache'
 import BaseSearch from '@/components/BaseTable/BaseSearch.vue'
 import BaseTable from '@/components/BaseTable/BaseTable.vue'
 
 import { useDialogDrag } from '@/hooks/useDialogDrag'
+import { getFunctionList } from '@/api/workflow/WorkFlowApi'
 
 const { initDialog } = useDialogDrag()
 
@@ -434,7 +423,10 @@ async function getList() {
       e => e.id === search.value.funcClassifyKeyword
     ).name
   }
-  const data = await http.post<any, PageResult>('rule-config/func/page', { data: params })
+  const data = await http.post({
+    url: 'rule-config/func/page',
+    data: params
+  })
   tableData.value = Array.isArray(data.data?.rows) ? data.data.rows : []
   total.value = typeof data.data?.total === 'number' ? data.data.total : 0
   loadingList.value = false
@@ -499,7 +491,8 @@ async function editFunction(row: any) {
   dialogTitle.value = '编辑函数'
   loadingDetail.value = true
   dialogVisible.value = true
-  const { data } = await http.post<any, RestResult>('/rule-config/func/detail', {
+  const { data } = await http.post({
+    url: '/rule-config/func/detail',
     data: { id: row.id }
   })
   detail.value = data
@@ -519,7 +512,8 @@ async function remove(row: any) {
   })
     .then(async () => {
       await http
-        .post<any, RestResult>('/rule-config/func/delete', {
+        .post({
+          url: '/rule-config/func/delete',
           data: { id: row.id }
         })
         .then(res => {
@@ -540,7 +534,8 @@ function add() {
       return
     }
     await http
-      .post<any, { data: boolean }>('/rule-config/func/add', {
+      .post({
+        url: '/rule-config/func/add',
         data: {
           funcCode: detail.value.funcCode,
           funcName: detail.value.funcName,
@@ -579,7 +574,8 @@ function update() {
       return
     }
     await http
-      .post<any, { data: boolean }>('/rule-config/func/update', {
+      .post({
+        url: '/rule-config/func/update',
         data: {
           id: detail.value.id,
           funcCode: detail.value.funcCode,
@@ -614,7 +610,8 @@ function update() {
 }
 
 async function fetchDict(): Promise<void> {
-  const { data } = await http.post<any, RestResult>('/umas/common/dict/get', {
+  const { data } = await http.post({
+    url: '/umas/common/dict/get',
     data: {
       codes: ['FUNCTION_TYPE']
     }
@@ -646,7 +643,7 @@ const toggleFunctionStatus = (row: any) => {
           functionStatus: newStatus
         }
       }
-      http.post<any, RestResult>('/rule-config/func/update/enable', params).then(res => {
+      http.post({ url: '/rule-config/func/update/enable', data: params }).then(res => {
         if (res.data === true) {
           ElMessage.success(`${actionText}成功`)
           getList()
@@ -685,7 +682,7 @@ function refreshFunctionCache() {
   })
     .then(() => {
       http
-        .post('/rule-config/rule/cache/refreshFunctions')
+        .post({ url: '/rule-config/rule/cache/refreshFunctions' })
         .then((res: any) => {
           if (res.data === true) {
             ElMessage.success('函数缓存刷新成功')
@@ -715,7 +712,8 @@ async function showRuleUsage(row: any) {
 async function fetchRuleUsage() {
   ruleUsageLoading.value = true
   try {
-    const data = await http.post<any, PageResult>('rule-config/func/useBy/rule', {
+    const data = await http.post({
+      url: 'rule-config/func/useBy/rule',
       data: {
         funcId: currentFunction.value.id,
         pageNo: ruleUsagePageNo.value,
@@ -786,7 +784,7 @@ const setFunctionStatus = (row): Promise<boolean> => {
 
 const functionCateData = ref([])
 async function fetchFunctionCateList(): Promise<void> {
-  const res = await http.post<any, RestResult>('/rule-config/func/find-func-with-classify', {})
+  const res = await getFunctionList()
   dictData.value.funcClassifyKeyword = res.data
 }
 onMounted(() => {

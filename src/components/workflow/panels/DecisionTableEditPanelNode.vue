@@ -262,13 +262,14 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import DecisionTableParamEditPanel from './DecisionTableParamEditPanel.vue'
 import { DecisionTableExpressionConfig, DecisionTableParamData, DecisionTableRowData } from '@/type/workflow';
 import { batchGetLuaByExpressions } from '@/api/Lua';
-import { useParamStoreHook } from '@/store/modules/params'
+import { useParamStore } from '@/store/modules/params'
 import * as XLSX from 'xlsx'
 import { defaultMockDecisionTableData, decisionTableTemplateData } from './DecisiontableConfig'
 import { useRoute } from 'vue-router'
 import BaseFunctionExpression from '@/components/BaseFunctionExpression/index.vue'
 const route = useRoute()
 
+const paramStore = useParamStore()
 // 定义参数结构
 // interface TableParam {
 //   paramName: string
@@ -919,7 +920,6 @@ const handleFieldHeaderClick = (field: TableField) => {
 
 // 获取参数数据
 const getParamData = async () => {
-  const paramStore = useParamStoreHook()
   partList.value = await getPartList()
   paramList.value = await paramStore.getParamList()
   tableList.value = await paramStore.getTableList()

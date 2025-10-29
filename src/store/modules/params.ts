@@ -1,10 +1,6 @@
 import { defineStore } from 'pinia'
-import { store } from '@/store'
-import { routerArrays } from '@/layout/types'
-import { multiType, positionType } from './types'
-import { isEqual, isBoolean, isUrl, storageLocal } from '@pureadmin/utils'
-import {http} from "@/utils/http";
-import {ElMessage} from "element-plus";
+import { http } from "@/axios";
+import { ElMessage } from "element-plus";
 
 export const useParamStore = defineStore({
   id: 'params-list',
@@ -20,7 +16,8 @@ export const useParamStore = defineStore({
   actions: {
     async getPartList() {
       if(this.partList.length === 0) {
-        const res: any = await http.post<any, any>('/rule-config/datasource/fields', {
+        const res: any = await http.post({
+          url: '/rule-config/datasource/fields',
           data: {
             databaseId: 'default',
             tableName: 'part'
@@ -37,7 +34,8 @@ export const useParamStore = defineStore({
     },
     async getTableList() {
       if(this.tableList.length === 0) {
-        const res: any = await http.post<any, any>('/rule-config/datasource/list', {
+        const res: any = await http.post({
+          url: '/rule-config/datasource/list',
           data: {}
         })
         const tableList = []
@@ -45,7 +43,8 @@ export const useParamStore = defineStore({
           const datasourceList = res.data
           const _res = await Promise.all(
             datasourceList.map(async item => {
-              return http.post<any, any>('/rule-config/datasource/fields', {
+              return http.post({
+                url: '/rule-config/datasource/fields',
                 data: item
               })
             })
@@ -72,7 +71,8 @@ export const useParamStore = defineStore({
     },
     async getParamList() {
       if(this.paramList.length === 0) {
-        const res: any = await http.post<any, any>('/config/configParam/queryParamsByType', {
+        const res: any = await http.post({
+          url: '/config/configParam/queryParamsByType',
           data: {}
         })
         let paramList = []
@@ -108,7 +108,3 @@ export const useParamStore = defineStore({
     },
   }
 })
-
-export function useParamStoreHook() {
-  return useParamStore(store)
-}

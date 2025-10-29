@@ -1,7 +1,7 @@
 <template>
   <div class="rule-edit-layout">
     <!-- 收缩按钮 -->
-    <div v-if="hasEdit" class="fold" @click="foldMenu">
+    <div class="fold" @click="foldMenu">
       <el-tooltip :content="foldStatus ? '展开左侧功能面板' : '隐藏左侧功能面板'" placement="top">
         <LeftOutlined v-if="!foldStatus"></LeftOutlined>
         <RightOutlined v-else></RightOutlined>
@@ -136,7 +136,6 @@
           @close-search-modal="handleCloseSearchModal"
           :nodeId="nodeId"
           :isTesting="isTesting"
-          :hasEdit="hasEdit"
         />
       </div>
     </div>
@@ -144,7 +143,6 @@
     <!-- 属性面板抽屉组件 -->
     <AttrPanelDrawer
       :visible="showAttrPanel"
-      :disabled="!hasEdit"
       :nodeData="selectedNodeData"
       :workflowData="workflowData"
       :getAvailableSourceOptions="getAvailableSourceOptions"
@@ -243,20 +241,19 @@ import {
   FunctionNode,
   updateRule
 } from '@/api/workflow/WorkFlowApi'
-import { useRuleStore, useCanvasStore } from '@/store/modules/routerCache'
+import { useRuleStore, useCanvasStore } from '@/store/modules/ruleCache'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { nodeIdFactory } from '@/utils/workflow/NodeIdFactory'
 import { compressParamData, expandParamData } from '@/utils/workflow/DataOptimizer'
 // import BaseFuncHelpDialog from '@/components/workflow/BaseFuncHelpDialog.vue'
 import RuleDetail from '@/views/rule/RuleDetail.vue'
-import { http } from '@/utils/http'
-import { RestResult } from '@/utils/http/types'
+import { http } from '@/axios'
 import TestDrawer from '@/components/TestDrawer/index.vue'
 import NodeTypeIcon from '@/components/NodeTypeIcon/index.vue'
 import NodeSearchModal from '@/components/workflow/NodeSearchModal.vue'
 import { emitter } from '@/utils/mitt'
 import { bus } from 'wujie'
-import { useParamStoreHook } from '@/store/modules/params'
+import { useParamStore } from '@/store/modules/params'
 import BusinessPort from '@/assets/rsvg/businessport.svg'
 import Basic from '@/assets/rsvg/basic.svg'
 import StarOutlined from '@/assets/rsvg/StarOutlined.svg'
@@ -270,6 +267,7 @@ import CommonDialog from '@/components/Dialog/CommonDialog.vue'
 
 import { useDialogDrag } from '@/hooks/useDialogDrag'
 
+const paramStore = useParamStore()
 const { initDialog } = useDialogDrag()
 
 // import BusinessPort from "@/assets/rsvg/businessport.svg";
@@ -321,7 +319,6 @@ function showMicroFrontendExitMessage(): void {
 
 const ruleStore = useRuleStore()
 const canvasStore = useCanvasStore()
-const paramStore = useParamStoreHook()
 
 /**
  * 缓存当前画布数据
@@ -1007,12 +1004,11 @@ onActivated(async () => {
   const cachedCanvas = canvasStore.getCurrentCanvas(ruleId)
 
   // 如果加载过，切换的时候会设置为false 那一定会有key
-  const hasLoad = Object.prototype.hasOwnProperty.call(ruleStore.hasEditMap, ruleId)
   let baseData = workflowData.value
 
   paramStore.setCanvasList(ruleId, ruleData?.variableSet || '[]')
 
-  if (ruleData && !hasLoad) {
+  if (ruleData) {
     // 优先级1：使用从其他页面跳转过来的规则数据
     baseData = {
       ...workflowData.value,
@@ -1058,18 +1054,6 @@ onActivated(async () => {
   // workflowData.value = baseData
   updateWorkflowData(baseData)
 
-
-  if (!hasCanvasContent() || !ruleId) {
-    ruleStore.setReadonly(ruleId)
-  }
-
-  // setTimeout(() => {
-  //   editorRef.value.handleFit()
-  //   if (hasEdit.value) {
-  //     editorRef.value.handleRegister()
-  //   }
-  // }, 100)
-
   // 添加浏览器事件监听
   window.addEventListener('beforeunload', handleBeforeUnload)
 
@@ -1109,20 +1093,18 @@ onActivated(async () => {
   // 监听页签关闭检查事件
   emitter.on('tabCloseCheck', async ({ name, resolve }) => {
     if (name === 'ruleEdit') {
-      if (hasEdit.value) {
-        // 检查是否有未保存的修改
-        const hasUnsaved = hasUnsavedChanges()
-        if (hasUnsaved) {
-          saveDialogResolve = resolve
-          // 获取当前工作流数据并保存
-          await editorRef.value?.handleSave()
-          isSaveFromTag.value = true
-        } else {
-          resolve(false)
-        }
+
+      // 检查是否有未保存的修改
+      const hasUnsaved = hasUnsavedChanges()
+      if (hasUnsaved) {
+        saveDialogResolve = resolve
+        // 获取当前工作流数据并保存
+        await editorRef.value?.handleSave()
+        isSaveFromTag.value = true
       } else {
         resolve(false)
       }
+
     } else {
       resolve(false)
     }
@@ -1153,20 +1135,7 @@ onDeactivated(() => {
   // clearAutoSaveTimer()
 })
 
-const hasEdit = computed(() => {
-  const ruleId = route.query?.ruleId as string
-  return ruleStore.hasEditMap[ruleId]
-})
 
-watch(
-  () => hasEdit.value,
-  n => {
-    foldStatus.value = !n
-  },
-  {
-    deep: true
-  }
-)
 // 另存相关方法
 const handleSaveAs = (data: any) => {
   // 保存从WorkflowDesigner传递的数据
@@ -1204,7 +1173,8 @@ const closeSaveAsDialog = () => {
 const performSaveAs = async (formData: any) => {
   loadingSaveAs.value = true
   try {
-    const res = await http.post<any, RestResult>('/rule-config/rule/add', {
+    const res = await http.post({
+      url: '/rule-config/rule/add',
       data: formData
     })
 

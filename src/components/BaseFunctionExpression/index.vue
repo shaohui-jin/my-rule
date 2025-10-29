@@ -207,7 +207,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { CopyDocument, FullScreen, Search } from '@element-plus/icons-vue'
-import { useParamStoreHook } from '@/store/modules/params'
+import { useParamStore } from '@/store/modules/params'
 import { WorkflowData } from '@/type/workflow'
 import { useVModel } from '@vueuse/core'
 import { ElMessage } from 'element-plus'
@@ -219,6 +219,7 @@ import { useRoute } from 'vue-router'
 
 import { useDialogDrag } from '@/hooks/useDialogDrag'
 
+const paramStore = useParamStore()
 const { initDialog } = useDialogDrag()
 
 const route = useRoute()
@@ -478,7 +479,6 @@ const canvasList = ref<{ name: string; code: string; children: any[] }[]>([])
 
 const flatTreeData = ref<{ name: string; code: string; children: any[] }[]>([])
 
-const paramStore = useParamStoreHook()
 
 // 生成随机字符串 ID
 function generateRandomId(length = 8) {

@@ -1,13 +1,9 @@
-import { $t } from '@/plugins/i18n'
-
 export default {
   path: '/error',
   redirect: '/error/403',
   meta: {
     icon: 'informationLine',
-    title: $t('menus.hsabnormal'),
-    showLink: false,
-    rank: 9
+    title: '错误页',
   },
   children: [
     {
