@@ -1,5 +1,120 @@
+<template>
+  <div class="bg-gray-50 h-full flex flex-col">
+    <nav class="gradient-bg text-white shadow-lg h-10">
+      <div class="container mx-auto px-4 py-4 h-full">
+        <div class="flex items-center justify-between h-full">
+          <div class="flex items-center space-x-2">
+            <i class="fas fa-code text-xl"></i>
+            <h1 class="text-xl font-bold">函数JSDoc解析器</h1>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container mx-auto px-4 py-4 h-full flex flex-col flex-1 overflow-hidden">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 overflow-hidden">
+        <!-- 代码输入区域 -->
+        <div class="bg-white rounded-xl shadow-lg p-4 fade-in flex flex-col overflow-overlay">
+          <h2 class="text-lg font-semibold text-gray-800 mb-4">
+            <i class="fas fa-edit mr-2 text-blue-500"></i>
+            代码编辑器
+          </h2>
+          <div class="w-full code-editor focus:ring-2 focus:ring-blue-500 resize-none flex-1">
+            <LuaEditor ref="JsEditorRef" v-model="state.jsCode" />
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4 pt-4">
+            <el-button :icon="Bottom" @click="loadTemplate">导入模版</el-button>
+            <el-button :icon="Right" @click="Js2FormJson">解析JSDoc</el-button>
+            <el-button @click="clearCode">
+              <i class="fas fa-trash mr-2"></i>
+              清空
+            </el-button>
+            <el-button type="primary" @click="saveFuncData">
+              <i class="fas fa-trash mr-2"></i>
+              保存
+            </el-button>
+          </div>
+        </div>
+
+        <!-- 注解解析输出区域 -->
+        <div class="bg-white rounded-xl shadow-lg p-4 fade-in flex flex-col overflow-overlay">
+          <h2 class="text-lg font-semibold text-gray-800 mb-4">
+            <i class="fas fa-file-code mr-2 text-green-500"></i>
+            注解解析
+          </h2>
+          <div class="bg-gray-900 text-green-400 rounded-lg p-4 overflow-auto code-editor flex-1">
+            <pre style="font-size: 14px">{{ state.js2JsonCode }}</pre>
+          </div>
+        </div>
+
+        <!-- 表单预览区域 -->
+        <div class="bg-white rounded-xl shadow-lg p-4 fade-in flex flex-col overflow-overlay">
+          <h2 class="text-lg font-semibold text-gray-800 mb-4">
+            <i class="fas fa-file-code mr-2 text-green-500"></i>
+            表单预览
+          </h2>
+          <div class="w-full code-editor focus:ring-2 focus:ring-blue-500 resize-none flex-1">
+            <h4 style="margin: 16px 0 16px 0">
+              <span>入参配置：</span>
+            </h4>
+            <SimpleFormRenderer
+              ref="inputFormRendererRef"
+              :formJson="state.formJson.input"
+              :disabled="formDisabled"
+            />
+            <h4 style="margin: 16px 0 16px 0">
+              <span>出参配置</span>
+            </h4>
+            <SimpleFormRenderer
+              ref="outputFormRendererRef"
+              :formJson="state.formJson.output"
+              :disabled="formDisabled"
+            />
+            <h4>备注：</h4>
+            <el-input
+              type="textarea"
+              rows="5"
+              maxlength="200"
+              show-word-limit
+              v-model="state.funcDesc"
+              placeholder="请输入备注....."
+            />
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 工具说明 -->
+      <div class="bg-white rounded-xl shadow-lg p-4 mt-4 fade-in">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">
+          <i class="fas fa-tools mr-2 text-orange-500"></i>
+          工具说明
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="bg-blue-50 p-4 rounded-lg">
+            <h3 class="font-semibold text-blue-800">JSDoc语法</h3>
+            <p class="text-sm text-gray-600">语法支持 <a class="text-blue-800 font-semibold" href="https://jsdoc.nodejs.cn/" target="_blank">JSDoc</a></p>
+          </div>
+          <div class="bg-green-50 p-4 rounded-lg">
+            <h3 class="font-semibold text-green-800">自主解析JSDoc</h3>
+            <p>
+              <p class="text-sm text-gray-600">已接入<strong>@param</strong>、<strong>@return</strong>、<strong>@example</strong>等...</p>
+              <p class="text-sm text-gray-600">轻量级解析器，专注于注释解析，注解陆续接入解析中...</p>
+            </p>
+          </div>
+          <div class="bg-purple-50 p-4 rounded-lg">
+            <h3 class="font-semibold text-purple-800">自主解析表单</h3>
+            <p class="text-sm text-gray-600">轻量级表单生成器</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
 <script setup lang="ts">
-import LuaParser from 'luaparse'
+import JSDocParser from '@/utils/parser/JSDocParser'
 import { parseLuaToFormConfig } from '@/components/funcForm/util.js'
 import { reactive, ref, onMounted, onActivated } from 'vue'
 // @ts-ignore
@@ -16,35 +131,55 @@ defineOptions({
   name: 'functionEdit'
 })
 
+const jsDocParser = new JSDocParser()
+
 // 使用 Lua 模板 hook备注
 const getTemplate = () => {
-  return `local _M = {}
-
-local table = require("core.table")
-local part = require("scene.part")
-
--- 参数示例
--- @param expression function 表达式
--- @param input_parts table 复杂对象 # default:{}
--- @field input_parts.id string Part对象ID
--- @field input_parts.name string Part对象名称
--- @param ids table 简单数组 # default:[]
--- @field ids[] number id值
--- @param op string 单选列表 # options:["IN","NOTIN",">","<",">=","<=","=","<>"] default:"IN"
--- @param value string 简单字符串 # default:""
--- @param deep number 简单数值 # default:1
--- @param dir table 多选列表 # options:["up","down","left","right"] default:["up"] componentType:select-multi
--- @field dir[] string 方向值
--- @param mode boolean 强制选择框 # options:[{"使用实体模型":true},{"使用obb包围盒":false}] default:true componentType:select
--- @return table 返回符合条件的对象列表
--- @field return[].part table Part对象
--- @field return[].parent table 符合条件的父级Part对象列表
-function _M.get_parent(expression, input_parts, ids, op, value, deep, dir, mode)
-
-end
-
-return _M
-`
+  return `
+  /**
+   * 计算两个数字的和
+   * @param {number=1} a - 第一个加数，默认为1
+   * @param {number} b - 第二个加数
+   * @param {Object} employee - 员工
+   * @param {string} employee.name - 员工名字
+   * @param {string} employee.department - 员工部门
+   * @param {Object[]} employees - 多员工
+   * @param {string} employees[].name - 员工名字
+   * @param {string} employees[].department - 员工部门
+   * @returns {number} 两个数字的和
+   * @example add(1, 2); // 返回 3
+   */
+  function add(a, b) {
+      return a + b;
+  }
+  `
+//   return `local _M = {}
+//
+// local table = require("core.table")
+// local part = require("scene.part")
+//
+// -- 参数示例
+// -- @param expression function 表达式
+// -- @param input_parts table 复杂对象 # default:{}
+// -- @field input_parts.id string Part对象ID
+// -- @field input_parts.name string Part对象名称
+// -- @param ids table 简单数组 # default:[]
+// -- @field ids[] number id值
+// -- @param op string 单选列表 # options:["IN","NOTIN",">","<",">=","<=","=","<>"] default:"IN"
+// -- @param value string 简单字符串 # default:""
+// -- @param deep number 简单数值 # default:1
+// -- @param dir table 多选列表 # options:["up","down","left","right"] default:["up"] componentType:select-multi
+// -- @field dir[] string 方向值
+// -- @param mode boolean 强制选择框 # options:[{"使用实体模型":true},{"使用obb包围盒":false}] default:true componentType:select
+// -- @return table 返回符合条件的对象列表
+// -- @field return[].part table Part对象
+// -- @field return[].parent table 符合条件的父级Part对象列表
+// function _M.get_parent(expression, input_parts, ids, op, value, deep, dir, mode)
+//
+// end
+//
+// return _M
+// `
 }
 
 const functionStore = useFunctionStore()
@@ -58,38 +193,12 @@ const JsEditorRef = ref()
 // 识别到的函数的参数数量
 const curFuncParamLen = ref(0)
 
-// 共享的示例注释字符串
-const EXAMPLE_COMMENTS = `-- 基础类型:
--- @param type number 类型 # default:5
--- 有列表项的字符串类型:
--- @param find_type string 查找类型 # options:[{"找自身":"0"},{"找父级":"1"}] default:"0"
-
--- 简单数组类型的table 支持多选 (paramSubType: string[])
--- @param dir table 方向 # options:["up","down","left","right"] default:["up"] componentType:select-multi
--- @field dir[] string 方向列表
-
--- 对象类型的table (paramSubType: {name:string,age:number})
--- @param user table 用户信息 # default:{}
--- @field user.name string 用户名
--- @field user.age number 年龄
-
--- 对象数组类型的table (paramSubType: {name:string,age:number}[])
--- @param users table 用户列表 # default:[]
--- @field users[].name string 用户名
--- @field users[].age number 年龄
-
--- 自定义类型 (paramSubType: {name:string,age:number}Part[])
--- @param users table 用户列表 # default:[]
--- @field users[] $Part 自定义类型用于说明是数组的每个item的类型
--- @field users[].name string 用户名&说明Part有的属性
--- @field users[].age number 年龄&说明Part有的属性&后续扩展可选给下游
-`
-
 const state = reactive({
   id: '',
   funcCode: '', //更新接口必须字段 本类不关心
   functionStatus: '', // 函数状态 更新接口必须字段 本类不关心
-  luaScript: '', // 脚本代码
+  jsCode: '', // 脚本代码
+  js2JsonCode: {}, // 脚本代码转换json
   funcDesc: '', // 函数描述
   funcName: '', // 函数名 允许中文  方便看懂
   className: '', // 函数的类名 代码中使用
@@ -104,8 +213,7 @@ const state = reactive({
       formConfig: {},
       widgetList: []
     },
-    codeJson: {},
-    version: '1.0.0'
+    codeJson: {}
   }
 })
 
@@ -186,7 +294,7 @@ const saveFuncData = () => {
         funcCode: state.funcCode,
         functionStatus: state.functionStatus,
         funcDesc: state.funcDesc,
-        luaScript: state.luaScript,
+        jsCode: state.jsCode,
         configData: JSON.stringify(compressedConfigData)
       }
     })
@@ -208,23 +316,15 @@ const saveFuncData = () => {
     })
 }
 
-const insertExample = () => {
-  // 方案1：直接修改 state.luaScript，利用 v-model 双向绑定自动更新编辑器
-  const currentContent = state.luaScript
-  const newContent = EXAMPLE_COMMENTS + (currentContent ? '\n\n' + currentContent : '')
-  state.luaScript = newContent
-
-  ElNotification({
-    type: 'success',
-    message: '已插入示例注释到代码开头',
-    duration: 1000
-  })
+const clearCode = () => {
+  state.jsCode = ''
+  state.js2JsonCode = {}
 }
 
-const loadTemplate = (templateName: string) => {
-  const templateCode = getTemplate(templateName)
+const loadTemplate = () => {
+  const templateCode = getTemplate()
   if (templateCode) {
-    if (state.luaScript !== '') {
+    if (state.jsCode !== '') {
       const description = `将覆盖当前函数，是否继续？`
       ElMessageBox.confirm(description, '提示', {
         confirmButtonText: '确定',
@@ -232,14 +332,14 @@ const loadTemplate = (templateName: string) => {
         type: 'warning'
       })
         .then(() => {
-          state.luaScript = templateCode
+          state.jsCode = templateCode
           ElNotification({
             type: 'success',
             message: '加载模版成功',
             duration: 1000
           })
           setTimeout(() => {
-            Lua2FormJson()
+            Js2FormJson()
           }, 1000)
         })
         .catch(() => {
@@ -249,43 +349,45 @@ const loadTemplate = (templateName: string) => {
           })
         })
     } else {
-      state.luaScript = templateCode
+      state.jsCode = templateCode
       ElNotification({
         message: '加载模版成功',
         type: 'success',
         duration: 1000
       })
       setTimeout(() => {
-        Lua2FormJson()
+        Js2FormJson()
       }, 1000)
     }
   }
 }
 
-const Lua2FormJson = () => {
-  if (state.luaScript === '') {
-    ElNotification({
-      message: '请先输入函数！',
-      type: 'error',
-      duration: 1000
-    })
+const Js2FormJson = () => {
+  if (state.jsCode === '') {
+    state.js2JsonCode = {}
     return
   }
   try {
-    const ast = LuaParser.parse(state.luaScript, { luaVersion: '5.2' })
-    const functionComments = ast.comments
-      ?.filter((comment: any) => comment.type === 'Comment' && comment.value.trim().startsWith('@'))
-      .map((comment: any) => {
-        comment.value = comment.value.trim()
-        return comment
-      })
-    // 提取函数定义信息
-    extractFunctionInfo(ast)
-    // 入参和出参配置生成
-    state.formJson.input = parseLuaToFormConfig(functionComments, 'input')
-    state.formJson.output = parseLuaToFormConfig(functionComments, 'output')
-    // 设置入参默认值
-    setInputFormData(functionComments)
+    const ast = jsDocParser.parseCode(state.jsCode)
+    console.log(state.jsCode, ast)
+    state.js2JsonCode = ast
+
+    // const functionComments = ast.comments
+    //   ?.filter((comment: any) => comment.type === 'Comment' && comment.value.trim().startsWith('@'))
+    //   .map((comment: any) => {
+    //     comment.value = comment.value.trim()
+    //     return comment
+    //   })
+    // console.log('ast', ast)
+    // console.log('functionComments', functionComments)
+    // // 提取函数定义信息
+    // // extractFunctionInfo(ast)
+    // // 入参和出参配置生成
+    // state.formJson.input = parseLuaToFormConfig(functionComments, 'input')
+    // state.formJson.output = parseLuaToFormConfig(functionComments, 'output')
+    // console.log('state.formJson', state.formJson)
+    // // 设置入参默认值
+    // setInputFormData(functionComments)
     ElNotification({
       message: '函数解析表单成功！',
       type: 'success',
@@ -301,41 +403,7 @@ const Lua2FormJson = () => {
   }
 }
 
-// 提取函数定义信息
-const extractFunctionInfo = (ast: any) => {
-  if (!ast.body || !Array.isArray(ast.body)) {
-    return
-  }
-  // 查找所有非局部函数定义
-  const globalFunctions = ast.body
-    .filter(node => node.type === 'FunctionDeclaration' && !node.isLocal)
-    .map(node => ({
-      name: node.identifier?.identifier?.name,
-      parameters: node.parameters?.map(p => p.name) || []
-    }))
-    .filter(func => func.name)
-  // 如果找到非局部函数，使用第一个作为默认值
-  if (globalFunctions.length > 0) {
-    const firstFunction = globalFunctions[0]
-    // 只有当当前值为空时才自动填充
-    if (state.className === '') {
-      state.className = firstFunction.name.replace(/_/g, '-')
-    }
-    if (state.funcLuaName === '') {
-      state.funcLuaName = firstFunction.name
-    }
-    // 入参数量
-    curFuncParamLen.value = firstFunction.parameters.length
-    console.log('检测到的非局部函数:', globalFunctions)
-  } else {
-    // 如果没有找到非局部函数，给出提示
-    ElNotification({
-      type: 'warning',
-      message: '未检测到非局部函数定义，请确保函数没有使用local关键字',
-      duration: 3000
-    })
-  }
-}
+
 
 const setInputFormData = (comments: any) => {
   const formData = {}
@@ -365,7 +433,7 @@ onActivated(() => {
     state.id = functionData.id || ''
     state.funcName = functionData.funcName || ''
     state.funcCode = functionData.funcCode || ''
-    state.luaScript = functionData.luaScript || ''
+    state.jsCode = functionData.jsCode || ''
     state.funcDesc = functionData.funcDesc || ''
     state.functionStatus = functionData.functionStatus || ''
     // 设置编辑器的值 - 现在通过 v-model 自动同步，无需手动设置
@@ -386,7 +454,7 @@ onActivated(() => {
     functionStore.clearCurrentFunction()
     // 解析函数配置
     setTimeout(() => {
-      Lua2FormJson()
+      Js2FormJson()
     }, 1000)
   }
   // else {
@@ -394,7 +462,7 @@ onActivated(() => {
   //   state.id = ''
   //   state.funcName = ''
   //   state.funcCode = ''
-  //   state.luaScript = ''
+  //   state.jsCode = ''
   //   state.funcDesc = ''
   //   state.functionStatus = ''
   //   state.className = ''
@@ -404,205 +472,31 @@ onActivated(() => {
 })
 </script>
 
-<template>
-  <div class="func-edit-root">
-    <div class="left">
-      <h3 class="title">
-        <span>
-          <el-button :icon="Bottom" @click="loadTemplate('01')">导入模版01</el-button>
-          <el-button :icon="Bottom" @click="insertExample">插入示例</el-button>
-          <el-popover
-            placement="bottom-start"
-            title="Lua 注释提取规则"
-            :width="800"
-            trigger="hover"
-            popper-class="func-edit-help-popper"
-          >
-            <template #reference>
-              <el-button
-                :icon="QuestionFilled"
-              >Lua 注释提取规则</el-button>
-            </template>
-            <template #default>
-              <div class="help-content">
-                <p>系统会识别以 <code>-- @</code> 开头的特殊注释行，用于生成表单配置。</p>
-
-                <strong>核心规则:</strong>
-                <ul>
-                  <li><code>@param &lt;name&gt; &lt;type&gt; &lt;desc&gt; # [options]</code> - 定义输入参数。</li>
-                  <li><code>@field &lt;parent&gt;.&lt;field&gt; &lt;type&gt; &lt;desc&gt;</code> - 定义 <code>table</code> 对象的字段。</li>
-                  <li><code>@return &lt;type&gt; &lt;desc&gt;</code> - 定义函数返回值。</li>
-                </ul>
-
-                <strong>高级选项 (# 后):</strong>
-                <ul>
-                  <li><code>default:&lt;value&gt;</code>: 设置默认值</li>
-                  <li><code>options:[{...}]</code>: 定义下拉选项</li>
-                  <li><code>desc:&lt;desc&gt;</code>: 设置字段描述</li>
-                  <li><code>componentType:&lt;componentType&gt;</code>: 设置组件类型</li>
-                  <li><code>multiple:&lt;multiple&gt;</code>: 设置是否多选</li>
-                </ul>
-
-                <strong>示例:</strong>
-                <pre><code>{{ EXAMPLE_COMMENTS }}</code></pre>
-              </div>
-            </template>
-          </el-popover>
-        </span>
-        <div style="margin-left: auto; display: flex;">
-          <el-button type="primary" @click="saveFuncData">保存</el-button>
-          <el-button :icon="Right" type="primary" @click="Lua2FormJson">更新表单配置</el-button>
-        </div>
-      </h3>
-      <div class="js-editor-container">
-        <LuaEditor ref="JsEditorRef" v-model="state.luaScript" />
-      </div>
-    </div>
-    <div class="right">
-      <h4 style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #e4e7ed; color: #0431fa; font-size: 18px;" >
-        表单预览
-      </h4>
-      <div class="function-basic-info">
-        <h4 style="margin: 0 0 16px 0">当前编辑：{{ state.funcName }}</h4>
-        <el-form-item label="文件名" required>
-          <el-input v-model="state.className" placeholder="请输入函数的类名" />
-        </el-form-item>
-        <el-form-item label="方法名" required>
-          <el-input v-model="state.funcLuaName" placeholder="请输入实际调用的方法名" />
-        </el-form-item>
-        <el-form-item label="类路径">
-          <el-input v-model="state.path" placeholder="请输入类路径 默认会放在dynamic目录下" />
-        </el-form-item>
-      </div>
-      <h4 style="margin: 16px 0 16px 0">
-        <span>入参配置：</span>
-      </h4>
-      <SimpleFormRenderer
-        ref="inputFormRendererRef"
-        :formJson="state.formJson.input"
-        :disabled="formDisabled"
-      />
-      <h4 style="margin: 16px 0 16px 0">
-        <span>出参配置</span>
-      </h4>
-      <SimpleFormRenderer
-        ref="outputFormRendererRef"
-        :formJson="state.formJson.output"
-        :disabled="formDisabled"
-      />
-      <h4>备注：</h4>
-      <el-input
-        type="textarea"
-        rows="5"
-        maxlength="200"
-        show-word-limit
-        v-model="state.funcDesc"
-        placeholder="请输入备注....."
-      />
-    </div>
-  </div>
-</template>
-
 <style lang="scss" scoped>
-.func-edit-root {
-  display: flex;
-  width: 100%;
-  min-height: 100%;
-  box-sizing: border-box;
+.overflow-overlay {
+  overflow: overlay;
 }
-.left {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-width: 0;
-  padding: 16px 16px 0;
-  height: calc(100vh - 120px);
-  .title {
-    display: flex;
-    align-items: center;
-    font-weight: bold;
-    margin-bottom: 16px;
-    font-size: 14px;
-  }
-  .js-editor-container {
-    flex: 1;
-    display: flex;
-    min-height: 0;
-  }
-}
-.right {
-  width: 400px;
-  height: calc(100vh - 120px);
-  overflow-y: auto;
-  border-radius: 8px;
-  flex-shrink: 0;
-  padding: 16px;
-  background-color: #fafcff;
-  border: 1px solid #e4e7ed;
-  :deep(.el-form-item__label) {
-    font-weight: 500;
-    font-size: 14px;
-  }
-  .title {
-    display: flex;
-    align-items: center;
-    margin-bottom: 10px;
-    font-size: 16px;
-    color: #303133;
-    border-bottom: 1px solid #e4e7ed;
-    padding-bottom: 16px;
-  }
 
-  h4 {
-    display: flex;
-    align-items: center;
-    color: #303133;
-    font-weight: 600;
-    margin: 0 0 16px 0;
+.gradient-bg {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+.code-editor {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+.fade-in {
+  animation: fadeIn 0.5s ease-in;
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
-</style>
-
-<style lang="scss">
-.func-edit-help-popper {
-  .help-content {
-    max-height: 400px;
-    overflow-y: auto;
-    p {
-      margin-bottom: 12px;
-    }
-    strong {
-      display: block;
-      margin-top: 12px;
-      margin-bottom: 8px;
-      font-size: 14px;
-      font-weight: 600;
-    }
-    ul {
-      padding-left: 20px;
-      margin: 0 0 12px 0;
-    }
-    li {
-      margin-bottom: 5px;
-    }
-    code {
-      background-color: #eef0f4;
-      padding: 2px 5px;
-      border-radius: 4px;
-      font-family: 'Courier New', Courier, monospace;
-    }
-    pre {
-      background-color: #f5f7fa;
-      padding: 10px;
-      border-radius: 4px;
-      white-space: pre-wrap;
-      line-height: 1.5;
-      code {
-        background-color: transparent;
-        padding: 0;
-        border-radius: 0;
-      }
-    }
-  }
+.el-button + .el-button {
+  margin-left: 0;
 }
 </style>

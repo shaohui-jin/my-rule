@@ -1,0 +1,663 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>高级JSDoc解析器 - 复杂对象配置处理</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .gradient-bg {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .node-highlight {
+      transition: all 0.3s ease;
+    }
+    .node-highlight:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+<!-- 导航栏 -->
+<nav class="gradient-bg text-white shadow-lg">
+  <div class="container mx-auto px-4 py-4">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <i class="fas fa-code text-2xl"></i>
+        <h1 class="text-2xl font-bold">高级JSDoc解析器</h1>
+      </div>
+      <div class="flex items-center space-x-4">
+        <button id="themeToggle" class="p-2 rounded-full hover:bg-white/20 transition">
+          <i class="fas fa-moon"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="container mx-auto px-4 py-8">
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <!-- 代码输入区域 -->
+    <div class="bg-white rounded-xl shadow-lg p-6">
+      <h2 class="text-xl font-semibold text-gray-800 mb-4">
+        <i class="fas fa-edit mr-2 text-blue-500"></i>
+        复杂JSDoc配置示例
+      </h2>
+
+      <textarea id="codeInput" class="w-full h-80 font-mono text-sm border border-gray-300 rounded-lg p-4 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none" placeholder="请输入包含复杂JSDoc注释的JavaScript代码...">
+/**
+ * 复杂用户配置对象
+ * @typedef {Object} UserConfig
+ * @property {string} name - 用户名
+ * @property {number} age - 年龄
+ * @property {Object} address - 地址信息
+ * @property {string} address.street - 街道
+ * @property {string} address.city - 城市
+ * @property {Array<string>} hobbies - 爱好列表
+ * @property {Object} preferences - 偏好设置
+ * @property {boolean} preferences.notifications - 是否接收通知
+ * @property {string} preferences.theme - 主题设置
+ */
+
+/**
+ * 用户管理类 - 处理复杂的用户配置
+ * @class
+ * @param {UserConfig} config - 用户配置对象
+ * @example
+ * const user = new UserManager({
+ *   name: '张三',
+ *   age: 25,
+ *   address: {
+ *     street: '人民路123号',
+ *     city: '北京'
+ *   },
+ *   hobbies: ['阅读', '运动'],
+ *   preferences: {
+ *     notifications: true,
+ *     theme: 'dark'
+ *   }
+ * });
+ */
+class UserManager {
+    constructor(config) {
+        this.config = config;
+        this.validateConfig();
+    }
+
+    /**
+     * 验证配置对象
+     * @private
+     * @throws {TypeError} 当配置无效时抛出错误
+     */
+    validateConfig() {
+        if (!this.config.name) {
+            throw new TypeError('用户名不能为空');
+        }
+    }
+
+    /**
+     * 获取格式化后的用户信息
+     * @param {Object} options - 格式化选项
+     * @param {boolean} [options.detailed=false] - 是否显示详细信息
+     * @returns {string} 格式化后的用户信息
+     * @example
+     * user.getFormattedInfo({ detailed: true });
+     */
+    getFormattedInfo(options = {}) {
+        const { detailed = false } = options;
+        return detailed ?
+            `${this.config.name} (${this.config.age}岁) - ${this.config.address.city}" :
+            this.config.name;
+    }
+}
+
+/**
+ * API配置对象工厂函数
+ * @param {Object} baseConfig - 基础配置
+ * @param {string} baseConfig.host - API主机地址
+ * @param {number} baseConfig.port - API端口
+ * @returns {Object} API配置对象
+ */
+function createAPIConfig(baseConfig) {
+    return {
+        ...baseConfig,
+        endpoint: `${baseConfig.host}:${baseConfig.port}/api`
+    };
+}</textarea>
+
+      <div class="flex space-x-3 mt-4">
+        <button id="parseBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg transition flex items-center">
+          <i class="fas fa-play mr-2"></i>
+          解析复杂JSDoc
+        </button>
+        <button id="clearBtn" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg transition flex items-center">
+          <i class="fas fa-trash mr-2"></i>
+          清空
+        </button>
+      </div>
+    </div>
+
+    <!-- JSON输出区域 -->
+    <div class="bg-white rounded-xl shadow-lg p-6">
+      <h2 class="text-xl font-semibold text-gray-800 mb-4">
+        <i class="fas fa-file-code mr-2 text-green-500"></i>
+        结构化JSON输出
+      </h2>
+
+      <div class="bg-gray-900 text-green-400 rounded-lg p-4 overflow-auto max-h-80 font-mono text-sm">
+        <pre id="jsonOutput">{}</pre>
+      </div>
+
+      <div class="flex space-x-3 mt-4">
+        <button id="copyBtn" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg transition flex items-center">
+          <i class="fas fa-copy mr-2"></i>
+          复制JSON
+        </button>
+        <button id="exportBtn" class="bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-lg transition flex items-center">
+          <i class="fas fa-download mr-2"></i>
+          导出文件
+        </button>
+      </div>
+    </div>
+
+    <!-- 插件说明区域 -->
+    <div class="bg-white rounded-xl shadow-lg p-6 mt-8">
+      <h2 class="text-xl font-semibold text-gray-800 mb-4">
+        <i class="fas fa-tools mr-2 text-orange-500"></i>
+        推荐插件特性对比
+      </h2>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-blue-50 p-6 rounded-lg node-highlight">
+          <h3 class="font-semibold text-blue-800 mb-3">documentation.js</h3>
+          <ul class="text-sm text-gray-600 space-y-2">
+            <li><i class="fas fa-check text-blue-500 mr-2"></i>支持ES6+语法</li>
+            <li><i class="fas fa-check text-blue-500 mr-2"></i>复杂对象嵌套支持</li>
+            <li><i class="fas fa-check text-blue-500 mr-2"></i>多格式输出</li>
+          </ul>
+        </div>
+        <div class="bg-green-50 p-6 rounded-lg node-highlight">
+          <h3 class="font-semibold text-green-800 mb-3">doctrine</h3>
+          <ul class="text-sm text-gray-600 space-y-2">
+            <li><i class="fas fa-check text-green-500 mr-2"></i>轻量级设计</li>
+            <li><i class="fas fa-check text-green-500 mr-2"></i>专注注释解析</li>
+            <li><i class="fas fa-check text-green-500 mr-2"></i>无外部依赖</li>
+          </ul>
+        </div>
+        <div class="bg-purple-50 p-6 rounded-lg node-highlight">
+          <h3 class="font-semibold text-purple-800 mb-3">jsdoc-api</h3>
+          <ul class="text-sm text-gray-600 space-y-2">
+            <li><i class="fas fa-check text-purple-500 mr-2"></i>异步解析支持</li>
+            <li><i class="fas fa-check text-purple-500 mr-2"></i>基于JSDoc3</li>
+            <li><i class="fas fa-check text-purple-500 mr-2"></i>Promise API</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
+
+  <script>
+    class AdvancedJSDocParser {
+    constructor() {
+    this.complexTypes = new Map();
+    this.parsedData = [];
+    }
+
+    /**
+    * 解析复杂JSDoc配置
+    * @param {string} code - JavaScript源代码
+    * @returns {Object} 结构化JSON对象
+    */
+    parseComplexJSDoc(code) {
+    try {
+    this.complexTypes.clear();
+    this.parsedData = [];
+
+    // 先提取所有typedef定义
+    this.extractTypeDefs(code);
+
+    // 再解析其他JSDoc注释
+    this.extractJSDocComments(code);
+
+    return this.generateComplexOutput();
+    } catch (error) {
+    throw new Error(`复杂JSDoc解析失败: ${error.message}`);
+    }
+    }
+
+    /**
+    * 提取@typedef类型定义
+    * @param {string} code - JavaScript源代码
+    */
+    extractTypeDefs(code) {
+    const typedefRegex = /\/\*\*[\s\S]*?@typedef\s+\{([^}]+)\}\s+(\w+)[\s\S]*?\*\//g;
+    let match;
+
+    while ((match = typedefRegex.exec(code)) !== null) {
+    const [fullMatch, type, name] = match;
+    this.complexTypes.set(name, {
+    type: type.trim(),
+    properties: this.extractTypeDefProperties(fullMatch)
+    });
+    }
+    }
+
+    /**
+    * 提取typedef中的属性定义
+    * @param {string} comment - JSDoc注释文本
+    * @returns {Array} 属性数组
+    */
+    extractTypeDefProperties(comment) {
+    const properties = [];
+    const propertyRegex = /@property\s+\{([^}]+)\}\s+([\w.]+)\s+-\s+(.*)/g;
+    let propMatch;
+
+    while ((propMatch = propertyRegex.exec(comment)) !== null) {
+    const [, propType, propName, description] = propMatch;
+    properties.push({
+    name: propName,
+    type: propType,
+    description: description
+    });
+    }
+
+    return properties;
+    }
+
+    /**
+    * 提取其他JSDoc注释
+    * @param {string} code - JavaScript源代码
+    */
+    extractJSDocComments(code) {
+    const jsdocRegex = /\/\*\*[\s\S]*?\*\//g;
+    const comments = code.match(jsdocRegex) || [];
+
+    comments.forEach(comment => {
+    if (!comment.includes('@typedef')) {
+    const parsed = this.parseSingleJSDoc(comment);
+    if (parsed) this.parsedData.push(parsed);
+    }
+    })
+
+    /**
+    * 解析单个JSDoc注释
+    * @param {string} comment - JSDoc注释文本
+    * @returns {Object|null} 解析结果
+    */
+    parseSingleJSDoc(comment) {
+    let content = comment
+    .replace(/^\/\*\*?/, '')
+    .replace(/\*\/$/, '')
+    .trim();
+
+    const lines = content.split('\n').map(line =>
+    line.replace(/^\s*\*?\s?/, '')
+    );
+
+    const result = {
+    description: '',
+    tags: [],
+    type: 'unknown'
+    };
+
+    let currentDesc = [];
+
+    lines.forEach(line => {
+    if (line.startsWith('@')) {
+    const tagMatch = line.match(/^@(\w+)\s+(.*)/);
+    if (tagMatch) {
+    const [, tagName, tagContent] = tagMatch;
+    result.tags.push({
+    tag: tagName,
+    content: tagContent.trim()
+    });
+    }
+    } else {
+    currentDesc.push(line);
+    }
+    });
+
+    result.description = currentDesc.join('\n').trim();
+
+    // 确定注释类型
+    if (result.tags.some(tag => tag.tag === 'class')) {
+    result.type = 'class';
+    } else if (result.tags.some(tag => tag.tag === 'typedef')) {
+    result.type = 'typedef';
+    } else if (result.tags.some(tag => tag.tag === 'param' || tag.tag === 'returns')) {
+    result.type = 'function';
+    }
+
+    return result.description || result.tags.length > 0 ? result : null;
+    }
+
+    /**
+    * 生成复杂输出结构
+    * @returns {Object} 完整输出对象
+    */
+    generateComplexOutput() {
+    const output = {
+    metadata: {
+    parsedAt: new Date().toISOString(),
+    parser: 'AdvancedJSDocParser v2.0'
+    },
+    complexTypes: Array.from(this.complexTypes.entries()).map(([name, def]) => ({
+    name,
+    ...def
+    })),
+    classes: [],
+    functions: [],
+    typedefs: [],
+    summary: {
+    totalComplexTypes: this.complexTypes.size,
+    totalClasses: 0,
+    totalFunctions: 0
+    }
+    };
+
+    this.parsedData.forEach(item => {
+    switch (item.type) {
+    case 'class':
+    output.classes.push(this.processClass(item));
+    break;
+    case 'function':
+    output.functions.push(this.processFunction(item));
+    break;
+    case 'typedef':
+    output.typedefs.push(this.processTypedef(item));
+    break;
+    }
+    });
+
+    output.summary.totalClasses = output.classes.length;
+    output.summary.totalFunctions = output.functions.length;
+
+    return output;
+    }
+
+    /**
+    * 处理类注释
+    * @param {Object} item - 解析项
+    * @returns {Object} 类信息
+    */
+    processClass(item) {
+    const classInfo = {
+    description: item.description,
+    constructor: null,
+    methods: []
+    };
+
+    item.tags.forEach(tag => {
+    if (tag.tag === 'param') {
+    const paramMatch = tag.content.match(/\{([^}]+)\}\s+(\w+)(?:\s+-\s+(.*))?/);
+    if (paramMatch) {
+    classInfo.constructor = {
+    parameters: [{
+    name: paramMatch[2],
+    type: paramMatch[1],
+    description: paramMatch[3] || ''
+    }]
+    };
+    }
+    });
+
+    return classInfo;
+    }
+
+    /**
+    * 处理函数注释
+    * @param {Object} item - 解析项
+    * @returns {Object} 函数信息
+    */
+    processFunction(item) {
+    const funcInfo = {
+    description: item.description,
+    parameters: [],
+    returns: null,
+    examples: [],
+    throws: []
+    };
+
+    item.tags.forEach(tag => {
+    switch (tag.tag) {
+    case 'param':
+    const paramMatch = tag.content.match(/\{([^}]+)\}\s+(\w+)(?:\s+-\s+(.*))?/);
+    if (paramMatch) {
+    funcInfo.parameters.push({
+    name: paramMatch[2],
+    type: paramMatch[1],
+    description: paramMatch[3] || ''
+    });
+    }
+    break;
+    case 'return':
+    case 'returns':
+    const returnMatch = tag.content.match(/\{([^}]+)\}\s+(.*)/);
+    if (returnMatch) {
+    funcInfo.returns = {
+    type: returnMatch[1],
+    description: returnMatch[2]
+    };
+    }
+    break;
+    case 'example':
+    funcInfo.examples.push(tag.content);
+    break;
+    case 'throws':
+    funcInfo.throws.push(tag.content);
+    break;
+    }
+    });
+
+    return funcInfo;
+    }
+
+    /**
+    * 处理typedef注释
+    * @param {Object} item - 解析项
+    * @returns {Object} typedef信息
+    */
+    processTypedef(item) {
+    return {
+    description: item.description,
+    tags: item.tags
+    };
+    }
+    }
+
+    class ComplexJSDocApp {
+    constructor() {
+    this.parser = new AdvancedJSDocParser();
+    this.init();
+    }
+
+    init() {
+    this.bindEvents();
+    this.setupDemoData();
+    }
+
+    bindEvents() {
+    document.getElementById('parseBtn').addEventListener('click', () => {
+    this.parseAndDisplay();
+    });
+
+    document.getElementById('clearBtn').addEventListener('click', () => {
+    this.clearAll();
+    });
+
+    document.getElementById('copyBtn').addEventListener('click', () => {
+    this.copyToClipboard();
+    });
+
+    document.getElementById('exportBtn').addEventListener('click', () => {
+    this.exportData();
+    });
+
+    document.getElementById('themeToggle').addEventListener('click', () => {
+    this.toggleTheme();
+    });
+    }
+
+    setupDemoData() {
+    // 可以预设一些复杂的JSDoc示例
+    const demoData = `// 这里可以放更多复杂的JSDoc示例`;
+    }
+
+    parseAndDisplay() {
+    const codeInput = document.getElementById('codeInput').value;
+
+    if (!codeInput.trim()) {
+    this.showNotification('请输入包含复杂JSDoc注释的JavaScript代码', 'error');
+    return;
+    }
+
+    try {
+    const result = this.parser.parseComplexJSDoc(codeInput);
+    const jsonOutput = JSON.stringify(result, null, 2);
+    document.getElementById('jsonOutput').textContent = jsonOutput;
+    this.showNotification('复杂JSDoc解析成功！', 'success');
+    } catch (error) {
+    this.showNotification(error.message, 'error');
+    }
+    }
+
+    clearAll() {
+    document.getElementById('codeInput').value = '';
+    document.getElementById('jsonOutput').textContent = '{}';
+    this.showNotification('已清空所有内容', 'info');
+    }
+
+    copyToClipboard() {
+    const jsonOutput = document.getElementById('jsonOutput').textContent;
+
+    if (jsonOutput === '{}') {
+    this.showNotification('没有可复制的数据', 'warning');
+    return;
+    }
+
+    navigator.clipboard.writeText(jsonOutput).then(() => {
+    this.showNotification('JSON已复制到剪贴板', 'success');
+    }).catch(() => {
+    this.showNotification('复制失败，请手动复制', 'error');
+    });
+    }
+
+    exportData() {
+    const jsonOutput = document.getElementById('jsonOutput').textContent;
+
+    if (jsonOutput === '{}') {
+    this.showNotification('没有可导出的数据', 'warning');
+    return;
+    }
+
+    const blob = new Blob([jsonOutput], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `complex-jsdoc-${new Date().getTime()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    this.showNotification('复杂JSDoc数据已导出', 'success');
+    }
+
+    toggleTheme() {
+    document.body.classList.toggle('dark');
+    document.body.classList.toggle('bg-gray-900');
+    this.showNotification('主题已切换', 'info');
+    }
+
+    showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    const bgColor = {
+    success: 'bg-green-500',
+    error: 'bg-red-500',
+    warning: 'bg-yellow-500',
+    info: 'bg-blue-500'
+    }[type];
+
+    notification.className = `fixed top-4 right-4 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg transform transition-all duration-300 fade-in`;
+    notification.textContent = message;
+
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+    notification.classList.add('opacity-0', 'translate-x-full');
+    setTimeout(() => {
+    if (document.body.contains(notification)) {
+    document.body.removeChild(notification);
+    }
+    }, 300);
+    }, 2500);
+    }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+    new ComplexJSDocApp();
+    });
+    </script>
+
+      <code_start project_name=jsdoc-parser-demo filename=package.json title=项目依赖配置 entrypoint=false runnable=false project_final_file=true>
+        {
+        "name": "complex-jsdoc-parser-demo",
+        "version": "1.0.0",
+        "description": "高级JSDoc解析器 - 处理复杂对象配置",
+        "main": "app.js",
+        "scripts": {
+        "start": "python -m http.server 8000"
+        },
+        "dependencies": {
+        "documentation": ".0.0",
+        "doctrine": ".0.0",
+        "jsdoc-api": ".0.0"
+        },
+        "devDependencies": {},
+        "keywords": ["jsdoc", "javascript", "documentation", "parser"],
+        "author": "JSDoc Parser Team",
+        "license": "MIT"
+        }
+        <code_end>
+
+          ### 主要功能特点
+
+          **复杂类型支持**：能够解析嵌套对象、数组类型等复杂JSDoc配置
+
+          **typedef定义提取**：专门处理`@typedef`类型定义，支持属性级注释
+
+          **结构化JSON输出**：将复杂JSDoc注释转换为层次分明的JSON对象
+
+          **多类型识别**：自动区分类、函数、typedef等不同类型的注释
+
+          ### 推荐插件对比
+
+          **documentation.js**：最适合处理ES6+语法和复杂对象嵌套
+          - 支持完整的模块系统
+          - 提供多种输出格式
+          - 社区活跃，文档完善
+
+          **doctrine**：轻量级选择，适合简单项目
+          - 无外部依赖
+          - 专注于注释解析
+          - 性能优秀
+
+          **jsdoc-api**：基于官方JSDoc3，兼容性最好
+          - 支持异步解析
+          - 配置灵活
+
+          ### 使用说明
+
+          1. **输入复杂JSDoc代码**：在编辑器中输入包含嵌套对象、typedef等复杂配置的JavaScript代码
+
+          2. **解析处理**：点击"解析复杂JSDoc"按钮生成结构化JSON
+
+          3. **导出结果**：支持复制JSON或导出为文件
+
+          该Demo特别优化了对复杂对象配置的处理，能够准确解析嵌套属性和类型定义，为API文档生成和代码分析提供可靠的数据支持。

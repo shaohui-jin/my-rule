@@ -64,7 +64,7 @@ const emit = defineEmits(['update:modelValue'])
 const props = defineProps({
   language: {
     type: String,
-    default: 'typescript'
+    default: 'javascript'
   },
   modelValue: {
     type: String,
@@ -87,12 +87,12 @@ onMounted(() => {
     scrollBeyondLastLine: false,
     readOnly: false,
     readOnlyMessage: { value: '不可以修改哦', supportThemeIcons: true, supportHtml: true }, // 为只读时编辑内日提示词
-    codeLens: true, // 代码透镜
+    codeLens: false, // 代码透镜
     folding: true, // 代码折叠
     snippetSuggestions: 'inline', // 代码提示
     tabCompletion: 'on', // 代码提示按tab完成
     foldingStrategy: 'auto', // 折叠策略
-    smoothScrolling: true, // 滚动动画
+    smoothScrolling: false, // 滚动动画
     fontSize: 12,
     automaticLayout: true // 启用自动布局
   })
@@ -133,7 +133,7 @@ const handleDownload = () => {
 
     // 设置文件名，包含时间戳
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5)
-    const extension = props.language === 'lua' ? '.lua' : '.txt'
+    const extension = props.language === 'javascript' ? '.js' : '.txt'
     link.download = `${props.fileName}_${timestamp}${extension}`
 
     // 触发下载
@@ -231,37 +231,10 @@ const getValue = (): string => {
   return codeEditor?.getValue() || ''
 }
 
-const insertText = (text: string, position?: { lineNumber: number; column: number }) => {
-  if (!codeEditor) return
-
-  if (position) {
-    // 在指定位置插入文本
-    codeEditor.executeEdits('insertText', [
-      {
-        range: new monaco.Range(
-          position.lineNumber,
-          position.column,
-          position.lineNumber,
-          position.column
-        ),
-        text: text
-      }
-    ])
-  } else {
-    // 在文档开头插入文本
-    codeEditor.executeEdits('insertText', [
-      {
-        range: new monaco.Range(1, 1, 1, 1),
-        text: text
-      }
-    ])
-  }
-}
 
 defineExpose({
   setValue,
   getValue,
-  insertText,
   handleDownload,
   copyContent,
   toggleFullscreen

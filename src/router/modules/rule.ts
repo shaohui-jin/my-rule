@@ -32,9 +32,17 @@ export default {
       }
     },
     {
-      path: '/rule/function/edit',
+      path: '/rule/func/edit',
       name: 'functionEdit',
       component: () => import('@/views/rule/FuncEdit.vue'),
+      meta: {
+        title: '函数编辑',
+      }
+    },
+    {
+      path: '/rule/func/edit-lua',
+      name: 'functionEditLua',
+      component: () => import('@/views/rule/FuncEdit-lua.vue'),
       meta: {
         title: '函数编辑',
       }
