@@ -11,21 +11,21 @@
       </div>
     </nav>
 
-    <div class="container mx-auto px-4 py-4 h-full flex flex-col flex-1 overflow-hidden">
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 overflow-hidden">
+    <div class="container mx-auto px-4 py-4 lg:h-full flex flex-col flex-1 lg:overflow-hidden">
+      <div class="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4 overflow-hidden">
         <!-- 代码输入区域 -->
-        <div class="bg-white rounded-xl shadow-lg p-4 fade-in flex flex-col overflow-overlay">
+        <div class="bg-white rounded-xl shadow-lg p-4 fade-in flex flex-col overflow-overlay min-h-full max-h-full">
           <h2 class="text-lg font-semibold text-gray-800 mb-4">
             <i class="fas fa-edit mr-2 text-blue-500"></i>
             代码编辑器
           </h2>
-          <div class="w-full code-editor focus:ring-2 focus:ring-blue-500 resize-none flex-1">
-            <LuaEditor ref="JsEditorRef" v-model="state.jsCode" />
+          <div class="w-full code-editor focus:ring-2 focus:ring-blue-500 resize-none flex-1 min-h-64">
+            <BaseEditor ref="JsEditorRef" v-model="state.jsCode" />
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-4 gap-4 pt-4">
-            <el-button :icon="Bottom" @click="loadTemplate">导入模版</el-button>
-            <el-button :icon="Right" @click="Js2FormJson">解析JSDoc</el-button>
+            <el-button :icon="Bottom" @click="loadTemplate">模版</el-button>
+            <el-button :icon="Right" @click="Js2FormJson">解析</el-button>
             <el-button @click="clearCode">
               <i class="fas fa-trash mr-2"></i>
               清空
@@ -38,18 +38,18 @@
         </div>
 
         <!-- 注解解析输出区域 -->
-        <div class="bg-white rounded-xl shadow-lg p-4 fade-in flex flex-col overflow-overlay">
+        <div class="bg-white rounded-xl shadow-lg p-4 fade-in flex flex-col overflow-overlay max-h-96 md:max-h-full">
           <h2 class="text-lg font-semibold text-gray-800 mb-4">
             <i class="fas fa-file-code mr-2 text-green-500"></i>
             注解解析
           </h2>
           <div class="bg-gray-900 text-green-400 rounded-lg p-4 overflow-auto code-editor flex-1">
-            <pre style="font-size: 14px">{{ state.js2JsonCode }}</pre>
+            <pre style="font-size: 12px; line-height: 16px">{{ state.js2JsonCode }}</pre>
           </div>
         </div>
 
         <!-- 表单预览区域 -->
-        <div class="bg-white rounded-xl shadow-lg p-4 fade-in flex flex-col overflow-overlay">
+        <div class="bg-white rounded-xl shadow-lg p-4 fade-in flex flex-col overflow-overlay max-h-96 sm:max-h-full ">
           <h2 class="text-lg font-semibold text-gray-800 mb-4">
             <i class="fas fa-file-code mr-2 text-green-500"></i>
             表单预览
@@ -58,19 +58,11 @@
             <h4 style="margin: 16px 0 16px 0">
               <span>入参配置：</span>
             </h4>
-            <SimpleFormRenderer
-              ref="inputFormRendererRef"
-              :formJson="state.formJson.input"
-              :disabled="formDisabled"
-            />
+            <BaseFormRender ref="inputFormRendererRef" :formJson="state.formJson.input" />
             <h4 style="margin: 16px 0 16px 0">
               <span>出参配置</span>
             </h4>
-            <SimpleFormRenderer
-              ref="outputFormRendererRef"
-              :formJson="state.formJson.output"
-              :disabled="formDisabled"
-            />
+            <BaseFormRender ref="outputFormRendererRef" :formJson="state.formJson.output" />
             <h4>备注：</h4>
             <el-input
               type="textarea"
@@ -82,7 +74,6 @@
             />
           </div>
         </div>
-
       </div>
 
       <!-- 工具说明 -->
@@ -114,12 +105,12 @@
 </template>
 
 <script setup lang="ts">
+import BaseEditor from '@/components/BaseEditor/index.vue'
 import JSDocParser from '@/utils/parser/JSDocParser'
-import { parseLuaToFormConfig } from '@/components/funcForm/util.js'
-import { reactive, ref, onMounted, onActivated } from 'vue'
-// @ts-ignore
-import LuaEditor from '@/components/LuaEditor/index.vue'
 import SimpleFormRenderer from '@/components/funcForm/SimpleFormRenderer.vue'
+import BaseFormRender from '@/components/BaseFormRender/index.vue'
+import { parseLuaToFormConfig } from '@/components/BaseFormRender/util'
+import { reactive, ref, onMounted, onActivated } from 'vue'
 import { Bottom, Right, QuestionFilled } from '@element-plus/icons-vue'
 import { ElMessage, ElNotification } from 'element-plus'
 import { ElMessageBox } from 'element-plus'
@@ -136,23 +127,23 @@ const jsDocParser = new JSDocParser()
 // 使用 Lua 模板 hook备注
 const getTemplate = () => {
   return `
-  /**
-   * 计算两个数字的和
-   * @param {number=1} a - 第一个加数，默认为1
-   * @param {number} b - 第二个加数
-   * @param {Object} employee - 员工
-   * @param {string} employee.name - 员工名字
-   * @param {string} employee.department - 员工部门
-   * @param {Object[]} employees - 多员工
-   * @param {string} employees[].name - 员工名字
-   * @param {string} employees[].department - 员工部门
-   * @returns {number} 两个数字的和
-   * @example add(1, 2); // 返回 3
-   */
-  function add(a, b) {
-      return a + b;
-  }
-  `
+/**
+* 透传员工
+* @param {object} employee - 员工
+* @param {string} employee.name - 员工名字
+* @param {number} employee.price - 员工工资
+* @param {object[]} employees[] - 多员工
+* @param {string} employees[].name - 员工名字
+* @param {number} employees[].price - 员工工资
+* @returns {object} employee - 员工
+* @returns {string} employee.name - 员工名字
+* @returns {number} employee.price - 员工工资
+* @example log({ name: '张三', price: 3000 }, [{ name: '张三', price: 3000 }, { name: '李四', price: 2000 }]); // {name: '张三', price: 3000}
+*/
+function log(employee, employees) {
+  return employee
+}
+`
 //   return `local _M = {}
 //
 // local table = require("core.table")
@@ -369,7 +360,7 @@ const Js2FormJson = () => {
   }
   try {
     const ast = jsDocParser.parseCode(state.jsCode)
-    console.log(state.jsCode, ast)
+
     state.js2JsonCode = ast
 
     // const functionComments = ast.comments
@@ -383,6 +374,7 @@ const Js2FormJson = () => {
     // // 提取函数定义信息
     // // extractFunctionInfo(ast)
     // // 入参和出参配置生成
+    // parseLuaToFormConfig(ast)
     // state.formJson.input = parseLuaToFormConfig(functionComments, 'input')
     // state.formJson.output = parseLuaToFormConfig(functionComments, 'output')
     // console.log('state.formJson', state.formJson)

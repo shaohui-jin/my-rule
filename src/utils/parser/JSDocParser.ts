@@ -1,6 +1,5 @@
 type ParamsType = 'number' | 'string' | 'object'
 
-
 interface FuncTag {
   tag: string
   content: string
@@ -11,24 +10,23 @@ interface FuncTags {
   tags: FuncTag[]
 }
 
-
-interface FunctionInput {
+export interface FunctionInputAndOutput {
   name: string
   type: string
   desc: string
+  typeRecord?: {
+    [key: string]: string
+  }
 }
 
-interface Function {
+export interface Function {
   desc: string
-  input: FunctionInput[]
-  output: {
-    type: string,
-    desc: string
-  },
+  input: FunctionInputAndOutput[]
+  output: FunctionInputAndOutput[],
   examples: string[]
 }
 
-interface JsDocData {
+export interface JsDocData {
   metadata: {
     parsedAt: string,
     version: string
@@ -42,6 +40,10 @@ interface JsDocData {
   }
 }
 
+const shouldTypeRecord = (str: string) => {
+  console.log('shouldTypeRecord', str)
+  return str === 'object' || str === 'object[]'
+}
 
 export default class JSDocParser {
   private funcTags: Array<FuncTags>
@@ -55,7 +57,7 @@ export default class JSDocParser {
   /**
    * 解析JavaScript代码并提取JSDoc注释
    * @param {string} code - JavaScript源代码
-   * @returns {Object} 包含JSDoc信息的JSON对象
+   * @returns {JsDocData} 包含JSDoc信息的JSON对象
    */
   parseCode(code: string): JsDocData {
     this.init()
@@ -86,7 +88,7 @@ export default class JSDocParser {
   /**
    * 解析单个JSDoc注释块
    * @param {string} comment - JSDoc注释文本
-   * @returns {Object|null} 解析后的JSDoc信息
+   * @returns {FuncTags|null} 解析后的JSDoc信息
    */
   parseJSDocComment(comment: string): FuncTags {
     let content = comment
@@ -126,7 +128,7 @@ export default class JSDocParser {
 
   /**
    * 生成输出JSON
-   * @returns {Object} 格式化后的JSON输出
+   * @returns {JsDocData} 格式化后的JSON输出
    */
   generateOutput(): JsDocData {
     const output: JsDocData = {
@@ -161,39 +163,26 @@ export default class JSDocParser {
 
   /**
    * 从JSDoc信息中提取函数信息
-   * @param {Object} jsdocInfo - JSDoc解析信息
-   * @returns {Object|null} 函数信息对象
+   * @param {FuncTags} funcTag - JSDoc解析信息
+   * @returns {Function|null} 函数信息对象
    */
   extractFunctionInfo(funcTag: FuncTags): Function {
-    console.log('funcTag', funcTag)
     const functionInfo: Function = {
       desc: funcTag.desc,
       input: [],
-      output: null,
+      output: [],
       examples: []
     };
-
-    funcTag.tags.forEach(tag => {
+    let tagType = '';
+    for (let i = 0; i < funcTag.tags.length; i++) {
+      const tag = funcTag.tags[i];
       switch (tag.tag) {
         case 'param':
-          const paramMatch = tag.content.match(/\{([^}]+)\}\s+(\S+)(?:\s+-\s+(.*))?/);
-          if (paramMatch) {
-            functionInfo.input.push({
-              name: paramMatch[2],
-              type: paramMatch[1],
-              desc: paramMatch[3] || ''
-            });
-          }
+          tagType = this.matchAndPush(tag.content, tagType, functionInfo, 'input')
           break;
         case 'return':
         case 'returns':
-          const returnMatch = tag.content.match(/\{([^}]+)\}\s+(.*)/);
-          if (returnMatch) {
-            functionInfo.output = {
-              type: returnMatch[1],
-              desc: returnMatch[2]
-            };
-          }
+          tagType = this.matchAndPush(tag.content, tagType, functionInfo, 'output')
           break;
         case 'example':
           functionInfo.examples.push(tag.content);
@@ -202,9 +191,32 @@ export default class JSDocParser {
           // 处理类信息
           break;
       }
-    });
+    }
+
 
     console.log('functionInfo', functionInfo)
     return functionInfo.input.length > 0 || functionInfo.output ? functionInfo : null;
+  }
+
+  matchAndPush(tagContent: string, tagType: string, functionInfo: Function, pushKey: 'input' | 'output') {
+    const paramMatch = tagContent.match(/\{([^}]+)\}\s+(\S+)(?:\s+-\s+(.*))?/);
+    if (paramMatch) {
+      const type = paramMatch[1];
+      const name = paramMatch[2];
+      const index = functionInfo[pushKey].length - 1
+      // 说明是前面对象的参数
+      if (name.includes('.') && !shouldTypeRecord(type) && tagType === name.split('.')[0]) {
+        if (!functionInfo[pushKey][index]['typeRecord']) {
+          functionInfo[pushKey][index]['typeRecord'] = {}
+        }
+        functionInfo[pushKey][index]['typeRecord'][name.split('.')[1]] = type
+      } else {
+        tagType = name;
+        functionInfo[pushKey].push({
+          name, type, desc: paramMatch[3] || ''
+        });
+      }
+    }
+    return tagType
   }
 }

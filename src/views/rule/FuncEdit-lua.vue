@@ -3,7 +3,7 @@ import LuaParser from 'luaparse'
 import { parseLuaToFormConfig } from '@/components/funcForm/util.js'
 import { reactive, ref, onMounted, onActivated } from 'vue'
 // @ts-ignore
-import LuaEditor from '@/components/LuaEditor/index.vue'
+import BaseEditor from '@/components/BaseEditor/index.vue'
 import SimpleFormRenderer from '@/components/funcForm/SimpleFormRenderer.vue'
 import { Bottom, Right, QuestionFilled } from '@element-plus/icons-vue'
 import { ElMessage, ElNotification } from 'element-plus'
@@ -457,7 +457,7 @@ onActivated(() => {
         </div>
       </h3>
       <div class="js-editor-container">
-        <LuaEditor ref="JsEditorRef" language="lua" v-model="state.luaScript" />
+        <BaseEditor ref="JsEditorRef" language="lua" v-model="state.luaScript" />
       </div>
     </div>
     <div class="right">

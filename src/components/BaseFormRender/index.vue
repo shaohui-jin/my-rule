@@ -351,37 +351,75 @@ defineExpose({
 })
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .simple-form-renderer {
   padding: 0;
+
+  :deep(.el-form-item) {
+    margin-bottom: 18px;
+    display: flex;
+    align-items: flex-start;
+  }
+
+  /* 调整表单项布局 */
+  :deep(.el-form-item__label) {
+    padding: 0;
+    height: auto;
+    line-height: 1.2;
+    text-align: right;
+    flex-shrink: 0;
+    position: relative; /* 添加相对定位 */
+  }
+
+  /* 移除 element-plus 的默认 margin */
+  :deep(.el-form-item__content) {
+    margin-left: 0 !important;
+    padding-left: 12px; /* 固定的左边距 */
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    justify-content: flex-start;
+    position: relative; /* 添加相对定位 */
+  }
+
+  /* 确保所有输入控件宽度一致 */
+  :deep(.el-input),
+  :deep(.el-select),
+  :deep(.el-input-number) {
+    width: 100%;
+  }
+
+  /* 修复 element-plus 的一些默认样式 */
+  :deep(.el-form-item__label-wrap) {
+    width: 100%;
+  }
+
+  :deep(.el-form-item__label::before),
+  :deep(.el-form-item__label::after) {
+    display: none !important;
+  }
+
+  :deep(.el-select) {
+    width: 100% !important;
+    min-width: 100px;
+    max-width: 100%;
+    flex-shrink: 0;
+  }
+
+  :deep(.el-select__tags) {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    flex-wrap: wrap;
+    overflow: hidden;
+  }
+
+  :deep(.el-select__input) {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
 }
 
-.simple-form-renderer :deep(.el-form-item) {
-  margin-bottom: 18px;
-  display: flex;
-  align-items: flex-start;
-}
-
-/* 调整表单项布局 */
-.simple-form-renderer :deep(.el-form-item__label) {
-  padding: 0;
-  height: auto;
-  line-height: 1.2;
-  text-align: right;
-  flex-shrink: 0;
-  position: relative; /* 添加相对定位 */
-}
-
-/* 移除 element-plus 的默认 margin */
-.simple-form-renderer :deep(.el-form-item__content) {
-  margin-left: 0 !important;
-  padding-left: 12px; /* 固定的左边距 */
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  justify-content: flex-start;
-  position: relative; /* 添加相对定位 */
-}
 
 .form-field-container {
   flex: 1;
@@ -468,42 +506,7 @@ defineExpose({
   cursor: pointer;
 }
 
-/* 确保所有输入控件宽度一致 */
-.simple-form-renderer :deep(.el-input),
-.simple-form-renderer :deep(.el-select),
-.simple-form-renderer :deep(.el-input-number) {
-  width: 100%;
-}
 
-/* 修复 element-plus 的一些默认样式 */
-.simple-form-renderer :deep(.el-form-item__label-wrap) {
-  width: 100%;
-}
-
-.simple-form-renderer :deep(.el-form-item__label::before),
-.simple-form-renderer :deep(.el-form-item__label::after) {
-  display: none !important;
-}
-
-.simple-form-renderer :deep(.el-select) {
-  width: 100% !important;
-  min-width: 100px;
-  max-width: 100%;
-  flex-shrink: 0;
-}
-
-.simple-form-renderer :deep(.el-select__tags) {
-  width: 100% !important;
-  max-width: 100% !important;
-  min-width: 0 !important;
-  flex-wrap: wrap;
-  overflow: hidden;
-}
-
-.simple-form-renderer :deep(.el-select__input) {
-  width: 100% !important;
-  min-width: 0 !important;
-}
 
 /* 全局tooltip样式覆盖 */
 :global(.field-desc-tooltip) {
