@@ -1,14 +1,14 @@
 export default {
-  path: '/rule',
+  path: '/my-rule',
   name: 'RuleCenter',
-  redirect: '/rule/edit',
+  redirect: '/my-rule/func/edit',
   meta: {
     title: '规则模块',
     rank: 1,
   },
   children: [
     {
-      path: '/rule/list',
+      path: '/my-rule/rule/list',
       name: 'ruleList',
       component: () => import('@/views/rule/RuleList.vue'),
       meta: {
@@ -16,7 +16,7 @@ export default {
       }
     },
     {
-      path: '/rule/edit',
+      path: '/my-rule/rule/edit',
       name: 'ruleEdit',
       component: () => import('@/views/rule/RuleEdit.vue'),
       meta: {
@@ -24,7 +24,7 @@ export default {
       }
     },
     {
-      path: '/rule/function',
+      path: '/my-rule/func/list',
       name: 'function',
       component: () => import('@/views/rule/FunctionList.vue'),
       meta: {
@@ -32,7 +32,7 @@ export default {
       }
     },
     {
-      path: '/rule/func/edit',
+      path: '/my-rule/func/edit',
       name: 'functionEdit',
       component: () => import('@/views/rule/FuncEdit.vue'),
       meta: {
@@ -40,7 +40,7 @@ export default {
       }
     },
     {
-      path: '/rule/func/edit-lua',
+      path: '/my-rule/func/edit-lua',
       name: 'functionEditLua',
       component: () => import('@/views/rule/FuncEdit-lua.vue'),
       meta: {
@@ -48,7 +48,7 @@ export default {
       }
     },
     {
-      path: '/test',
+      path: '/my-rule/test',
       name: 'test',
       component: () => import('@/views/rule/TestList.vue'),
       meta: {
