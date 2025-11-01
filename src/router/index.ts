@@ -1,4 +1,3 @@
-import NProgress from '@/utils/progress'
 import { Router, createRouter, createWebHistory } from 'vue-router'
 
 const modules: Record<string, any> = import.meta.glob(
@@ -35,12 +34,10 @@ export const router: Router = createRouter({
 })
 
 router.beforeEach((to: toRouteType, _from, next) => {
-  NProgress.start()
   next()
 })
 
 router.afterEach(() => {
-  NProgress.done()
 })
 
 export default router

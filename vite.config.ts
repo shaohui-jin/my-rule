@@ -27,7 +27,7 @@ export default ({ command, mode }: ConfigEnv): UserConfigExport => {
         '@': pathResolve('src'),
         '@build': pathResolve('build'),
         // 配置别名，使得在代码中可以通过'monaco-editor'来引用CDN中的monaco-editor
-        'monaco-editor': pathResolve('./node_modules/monaco-editor/esm/vs/editor/editor.main.js')
+        'monaco-editor': pathResolve('node_modules/monaco-editor/esm/vs/editor/editor.main.js')
       }
     },
     // 服务端渲染
@@ -63,7 +63,12 @@ export default ({ command, mode }: ConfigEnv): UserConfigExport => {
         'element-resize-detector',
         'monaco-editor'
       ],
-      exclude: ['@iconify-icons/ep', '@iconify-icons/ri', '@pureadmin/theme/dist/browser-utils', '@types/node']
+      exclude: [
+        '@iconify-icons/ep',
+        '@iconify-icons/ri',
+        '@pureadmin/theme/dist/browser-utils',
+        // '@types/node'
+      ]
     },
     build: {
       target: 'es2022',
