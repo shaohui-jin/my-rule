@@ -2,7 +2,6 @@ import dayjs from 'dayjs'
 import { resolve } from 'path'
 import pkg from './package.json'
 import { getPluginsList } from './build/plugins'
-import { include, exclude } from './build/optimize'
 import { UserConfigExport, ConfigEnv } from 'vite'
 
 /** 当前执行node命令时文件夹的地址（工作目录） */
@@ -11,12 +10,6 @@ const root: string = process.cwd()
 /** 路径查找 */
 const pathResolve = (dir: string): string => {
   return resolve(__dirname, '.', dir)
-}
-
-/** 设置别名 */
-const alias: Record<string, string> = {
-  '@': pathResolve('src'),
-  '@build': pathResolve('build')
 }
 
 const { dependencies, devDependencies, name, version } = pkg
@@ -30,7 +23,12 @@ export default ({ command, mode }: ConfigEnv): UserConfigExport => {
     base: './',
     root,
     resolve: {
-      alias
+      alias: {
+        '@': pathResolve('src'),
+        '@build': pathResolve('build'),
+        // 配置别名，使得在代码中可以通过'monaco-editor'来引用CDN中的monaco-editor
+        'monaco-editor': pathResolve('./node_modules/monaco-editor/esm/vs/editor/editor.main.js')
+      }
     },
     // 服务端渲染
     server: {
@@ -50,8 +48,22 @@ export default ({ command, mode }: ConfigEnv): UserConfigExport => {
     plugins: getPluginsList(command),
     // https://cn.vitejs.dev/config/dep-optimization-options.html#dep-optimization-options
     optimizeDeps: {
-      include,
-      exclude
+      include: [
+        'qs',
+        'mitt',
+        'dayjs',
+        'axios',
+        'pinia',
+        'echarts',
+        'vue-i18n',
+        'js-cookie',
+        '@vueuse/core',
+        '@pureadmin/utils',
+        'responsive-storage',
+        'element-resize-detector',
+        'monaco-editor'
+      ],
+      exclude: ['@iconify-icons/ep', '@iconify-icons/ri', '@pureadmin/theme/dist/browser-utils', '@types/node']
     },
     build: {
       target: 'es2022',
@@ -59,6 +71,8 @@ export default ({ command, mode }: ConfigEnv): UserConfigExport => {
       // 消除打包大小超过500kb警告
       chunkSizeWarningLimit: 4000,
       rollupOptions: {
+        // 确保在构建时包含外部依赖
+        external: ['monaco-editor'],
         input: {
           index: pathResolve('index.html')
         },
