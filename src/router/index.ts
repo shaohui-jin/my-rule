@@ -17,7 +17,7 @@ Object.keys(modules).forEach(key => {
 
 /** 创建路由实例 */
 export const router: Router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory(import.meta.env.VITE_PUBLIC_PATH),
   routes: routes,
   strict: true,
   scrollBehavior(to, from, savedPosition) {
