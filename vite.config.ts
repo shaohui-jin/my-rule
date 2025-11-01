@@ -25,9 +25,7 @@ export default ({ command, mode }: ConfigEnv): UserConfigExport => {
     resolve: {
       alias: {
         '@': pathResolve('src'),
-        '@build': pathResolve('build'),
-        // 配置别名，使得在代码中可以通过'monaco-editor'来引用CDN中的monaco-editor
-        'monaco-editor': pathResolve('./node_modules/monaco-editor/esm/vs/editor/editor.main.js')
+        '@build': pathResolve('build')
       }
     },
     // 服务端渲染
