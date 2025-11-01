@@ -42,8 +42,8 @@ export function getPluginsList(
     svgLoader(),
     // ElementPlus({}),
     monacoEditorPlugin({
-      languages: ['javascript'],
-      languageWorkers: [ 'editorWorkerService', 'json', 'typescript', 'html', 'css'],
+      languages: ['javascript', 'typescript'],
+      // languageWorkers: [ 'editorWorkerService', 'json', 'typescript', 'html', 'css'],
       // publicPath: 'https://unpkg.com/vite-plugin-monaco-editor@1.0.5/cdn'
     }),
     // 打包分析

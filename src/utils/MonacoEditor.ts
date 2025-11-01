@@ -24,6 +24,8 @@ export const getDefaultMonacoEditorConfig = (isFull: boolean = false): IStandalo
     foldingStrategy: 'auto', // 折叠策略
     smoothScrolling: false, // 滚动动画
     fontSize: isFull ? 14 : 12,
-    wordWrap: 'on'
+    wordWrap: 'on',
+    wordBasedSuggestions: true, // 禁用基于单词的智能提示（例如，自动完成）
+    quickSuggestions: true // 启用快速建议（例如，输入时自动显示建议）
   }
 }

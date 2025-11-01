@@ -73,10 +73,6 @@ onMounted(() => {
     ...getDefaultMonacoEditorConfig(),
     value: props.modelValue,
   })
-  codeEditor.updateOptions({
-    wordBasedSuggestions: false, // 禁用基于单词的智能提示（例如，自动完成）
-    quickSuggestions: true // 启用快速建议（例如，输入时自动显示建议）
-  });
 
   // 设置监听事件
   codeEditor.onDidChangeModelContent(() => {
