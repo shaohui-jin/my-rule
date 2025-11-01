@@ -18,7 +18,7 @@ const abortControllerMap: Map<string, AbortController> = new Map()
 
 const axiosInstance: AxiosInstance = axios.create({
   timeout: 60000,
-  baseURL: import.meta.env.VITE_API_BASE_PATH
+  baseURL: '/my-rule'
 })
 
 axiosInstance.interceptors.request.use((config: InternalAxiosRequestConfig) => {

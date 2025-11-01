@@ -72,11 +72,7 @@ declare global {
    * @see {@link https://yiming_chang.gitee.io/pure-admin-doc/pages/config/#%E5%85%B7%E4%BD%93%E9%85%8D%E7%BD%AE}
    */
   interface ViteEnv {
-    VITE_PORT: number;
     VITE_PUBLIC_PATH: string;
-    VITE_ROUTER_HISTORY: string;
-    VITE_CDN: boolean;
-    VITE_COMPRESSION: ViteCompression;
   }
 
   /**
