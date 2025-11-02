@@ -88,7 +88,7 @@ export default ({ command, mode }: ConfigEnv): UserConfigExport => {
         // languages: ['javascript', 'typescript'],
         languageWorkers: [ 'editorWorkerService', 'json', 'typescript', 'html', 'css'],
         // publicPath: 'https://unpkg.com/vite-plugin-monaco-editor@1.0.5/cdn',
-        publicPath: 'https://cdn.jsdelivr.net/npm/monaco-editor@latest/min/vs/loader.min.js'
+        // publicPath: 'https://cdn.jsdelivr.net/npm/monaco-editor@latest/min/vs/loader.min.js'
       })
       // 打包分析
     ],
