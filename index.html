@@ -14,10 +14,11 @@
     <link rel="icon" href="/favicon.ico" />
     <script src="/static/scripts/vs/loader.js"></script>
     <script async>
+      const VITE_PUBLIC_PATH  = location.hostname === 'shaohui-jin.github.io' ? '/my-rule/' : ''
       require.config({
         paths: {
           // 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@latest/min/vs'
-          'vs': '/static/scripts/vs'
+          'vs': `${VITE_PUBLIC_PATH}/static/scripts/vs`
         }
       });
 
