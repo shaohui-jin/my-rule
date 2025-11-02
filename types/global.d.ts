@@ -8,37 +8,11 @@ import type { ECharts } from "echarts";
 import type { IconifyIcon } from "@iconify/vue";
 import type { TableColumns } from "@pureadmin/table";
 import { type RouteComponent, type RouteLocationNormalized } from "vue-router";
-declare global {
-  interface Window {
-    // 是否存在无界
-    __POWERED_BY_WUJIE__?: boolean;
-    // 子应用mount函数
-    __WUJIE_MOUNT: () => void;
-    // 子应用unmount函数
-    __WUJIE_UNMOUNT: () => void;
-    // 子应用无界实例
-    __WUJIE: { mount: () => void };
-    $wujie: any
-    $micro: any
-  }
-}
+
 /**
  * 全局类型声明，无需引入直接在 `.vue` 、`.ts` 、`.tsx` 文件使用即可获得类型提示
  */
 declare global {
-  /**
-   * 平台的名称、版本、依赖、最后构建时间的类型提示
-   */
-  const __APP_INFO__: {
-    pkg: {
-      name: string;
-      version: string;
-      dependencies: Recordable<string>;
-      devDependencies: Recordable<string>;
-    };
-    lastBuildTime: string;
-  };
-
   /**
    * Window 的类型提示
    */
@@ -53,6 +27,18 @@ declare global {
     mozRequestAnimationFrame: (callback: FrameRequestCallback) => number;
     oRequestAnimationFrame: (callback: FrameRequestCallback) => number;
     msRequestAnimationFrame: (callback: FrameRequestCallback) => number;
+
+    monaco: any;
+    // 是否存在无界
+    __POWERED_BY_WUJIE__?: boolean;
+    // 子应用mount函数
+    __WUJIE_MOUNT: () => void;
+    // 子应用unmount函数
+    __WUJIE_UNMOUNT: () => void;
+    // 子应用无界实例
+    __WUJIE: { mount: () => void };
+    $wujie: any
+    $micro: any
   }
 
   /**
@@ -74,11 +60,6 @@ declare global {
   interface ViteEnv {
     VITE_PUBLIC_PATH: string;
   }
-
-  /**
-   *  继承 `@pureadmin/table` 的 `TableColumns` ，方便全局直接调用
-   */
-  interface TableColumnList extends Array<TableColumns> {}
 
   /**
    * 对应 `public/serverConfig.json` 文件的类型声明
@@ -105,31 +86,6 @@ declare global {
     MenuArrowIconNoTransition?: boolean;
     CachingAsyncRoutes?: boolean;
     TooltipEffect?: Effect;
-  }
-
-  /**
-   * 与 `ServerConfigs` 类型不同，这里是缓存到浏览器本地存储的类型声明
-   * @see {@link https://yiming_chang.gitee.io/pure-admin-doc/pages/config/#serverconfig-json}
-   */
-  interface StorageConfigs {
-    version?: string;
-    title?: string;
-    fixedHeader?: boolean;
-    hiddenSideBar?: boolean;
-    multiTagsCache?: boolean;
-    keepAlive?: boolean;
-    locale?: string;
-    layout?: string;
-    theme?: string;
-    darkMode?: boolean;
-    grey?: boolean;
-    weak?: boolean;
-    hideTabs?: boolean;
-    sidebarStatus?: boolean;
-    epThemeColor?: string;
-    showLogo?: boolean;
-    showModel?: string;
-    username?: string;
   }
 
   /**

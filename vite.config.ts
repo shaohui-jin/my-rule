@@ -107,7 +107,12 @@ export default ({ command, mode }: ConfigEnv): UserConfigExport => {
         '@pureadmin/utils',
         'responsive-storage',
         'element-resize-detector',
-        'monaco-editor'
+        // 'monaco-editor',
+        // 'monaco-editor/esm/vs/language/json/json.worker',
+        // 'monaco-editor/esm/vs/language/css/css.worker',
+        // 'monaco-editor/esm/vs/language/html/html.worker',
+        // 'monaco-editor/esm/vs/language/typescript/ts.worker',
+        // 'monaco-editor/esm/vs/editor/editor.worker'
       ],
       exclude: [
         '@iconify-icons/ep',
@@ -123,7 +128,7 @@ export default ({ command, mode }: ConfigEnv): UserConfigExport => {
       chunkSizeWarningLimit: 4000,
       rollupOptions: {
         // 确保在构建时包含外部依赖
-        external: ['monaco-editor'],
+        // external: ['monaco-editor'],
         input: {
           index: path.resolve(__dirname, 'index.html'),
         },

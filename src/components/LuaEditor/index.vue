@@ -37,7 +37,6 @@
 </template>
 
 <script setup lang="ts">
-import * as monaco from 'monaco-editor'
 import { onMounted, ref, defineExpose, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Download, DocumentCopy, FullScreen, Close } from '@element-plus/icons-vue'
@@ -46,10 +45,10 @@ import { Download, DocumentCopy, FullScreen, Close } from '@element-plus/icons-v
 const editorContainer = ref()
 
 // 编辑器对象
-let codeEditor: monaco.editor.IStandaloneCodeEditor | null = null
+let codeEditor = null
 
 // 全屏编辑器对象
-let fullscreenEditor: monaco.editor.IStandaloneCodeEditor | null = null
+let fullscreenEditor = null
 
 // 全屏状态
 const isFullscreen = ref(false)
@@ -78,7 +77,7 @@ const props = defineProps({
 })
 
 onMounted(() => {
-  codeEditor = monaco.editor.create(editorContainer.value, {
+  codeEditor = window.monaco.editor.create(editorContainer.value, {
     value: props.modelValue,
     language: props.language,
     theme: 'vs',
@@ -192,7 +191,7 @@ const toggleFullscreen = () => {
 const createFullscreenEditor = () => {
   if (fullscreenEditor || !fullscreenContainer.value) return
 
-  fullscreenEditor = monaco.editor.create(fullscreenContainer.value, {
+  fullscreenEditor = window.monaco.editor.create(fullscreenContainer.value, {
     value: codeEditor?.getValue() || '',
     language: props.language,
     theme: 'vs', // 全屏时使用深色主题

@@ -1,11 +1,11 @@
-import { editor } from 'monaco-editor'
-import IStandaloneEditorConstructionOptions = editor.IStandaloneEditorConstructionOptions
+// import { editor } from 'monaco-editor'
+// import IStandaloneEditorConstructionOptions = editor.IStandaloneEditorConstructionOptions
 
 /**
  * 获取默认的Monaco编辑器配置
  * @param isFull
  */
-export const getDefaultMonacoEditorConfig = (isFull: boolean = false): IStandaloneEditorConstructionOptions => {
+export const getDefaultMonacoEditorConfig = (isFull: boolean = false) => {
   return {
     language: 'javascript',
     // language: 'lua',
