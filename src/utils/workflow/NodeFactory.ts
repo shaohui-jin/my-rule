@@ -6,7 +6,6 @@ import { IteratorNode } from './IteratorNode'
 import { LOGIC_NODE_TEMPLATES } from './BaseLogicConfig'
 import { getIteratorData } from './IteratorManager'
 import { useParamStore } from '@/store/modules/params'
-const { VITE_PUBLIC_PATH } = import.meta.env
 
 const paramStore = useParamStore()
 // 创建逻辑节点

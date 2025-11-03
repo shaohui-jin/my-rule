@@ -2,6 +2,7 @@ export default {
   path: '/',
   name: 'RuleCenter',
   redirect: '/func/edit',
+  component: () => import('@/layout/index.vue'),
   meta: {
     title: '规则模块',
     rank: 1,
