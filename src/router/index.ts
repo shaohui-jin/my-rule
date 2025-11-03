@@ -1,4 +1,4 @@
-import { Router, createRouter, createWebHistory } from 'vue-router'
+import { Router, createRouter, createWebHistory, createWebHashHistory } from 'vue-router'
 
 const modules: Record<string, any> = import.meta.glob(
   ['./modules/**/*.ts'],
@@ -16,9 +16,8 @@ Object.keys(modules).forEach(key => {
 
 /** 创建路由实例 */
 export const router: Router = createRouter({
-  history: createWebHistory(import.meta.env.VITE_PUBLIC_PATH),
+  history: createWebHashHistory(),
   routes: routes,
-  strict: true,
   scrollBehavior(to, from, savedPosition) {
     return new Promise(resolve => {
       if (savedPosition) {
