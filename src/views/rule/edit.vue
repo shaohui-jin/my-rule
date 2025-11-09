@@ -171,7 +171,7 @@
       :destroy-on-close="true"
       @close="closeSaveAsDialog"
     >
-      <RuleDetail
+      <Detail
         v-loading="loadingSaveAs"
         ref="refSaveAsDetail"
         :detail="saveAsDetail"
@@ -246,7 +246,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { nodeIdFactory } from '@/utils/workflow/NodeIdFactory'
 import { compressParamData, expandParamData } from '@/utils/workflow/DataOptimizer'
 // import BaseFuncHelpDialog from '@/components/workflow/BaseFuncHelpDialog.vue'
-import RuleDetail from '@/views/rule/RuleDetail.vue'
+import Detail from '@/views/rule/detail.vue'
 import { http } from '@/axios'
 import TestDrawer from '@/components/TestDrawer/index.vue'
 import NodeTypeIcon from '@/components/NodeTypeIcon/index.vue'

@@ -69,7 +69,7 @@
       :destroy-on-close="true"
       @close="closeDialog"
     >
-      <rule-detail
+      <detail
         v-loading="loadingDetail"
         ref="refDetail"
         :detail="detail"
@@ -134,7 +134,7 @@ import { ref, onMounted, reactive, computed,nextTick  } from 'vue'
 import { http } from '@/axios'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Edit, ArrowDown, ArrowUp, Rank, Clock, Refresh, Search } from '@element-plus/icons-vue'
-import RuleDetail from './RuleDetail.vue'
+import Detail from './detail.vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useRuleStore } from '@/store/modules/ruleCache'
 import BaseSearch from '@/components/BaseTable/BaseSearch.vue'

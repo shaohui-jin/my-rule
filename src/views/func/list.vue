@@ -35,7 +35,7 @@
       :destroy-on-close="true"
       @close="closeDialog"
     >
-      <function-detail
+      <detail
         v-loading="loadingDetail"
         ref="refDetail"
         :detail="detail"
@@ -201,7 +201,7 @@ import {
   View,
   Close
 } from '@element-plus/icons-vue'
-import FunctionDetail from './FunctionDetail.vue'
+import Detail from './detail.vue'
 import { useRouter } from 'vue-router'
 import { useFunctionStore, useRuleStore } from '@/store/modules/ruleCache'
 import BaseSearch from '@/components/BaseTable/BaseSearch.vue'
