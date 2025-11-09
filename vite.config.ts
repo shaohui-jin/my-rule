@@ -25,7 +25,7 @@ export default ({ command, mode }: ConfigEnv): UserConfigExport => {
   let endTime: Dayjs
   let outDir: string
   return {
-    base: import.meta.env.VITE_PUBLIC_PATH,
+    base: env.VITE_PUBLIC_PATH,
     root,
     resolve: {
       alias: {
