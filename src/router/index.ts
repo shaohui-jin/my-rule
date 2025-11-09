@@ -16,7 +16,7 @@ Object.keys(modules).forEach(key => {
 
 /** 创建路由实例 */
 export const router: Router = createRouter({
-  history: createWebHashHistory(),
+  history: createWebHistory(),
   routes: routes,
   scrollBehavior(to, from, savedPosition) {
     return new Promise(resolve => {
