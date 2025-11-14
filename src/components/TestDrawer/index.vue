@@ -1109,7 +1109,7 @@ const toggleFullscreen = (type: 'xml' | 'script') => {
     })
 
     // 确保使用深色主题
-    window.monaco.editor.setTheme(DARK_THEME)
+    monaco.editor.setTheme(DARK_THEME)
 
     // 延迟创建全屏编辑器
     setTimeout(() => {
@@ -1139,7 +1139,7 @@ const toggleFullscreen = (type: 'xml' | 'script') => {
 const createFullscreenXmlEditor = () => {
   if (xmlEditorFullscreen || !xmlEditorFullscreenContainer.value) return
 
-  xmlEditorFullscreen = window.monaco.editor.create(xmlEditorFullscreenContainer.value as HTMLElement, {
+  xmlEditorFullscreen = monaco.editor.create(xmlEditorFullscreenContainer.value as HTMLElement, {
     value: xmlContent.value,
     language: 'xml',
     theme: DARK_THEME,
@@ -1169,7 +1169,7 @@ const createFullscreenXmlEditor = () => {
 const createFullscreenScriptEditor = () => {
   if (scriptEditorFullscreen || !scriptEditorFullscreenContainer.value) return
 
-  scriptEditorFullscreen = window.monaco.editor.create(scriptEditorFullscreenContainer.value as HTMLElement, {
+  scriptEditorFullscreen = monaco.editor.create(scriptEditorFullscreenContainer.value as HTMLElement, {
     value: scriptContent.value,
     language: 'lua',
     theme: DARK_THEME,
@@ -1255,7 +1255,7 @@ const createFullscreenNodeEditor = (nodeId: string, type: 'input' | 'output') =>
       : JSON.stringify(node.result ?? null, null, 2)
   }
 
-  nodeEditorFullscreen = window.monaco.editor.create(nodeEditorFullscreenContainer.value as HTMLElement, {
+  nodeEditorFullscreen = monaco.editor.create(nodeEditorFullscreenContainer.value as HTMLElement, {
     value: content,
     language: 'json',
     theme: LIGHT_THEME,
@@ -1310,8 +1310,8 @@ const initTestCaseList = async () => {
 const initXmlEditor = () => {
   if (xmlEditor || !xmlEditorContainer.value) return
   // 确保使用深色主题
-  window.monaco.editor.setTheme(DARK_THEME)
-  xmlEditor = window.monaco.editor.create(xmlEditorContainer.value as HTMLElement, {
+  monaco.editor.setTheme(DARK_THEME)
+  xmlEditor = monaco.editor.create(xmlEditorContainer.value as HTMLElement, {
     value: xmlContent.value,
     language: 'xml',
     theme: DARK_THEME,
@@ -1333,8 +1333,8 @@ const initXmlEditor = () => {
 const initScriptEditor = () => {
   if (scriptEditor || !scriptEditorContainer.value) return
   // 确保使用深色主题
-  window.monaco.editor.setTheme(DARK_THEME)
-  scriptEditor = window.monaco.editor.create(scriptEditorContainer.value as HTMLElement, {
+  monaco.editor.setTheme(DARK_THEME)
+  scriptEditor = monaco.editor.create(scriptEditorContainer.value as HTMLElement, {
     value: scriptContent.value,
     language: 'lua',
     theme: DARK_THEME,
@@ -1694,9 +1694,9 @@ const openDrawer = (data: ExecutionRecordData, isPreview: boolean = false, ismRu
   // 根据当前活动的标签页设置正确的主题
   setTimeout(() => {
     if (activeTab.value === 'xml' || activeTab.value === 'script') {
-      window.monaco.editor.setTheme(DARK_THEME)
+      monaco.editor.setTheme(DARK_THEME)
     } else if (activeTab.value === 'result') {
-      window.monaco.editor.setTheme(LIGHT_THEME)
+      monaco.editor.setTheme(LIGHT_THEME)
     }
   }, 300)
 
@@ -1848,9 +1848,9 @@ watch(drawerVisible, (visible) => {
     document.addEventListener('keydown', handleKeyDown)
     // 根据当前标签页立即设置正确的主题
     if (activeTab.value === 'xml' || activeTab.value === 'script') {
-      window.monaco.editor.setTheme(DARK_THEME)
+      monaco.editor.setTheme(DARK_THEME)
     } else if (activeTab.value === 'result') {
-      window.monaco.editor.setTheme(LIGHT_THEME)
+      monaco.editor.setTheme(LIGHT_THEME)
     }
     // 延迟初始化当前标签页的编辑器
     setTimeout(() => {
@@ -1984,9 +1984,9 @@ const initLastNodeOutputEditor = () => {
   }
 
   // 确保使用浅色主题
-  window.monaco.editor.setTheme(LIGHT_THEME)
+  monaco.editor.setTheme(LIGHT_THEME)
 
-  lastNodeOutputEditor = window.monaco.editor.create(lastNodeOutputEditorContainer.value as HTMLElement, {
+  lastNodeOutputEditor = monaco.editor.create(lastNodeOutputEditorContainer.value as HTMLElement, {
     value: lastNodeOutput.value,
     language: 'json',
     theme: LIGHT_THEME,
@@ -2034,9 +2034,9 @@ const initExpectedResultEditor = () => {
   }
 
   // 确保使用浅色主题
-  window.monaco.editor.setTheme(LIGHT_THEME)
+  monaco.editor.setTheme(LIGHT_THEME)
 
-  expectedResultEditor = window.monaco.editor.create(expectedResultEditorContainer.value as HTMLElement, {
+  expectedResultEditor = monaco.editor.create(expectedResultEditorContainer.value as HTMLElement, {
     value: expectedResult.value || '',
     language: 'json',
     theme: LIGHT_THEME,
@@ -2092,10 +2092,10 @@ const setEditorRef = (el: any | null, nodeId: string, type: 'input' | 'output') 
   // 如果编辑器已经存在，不重复创建
   if (nodeEditors[type]) return
   // 创建编辑器前设置浅色主题
-  window.monaco.editor.setTheme(LIGHT_THEME)
+  monaco.editor.setTheme(LIGHT_THEME)
 
   // 创建编辑器
-  const editor = window.monaco.editor.create(el as HTMLElement, {
+  const editor = monaco.editor.create(el as HTMLElement, {
     value: type === 'input'
       ? JSON.stringify(testResult.value.funcStepLogs[parseInt(nodeId)]?.inputParams ?? null, null, 2)
       : JSON.stringify(testResult.value.funcStepLogs[parseInt(nodeId)]?.result ?? null, null, 2),
@@ -2139,7 +2139,7 @@ watch(activeTab, async (newTab) => {
   setTimeout(async () => {
     if (newTab === 'xml') {
       // 切换到XML标签页时，确保使用深色主题
-      window.monaco.editor.setTheme(DARK_THEME)
+      monaco.editor.setTheme(DARK_THEME)
       if (!xmlEditor && xmlEditorContainer.value) {
         initXmlEditor()
       } else if (xmlEditor) {
@@ -2148,7 +2148,7 @@ watch(activeTab, async (newTab) => {
       }
     } else if (newTab === 'script') {
       // 切换到脚本标签页时，确保使用深色主题
-      window.monaco.editor.setTheme(DARK_THEME)
+      monaco.editor.setTheme(DARK_THEME)
       if (!scriptEditor && scriptEditorContainer.value) {
         initScriptEditor()
       } else if (scriptEditor) {
@@ -2157,7 +2157,7 @@ watch(activeTab, async (newTab) => {
       }
     } else if (newTab === 'result') {
       // 切换到结果标签页时，确保使用浅色主题
-      window.monaco.editor.setTheme(LIGHT_THEME)
+      monaco.editor.setTheme(LIGHT_THEME)
       if (testResult.value.message) {
         setTimeout(() => {
           outputExpanded.value = true
@@ -2176,7 +2176,7 @@ watch(activeNodePanels, () => {
   // 延迟执行以确保DOM已更新
   setTimeout(() => {
     // 切换到浅色主题
-    window.monaco.editor.setTheme(LIGHT_THEME)
+    monaco.editor.setTheme(LIGHT_THEME)
     editorsMap.forEach((editor, nodeId) => {
       const nodeIndex = parseInt(nodeId)
       const node = testResult.value.funcStepLogs[nodeIndex]

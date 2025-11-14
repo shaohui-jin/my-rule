@@ -40,15 +40,16 @@
 import { onMounted, ref, defineExpose, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Download, DocumentCopy, FullScreen, Close } from '@element-plus/icons-vue'
+import * as monaco from 'monaco-editor'
 
 // 容器对象
 const editorContainer = ref()
 
 // 编辑器对象
-let codeEditor = null
+let codeEditor: monaco.editor.IStandaloneCodeEditor = null
 
 // 全屏编辑器对象
-let fullscreenEditor = null
+let fullscreenEditor: monaco.editor.IStandaloneCodeEditor = null
 
 // 全屏状态
 const isFullscreen = ref(false)
@@ -77,7 +78,7 @@ const props = defineProps({
 })
 
 onMounted(() => {
-  codeEditor = window.monaco.editor.create(editorContainer.value, {
+  codeEditor = monaco.editor.create(editorContainer.value, {
     value: props.modelValue,
     language: props.language,
     theme: 'vs',
@@ -191,7 +192,7 @@ const toggleFullscreen = () => {
 const createFullscreenEditor = () => {
   if (fullscreenEditor || !fullscreenContainer.value) return
 
-  fullscreenEditor = window.monaco.editor.create(fullscreenContainer.value, {
+  fullscreenEditor = monaco.editor.create(fullscreenContainer.value, {
     value: codeEditor?.getValue() || '',
     language: props.language,
     theme: 'vs', // 全屏时使用深色主题

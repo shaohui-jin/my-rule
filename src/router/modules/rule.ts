@@ -1,12 +1,36 @@
 export default {
   path: '/',
   name: 'main',
-  component: () => import('@/App.vue'),
+  redirect: '/func/edit',
   meta: {
     title: '规则模块',
     rank: 1,
   },
   children: [
+    {
+      path: '/func/list',
+      name: 'function',
+      component: () => import('@/views/func/list.vue'),
+      meta: {
+        roles: '函数列表'
+      }
+    },
+    {
+      path: '/func/edit',
+      name: 'functionEdit',
+      component: () => import('@/views/func/edit.vue'),
+      meta: {
+        title: '函数编辑',
+      }
+    },
+    {
+      path: '/func/edit-lua',
+      name: 'functionEditLua',
+      component: () => import('@/views/func/edit-lua.vue'),
+      meta: {
+        title: '函数编辑',
+      }
+    },
     {
       path: '/rule/list',
       name: 'ruleList',

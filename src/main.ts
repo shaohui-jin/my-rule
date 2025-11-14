@@ -10,7 +10,9 @@ import { MotionPlugin } from '@vueuse/motion'
 // 引入重置样式
 import 'element-plus/dist/index.css'
 
+
 // 导入公共样式
+import '@/styles/index.css'
 
 // 导入字体图标
 

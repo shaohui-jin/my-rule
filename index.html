@@ -10,25 +10,7 @@
     />
     <title>DesignOnline-rule</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="icon" href="/favicon.ico" />
-    <script src="https://shaohui-jin.github.io/my-rule/static/scripts/vs/loader.js"></script>
-    <script async>
-      const vs  =  `https://shaohui-jin.github.io/my-rule/static/scripts/vs`
-      require.config({
-        paths: {
-          // 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@latest/min/vs'
-          'vs': vs
-        }
-      });
-
-      // 将monaco变量赋值为全局变量
-      require([`${vs}/editor/editor.main`], function() {
-        window.monaco = require(`${vs}/editor/editor.main`).m;
-        console.log('Monaco Editor loaded successfully');
-      });
-    </script>
-
     <script>
       window.process = {};
     </script>

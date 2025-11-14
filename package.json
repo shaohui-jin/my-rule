@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "cross-env NODE_OPTIONS=--max-old-space-size=4096 vite",
     "serve": "pnpm dev",
+    "rimrafNodeModules": "rimraf node_modules",
+    "installAndRun": "pnpm i && pnpm dev",
     "build": "rimraf dist && vite build",
     "build:staging": "rimraf dist && vite build --mode staging",
     "report": "rimraf dist && vite build",
@@ -42,6 +44,7 @@
     "@pureadmin/descriptions": "~1.1.0",
     "@pureadmin/table": "~2.0.0",
     "@pureadmin/utils": "~1.8.5",
+    "@tailwindcss/postcss": "^4.1.17",
     "@vueuse/core": "~9.13.0",
     "@vueuse/motion": "2.0.0-beta.12",
     "animate.css": "~4.1.1",
@@ -59,6 +62,7 @@
     "luaparse": "^0.3.0",
     "mitt": "~3.0.0",
     "mockjs": "~1.1.0",
+    "monaco-editor": "^0.54.0",
     "nprogress": "~0.2.0",
     "path": "~0.12.7",
     "pinia": "~2.0.32",
@@ -68,12 +72,12 @@
     "vite-plugin-monaco-editor": "^1.1.0",
     "vue": "~3.2.47",
     "vue-demi": "^0.14.10",
+    "vue-draggable-plus": "^0.6.0",
     "vue-i18n": "~9.2.2",
     "vue-router": "~4.1.6",
     "vue-types": "~5.0.2",
     "wujie-vue3": "~1.0.12",
-    "xlsx": "^0.18.5",
-    "vue-draggable-plus": "^0.6.0"
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@commitlint/cli": "13.1.0",
@@ -122,6 +126,7 @@
     "stylelint-config-standard": "~29.0.0",
     "stylelint-order": "~5.0.0",
     "svgo": "~3.0.2",
+    "tailwindcss": "^3.2.7",
     "terser": "~5.16.1",
     "typescript": "~4.9.5",
     "unplugin-vue-define-options": "~1.2.3",

@@ -35,15 +35,16 @@ import { onMounted, ref, defineExpose, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Download, DocumentCopy, FullScreen, Close } from '@element-plus/icons-vue'
 import { getDefaultMonacoEditorConfig } from '@/utils/MonacoEditor'
+import * as monaco from 'monaco-editor'
 
 // 容器对象
 const editorContainer = ref()
 
 // 编辑器对象
-let codeEditor = null
+let codeEditor: monaco.editor.IStandaloneCodeEditor = null
 
 // 全屏编辑器对象
-let fullscreenEditor = null
+let fullscreenEditor: monaco.editor.IStandaloneCodeEditor = null
 
 // 全屏状态
 const isFullscreen = ref(false)
@@ -68,8 +69,8 @@ const props = defineProps({
 })
 
 onMounted(() => {
-  // console.log('window.monaco.editor', window.monaco.editor)
-  codeEditor = window.monaco.editor.create(editorContainer.value, {
+  // console.log('monaco.editor', monaco.editor)
+  codeEditor = monaco.editor.create(editorContainer.value, {
     ...getDefaultMonacoEditorConfig(),
     value: props.modelValue,
   })
@@ -133,7 +134,7 @@ const toggleFullscreen = () => {
 const createFullscreenEditor = () => {
   if (fullscreenEditor || !fullscreenContainer.value) return
 
-  fullscreenEditor = window.monaco.editor.create(fullscreenContainer.value, {
+  fullscreenEditor = monaco.editor.create(fullscreenContainer.value, {
     ...getDefaultMonacoEditorConfig(true),
     value: codeEditor?.getValue() || '',
   })

@@ -1,11 +1,11 @@
-// import { editor } from 'monaco-editor'
-// import IStandaloneEditorConstructionOptions = editor.IStandaloneEditorConstructionOptions
+import { editor } from 'monaco-editor'
+import IStandaloneEditorConstructionOptions = editor.IStandaloneEditorConstructionOptions
 
 /**
  * 获取默认的Monaco编辑器配置
  * @param isFull
  */
-export const getDefaultMonacoEditorConfig = (isFull: boolean = false) => {
+export const getDefaultMonacoEditorConfig = (isFull: boolean = false): IStandaloneEditorConstructionOptions => {
   return {
     language: 'javascript',
     // language: 'lua',
@@ -25,7 +25,7 @@ export const getDefaultMonacoEditorConfig = (isFull: boolean = false) => {
     smoothScrolling: false, // 滚动动画
     fontSize: isFull ? 14 : 12,
     wordWrap: 'on',
-    wordBasedSuggestions: true, // 禁用基于单词的智能提示（例如，自动完成）
+    wordBasedSuggestions: "allDocuments", // 禁用基于单词的智能提示（例如，自动完成）
     quickSuggestions: true // 启用快速建议（例如，输入时自动显示建议）
   }
 }
