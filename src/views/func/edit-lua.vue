@@ -176,7 +176,7 @@ const saveFuncData = () => {
   // 压缩函数配置数据以减少存储空间
   const compressedConfigData = compressFunctionConfig(configData)
   // 函数列表数据
-
+  console.log('compressedConfigData', compressedConfigData)
   http
     .post({
       url: '/rule-config/func/update',
@@ -279,13 +279,14 @@ const Lua2FormJson = () => {
         comment.value = comment.value.trim()
         return comment
       })
-    console.log(ast)
-    console.log(functionComments)
+    console.log('functionComments', functionComments)
     // 提取函数定义信息
     extractFunctionInfo(ast)
     // 入参和出参配置生成
     state.formJson.input = parseLuaToFormConfig(functionComments, 'input')
     state.formJson.output = parseLuaToFormConfig(functionComments, 'output')
+    console.log('state.formJson.input', state.formJson.input)
+    console.log('state.formJson.output', state.formJson.output)
     // 设置入参默认值
     setInputFormData(functionComments)
     ElNotification({

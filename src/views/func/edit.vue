@@ -26,29 +26,29 @@
           </div>
 
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 mt-2 border-t border-theme-lighter">
-            <el-button 
-              :icon="Bottom" 
+            <el-button
+              :icon="Bottom"
               @click="loadTemplate"
               class="bg-theme-light hover:bg-theme-medium text-white border-theme-light"
             >
               模版
             </el-button>
-            <el-button 
-              :icon="Right" 
+            <el-button
+              :icon="Right"
               @click="Js2FormJson"
               class="bg-theme-medium hover:bg-theme-dark text-white border-theme-medium"
             >
               解析
             </el-button>
-            <el-button 
+            <el-button
               @click="clearCode"
               class="bg-theme-lighter hover:bg-theme-light text-theme-dark border-theme-lighter"
             >
               <i class="fas fa-trash mr-2"></i>
               清空
             </el-button>
-            <el-button 
-              type="primary" 
+            <el-button
+              type="primary"
               @click="saveFuncData"
               class="bg-theme-dark hover:bg-theme-medium text-white border-theme-dark"
             >
@@ -108,10 +108,10 @@
           <div class="bg-theme-lightest border border-theme-lighter p-2 rounded-lg hover:shadow-md transition-shadow">
             <h3 class="font-semibold text-theme-dark mb-1 mt-0 text-xs sm:text-sm">JSDoc语法</h3>
             <p class="text-xs text-gray-700 leading-snug mt-0 mb-0">
-              语法支持 
-              <a 
-                class="text-theme-medium hover:text-theme-dark font-semibold underline decoration-theme-light hover:decoration-theme-medium transition-colors" 
-                href="https://jsdoc.nodejs.cn/" 
+              语法支持
+              <a
+                class="text-theme-medium hover:text-theme-dark font-semibold underline decoration-theme-light hover:decoration-theme-medium transition-colors"
+                href="https://jsdoc.nodejs.cn/"
                 target="_blank"
               >
                 JSDoc
@@ -137,10 +137,10 @@
 
 <script setup lang="ts">
 import BaseEditor from '@/components/BaseEditor/index.vue'
-import JSDocParser from '@/utils/parser/JSDocParser'
+import JSDocParser, {Function, JsDocData} from '@/utils/parser/JSDocParser'
+import FormParser, { FromConfig } from '@/utils/parser/FormParser'
 import SimpleFormRenderer from '@/components/funcForm/SimpleFormRenderer.vue'
 import BaseFormRender from '@/components/BaseFormRender/index.vue'
-import { parseLuaToFormConfig } from '@/components/BaseFormRender/util'
 import { reactive, ref, onMounted, onActivated } from 'vue'
 import { Bottom, Right, QuestionFilled } from '@element-plus/icons-vue'
 import { ElMessage, ElNotification } from 'element-plus'
@@ -154,6 +154,7 @@ defineOptions({
 })
 
 const jsDocParser = new JSDocParser()
+const formParser = new FormParser()
 
 // 使用 Lua 模板 hook备注
 const getTemplate = () => {
@@ -166,42 +167,17 @@ const getTemplate = () => {
 * @param {object[]} employees[] - 多员工
 * @param {string} employees[].name - 员工名字
 * @param {number} employees[].price - 员工工资
+* @param {string} name - 名字
+* @param {number} price - 工资
 * @returns {object} employee - 员工
 * @returns {string} employee.name - 员工名字
 * @returns {number} employee.price - 员工工资
 * @example log({ name: '张三', price: 3000 }, [{ name: '张三', price: 3000 }, { name: '李四', price: 2000 }]); // {name: '张三', price: 3000}
 */
-function log(employee, employees) {
+function log(employee, employees, name, price) {
   return employee
 }
 `
-//   return `local _M = {}
-//
-// local table = require("core.table")
-// local part = require("scene.part")
-//
-// -- 参数示例
-// -- @param expression function 表达式
-// -- @param input_parts table 复杂对象 # default:{}
-// -- @field input_parts.id string Part对象ID
-// -- @field input_parts.name string Part对象名称
-// -- @param ids table 简单数组 # default:[]
-// -- @field ids[] number id值
-// -- @param op string 单选列表 # options:["IN","NOTIN",">","<",">=","<=","=","<>"] default:"IN"
-// -- @param value string 简单字符串 # default:""
-// -- @param deep number 简单数值 # default:1
-// -- @param dir table 多选列表 # options:["up","down","left","right"] default:["up"] componentType:select-multi
-// -- @field dir[] string 方向值
-// -- @param mode boolean 强制选择框 # options:[{"使用实体模型":true},{"使用obb包围盒":false}] default:true componentType:select
-// -- @return table 返回符合条件的对象列表
-// -- @field return[].part table Part对象
-// -- @field return[].parent table 符合条件的父级Part对象列表
-// function _M.get_parent(expression, input_parts, ids, op, value, deep, dir, mode)
-//
-// end
-//
-// return _M
-// `
 }
 
 const functionStore = useFunctionStore()
@@ -214,6 +190,17 @@ const outputFormRendererRef = ref()
 const JsEditorRef = ref()
 // 识别到的函数的参数数量
 const curFuncParamLen = ref(0)
+
+const formJson = reactive<{ [key: string]: FromConfig }>({
+  input: {
+    formConfig: null,
+    compList: []
+  },
+  output: {
+    formConfig: null,
+    compList: []
+  },
+})
 
 const state = reactive({
   id: '',
@@ -390,22 +377,16 @@ const Js2FormJson = () => {
     return
   }
   try {
-    const ast = jsDocParser.parseCode(state.jsCode)
+    const ast: JsDocData = jsDocParser.parseCode(state.jsCode)
 
     state.js2JsonCode = ast
 
-    // const functionComments = ast.comments
-    //   ?.filter((comment: any) => comment.type === 'Comment' && comment.value.trim().startsWith('@'))
-    //   .map((comment: any) => {
-    //     comment.value = comment.value.trim()
-    //     return comment
-    //   })
-    // console.log('ast', ast)
+    console.log('ast', ast)
     // console.log('functionComments', functionComments)
-    // // 提取函数定义信息
-    // // extractFunctionInfo(ast)
-    // // 入参和出参配置生成
-    // parseLuaToFormConfig(ast)
+
+    formJson.input = formParser.parseJsToFormConfig(ast.functions[0]?.input)
+    formJson.output = formParser.parseJsToFormConfig(ast.functions[0]?.output)
+
     // state.formJson.input = parseLuaToFormConfig(functionComments, 'input')
     // state.formJson.output = parseLuaToFormConfig(functionComments, 'output')
     // console.log('state.formJson', state.formJson)
@@ -520,23 +501,23 @@ onActivated(() => {
     width: 6px;
     background: transparent;
   }
-  
+
   &::-webkit-scrollbar-track {
     background: transparent;
   }
-  
+
   &::-webkit-scrollbar-thumb {
     background: rgba(0, 0, 0, 0.2);
     border-radius: 3px;
     border: 1px solid transparent;
     background-clip: padding-box;
-    
+
     &:hover {
       background: rgba(0, 0, 0, 0.3);
       background-clip: padding-box;
     }
   }
-  
+
   // Firefox 滚动条样式
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
@@ -546,21 +527,21 @@ onActivated(() => {
 .scrollbar-zero {
   // 隐藏横向滚动条
   overflow-x: hidden;
-  
+
   // 纵向滚动条宽度为0（Webkit浏览器）
   &::-webkit-scrollbar {
     width: 0;
     background: transparent;
   }
-  
+
   &::-webkit-scrollbar-track {
     display: none;
   }
-  
+
   &::-webkit-scrollbar-thumb {
     display: none;
   }
-  
+
   // Firefox 滚动条样式
   scrollbar-width: none;
   scrollbar-color: transparent transparent;
@@ -574,46 +555,46 @@ onActivated(() => {
 // 自定义按钮样式
 :deep(.el-button) {
   transition: all 0.3s ease;
-  
+
   &.bg-theme-light {
     background-color: #77a2cc;
     border-color: #77a2cc;
     color: white;
-    
+
     &:hover {
       background-color: #3c79b4;
       border-color: #3c79b4;
     }
   }
-  
+
   &.bg-theme-medium {
     background-color: #3c79b4;
     border-color: #3c79b4;
     color: white;
-    
+
     &:hover {
       background-color: #014f9c;
       border-color: #014f9c;
     }
   }
-  
+
   &.bg-theme-lighter {
     background-color: #b1cce4;
     border-color: #b1cce4;
     color: #014f9c;
-    
+
     &:hover {
       background-color: #77a2cc;
       border-color: #77a2cc;
       color: white;
     }
   }
-  
+
   &.bg-theme-dark {
     background-color: #014f9c;
     border-color: #014f9c;
     color: white;
-    
+
     &:hover {
       background-color: #3c79b4;
       border-color: #3c79b4;

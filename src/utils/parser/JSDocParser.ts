@@ -1,3 +1,5 @@
+import {ElMessage, ElNotification} from "element-plus";
+
 type ParamsType = 'number' | 'string' | 'object'
 
 interface FuncTag {
@@ -10,10 +12,10 @@ interface FuncTags {
   tags: FuncTag[]
 }
 
-export interface FunctionInputAndOutput {
-  name: string
+export interface InputAndOutput {
+  key: string
   type: string
-  desc: string
+  name: string
   typeRecord?: {
     [key: string]: string
   }
@@ -21,8 +23,8 @@ export interface FunctionInputAndOutput {
 
 export interface Function {
   desc: string
-  input: FunctionInputAndOutput[]
-  output: FunctionInputAndOutput[],
+  input: InputAndOutput[]
+  output: InputAndOutput[],
   examples: string[]
 }
 
@@ -40,8 +42,12 @@ export interface JsDocData {
   }
 }
 
-const shouldTypeRecord = (str: string) => {
-  console.log('shouldTypeRecord', str)
+/**
+ * 是否需要处理详细类型
+ * @params {string} str 类型
+ * @returns {boolean}
+ * */
+const shouldTypeRecord = (str: string): boolean => {
   return str === 'object' || str === 'object[]'
 }
 
@@ -173,16 +179,17 @@ export default class JSDocParser {
       output: [],
       examples: []
     };
-    let tagType = '';
+    let tagParamType = '';
+    let tagReturnType = '';
     for (let i = 0; i < funcTag.tags.length; i++) {
       const tag = funcTag.tags[i];
       switch (tag.tag) {
         case 'param':
-          tagType = this.matchAndPush(tag.content, tagType, functionInfo, 'input')
+          tagParamType = this.matchAndPush(tag.content, tagParamType, functionInfo, 'input')
           break;
         case 'return':
         case 'returns':
-          tagType = this.matchAndPush(tag.content, tagType, functionInfo, 'output')
+          tagReturnType = this.matchAndPush(tag.content, tagReturnType, functionInfo, 'output')
           break;
         case 'example':
           functionInfo.examples.push(tag.content);
@@ -193,7 +200,16 @@ export default class JSDocParser {
       }
     }
 
+    const inputList = functionInfo.input.filter(e => !e.type.includes('object'))
+    const outputList = functionInfo.output.filter(e => !e.type.includes('object'))
 
+    if (new Set(inputList.map(e => e.name)).size !== inputList.length) {
+      throw new Error('函数输入字段存在重复')
+    }
+
+    if (new Set(outputList.map(e => e.name)).size !== outputList.length) {
+      throw new Error('函数输出字段存在重复')
+    }
     console.log('functionInfo', functionInfo)
     return functionInfo.input.length > 0 || functionInfo.output ? functionInfo : null;
   }
@@ -202,18 +218,18 @@ export default class JSDocParser {
     const paramMatch = tagContent.match(/\{([^}]+)\}\s+(\S+)(?:\s+-\s+(.*))?/);
     if (paramMatch) {
       const type = paramMatch[1];
-      const name = paramMatch[2];
+      const key = paramMatch[2];
       const index = functionInfo[pushKey].length - 1
       // 说明是前面对象的参数
-      if (name.includes('.') && !shouldTypeRecord(type) && tagType === name.split('.')[0]) {
+      if (key.includes('.') && !shouldTypeRecord(type) && tagType === key.split('.')[0]) {
         if (!functionInfo[pushKey][index]['typeRecord']) {
           functionInfo[pushKey][index]['typeRecord'] = {}
         }
-        functionInfo[pushKey][index]['typeRecord'][name.split('.')[1]] = type
+        functionInfo[pushKey][index]['typeRecord'][key.split('.')[1]] = type
       } else {
-        tagType = name;
+        tagType = key;
         functionInfo[pushKey].push({
-          name, type, desc: paramMatch[3] || ''
+          key, type, name: paramMatch[3] || ''
         });
       }
     }
