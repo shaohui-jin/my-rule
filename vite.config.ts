@@ -11,10 +11,15 @@ import { getPackageSize } from '@pureadmin/utils'
 import svgLoader from 'vite-svg-loader'
 dayjs.extend(duration)
 import monacoEditorPlugin from 'vite-plugin-monaco-editor';
-import path from 'path'
+import path, { resolve } from 'path'
 
 /** 当前执行node命令时文件夹的地址（工作目录） */
 const root: string = process.cwd()
+
+/** 路径查找 */
+const pathResolve = (dir: string): string => {
+  return resolve(__dirname, '.', dir)
+}
 
 const { dependencies, devDependencies, name, version } = pkg
 
@@ -29,7 +34,8 @@ export default ({ command, mode }: ConfigEnv): UserConfigExport => {
     root,
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, 'src')
+        '@': path.resolve(__dirname, 'src'),
+        'monaco-editor': pathResolve('node_modules/monaco-editor/esm/vs/editor/editor.main.js')
       }
     },
     server: {
@@ -42,7 +48,7 @@ export default ({ command, mode }: ConfigEnv): UserConfigExport => {
       vueJsx(),
       DefineOptions(),
       // 线上环境删除console
-      removeConsole({ external: ['src/assets/iconfont/iconfont.js'] }),
+      removeConsole({ external: [] }),
       {
         name: 'vite:buildInfo',
         configResolved(resolvedConfig) {
@@ -87,48 +93,49 @@ export default ({ command, mode }: ConfigEnv): UserConfigExport => {
       monacoEditorPlugin({
         // languages: ['javascript', 'typescript'],
         languageWorkers: [ 'editorWorkerService', 'json', 'typescript', 'html', 'css'],
-        // publicPath: 'https://unpkg.com/vite-plugin-monaco-editor@1.0.5/cdn',
+        // publicPath: 'http://localhost:4173/my-rule/',
         // publicPath: 'https://cdn.jsdelivr.net/npm/monaco-editor@latest/min/vs/loader.min.js'
       })
       // 打包分析
     ],
     // https://cn.vitejs.dev/config/dep-optimization-options.html#dep-optimization-options
-    optimizeDeps: {
-      include: [
-        'qs',
-        'mitt',
-        'dayjs',
-        'axios',
-        'pinia',
-        'echarts',
-        'vue-i18n',
-        'js-cookie',
-        '@vueuse/core',
-        '@pureadmin/utils',
-        'responsive-storage',
-        'element-resize-detector',
-        // 'monaco-editor',
-        // 'monaco-editor/esm/vs/language/json/json.worker',
-        // 'monaco-editor/esm/vs/language/css/css.worker',
-        // 'monaco-editor/esm/vs/language/html/html.worker',
-        // 'monaco-editor/esm/vs/language/typescript/ts.worker',
-        // 'monaco-editor/esm/vs/editor/editor.worker'
-      ],
-      exclude: [
-        '@iconify-icons/ep',
-        '@iconify-icons/ri',
-        '@pureadmin/theme/dist/browser-utils'
-        // '@types/node'
-      ]
-    },
+    // optimizeDeps: {
+    //   include: [
+    //     'qs',
+    //     'mitt',
+    //     'dayjs',
+    //     'axios',
+    //     'pinia',
+    //     'echarts',
+    //     'vue-i18n',
+    //     'js-cookie',
+    //     '@vueuse/core',
+    //     '@pureadmin/utils',
+    //     'responsive-storage',
+    //     'element-resize-detector',
+    //     // 'monaco-editor',
+    //     // 'monaco-editor/esm/vs/language/json/json.worker',
+    //     // 'monaco-editor/esm/vs/language/css/css.worker',
+    //     // 'monaco-editor/esm/vs/language/html/html.worker',
+    //     // 'monaco-editor/esm/vs/language/typescript/ts.worker',
+    //     // 'monaco-editor/esm/vs/editor/editor.worker'
+    //   ],
+    //   exclude: [
+    //     '@iconify-icons/ep',
+    //     '@iconify-icons/ri',
+    //     '@pureadmin/theme/dist/browser-utils'
+    //     // '@types/node'
+    //   ]
+    // },
     build: {
-      target: 'es2022',
+      // target: 'es2022',
       sourcemap: false,
       // 消除打包大小超过500kb警告
       chunkSizeWarningLimit: 4000,
       rollupOptions: {
         // 确保在构建时包含外部依赖
         // external: ['monaco-editor'],
+        external: [],
         input: {
           index: path.resolve(__dirname, 'index.html'),
         },

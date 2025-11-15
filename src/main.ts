@@ -30,7 +30,7 @@ app.directive('click-outside', vClickOutside.directive);
 
 app.use(router)
 app.use(store);
-await router.isReady()
+// await router.isReady()
 app.use(MotionPlugin).use(ElementPlus)
 
 app.mount('#app')
