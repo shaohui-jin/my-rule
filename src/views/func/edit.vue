@@ -1,102 +1,133 @@
 <template>
-  <div class="bg-gray-50 h-full flex flex-col">
-    <nav class="gradient-bg text-white shadow-lg h-10">
-      <div class="container mx-auto px-4 py-4 h-full">
+  <div class="h-full flex flex-col min-h-screen">
+    <!-- 导航栏 -->
+    <nav class="bg-gradient-to-r from-theme-dark to-theme-medium text-white shadow-md h-12 flex-shrink-0">
+      <div class="container mx-auto px-3 h-full">
         <div class="flex items-center justify-between h-full">
-          <div class="flex items-center space-x-2">
-            <i class="fas fa-code text-xl"></i>
-            <h1 class="text-xl font-bold">函数JSDoc解析器</h1>
+          <div class="flex items-center space-x-2 sm:space-x-3">
+            <i class="fas fa-code text-lg sm:text-xl text-theme-lightest"></i>
+            <h1 class="text-base sm:text-xl font-bold">函数JSDoc解析器</h1>
           </div>
         </div>
       </div>
     </nav>
 
-    <div class="container mx-auto px-4 py-4 lg:h-full flex flex-col flex-1 lg:overflow-hidden">
-      <div class="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4 overflow-hidden">
+    <!-- 主内容区域 -->
+    <div class="container mx-auto px-3 py-3 flex-1 flex flex-col min-h-0 lg:overflow-hidden">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 lg:flex-1 lg:overflow-hidden lg:min-h-0">
         <!-- 代码输入区域 -->
-        <div class="bg-white rounded-xl shadow-lg p-4 fade-in flex flex-col overflow-overlay min-h-full max-h-full">
-          <h2 class="text-lg font-semibold text-gray-800 mb-4">
-            <i class="fas fa-edit mr-2 text-blue-500"></i>
+        <div class="bg-white rounded-xl shadow-md border border-theme-lighter p-3 flex flex-col lg:overflow-hidden min-h-[400px] lg:min-h-0 mb-2 mt-0">
+          <h2 class="text-base sm:text-lg font-semibold text-theme-dark mb-2 mt-0 flex items-center">
+            <i class="fas fa-edit mr-2 text-theme-medium"></i>
             代码编辑器
           </h2>
-          <div class="w-full code-editor focus:ring-2 focus:ring-blue-500 resize-none flex-1 min-h-64">
+          <div class="w-full code-editor focus:ring-2 focus:ring-theme-medium resize-none h-[400px] max-h-[400px] sm:h-[500px] sm:max-h-[500px] overflow-y-auto overflow-x-hidden scrollbar-zero lg:flex-1 lg:h-auto lg:min-h-0 lg:max-h-none lg:overflow-hidden">
             <BaseEditor ref="JsEditorRef" v-model="state.jsCode" />
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-4 pt-4">
-            <el-button :icon="Bottom" @click="loadTemplate">模版</el-button>
-            <el-button :icon="Right" @click="Js2FormJson">解析</el-button>
-            <el-button @click="clearCode">
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 mt-2 border-t border-theme-lighter">
+            <el-button 
+              :icon="Bottom" 
+              @click="loadTemplate"
+              class="bg-theme-light hover:bg-theme-medium text-white border-theme-light"
+            >
+              模版
+            </el-button>
+            <el-button 
+              :icon="Right" 
+              @click="Js2FormJson"
+              class="bg-theme-medium hover:bg-theme-dark text-white border-theme-medium"
+            >
+              解析
+            </el-button>
+            <el-button 
+              @click="clearCode"
+              class="bg-theme-lighter hover:bg-theme-light text-theme-dark border-theme-lighter"
+            >
               <i class="fas fa-trash mr-2"></i>
               清空
             </el-button>
-            <el-button type="primary" @click="saveFuncData">
-              <i class="fas fa-trash mr-2"></i>
+            <el-button 
+              type="primary" 
+              @click="saveFuncData"
+              class="bg-theme-dark hover:bg-theme-medium text-white border-theme-dark"
+            >
+              <i class="fas fa-save mr-2"></i>
               保存
             </el-button>
           </div>
         </div>
 
         <!-- 注解解析输出区域 -->
-        <div class="bg-white rounded-xl shadow-lg p-4 fade-in flex flex-col overflow-overlay max-h-96 md:max-h-full">
-          <h2 class="text-lg font-semibold text-gray-800 mb-4">
-            <i class="fas fa-file-code mr-2 text-green-500"></i>
+        <div class="bg-white rounded-xl shadow-md border border-theme-lighter p-3 flex flex-col lg:overflow-hidden min-h-[300px] sm:min-h-[400px] lg:min-h-0 mb-2 mt-0">
+          <h2 class="text-base sm:text-lg font-semibold text-theme-dark mb-2 mt-0 flex items-center">
+            <i class="fas fa-file-code mr-2 text-theme-medium"></i>
             注解解析
           </h2>
-          <div class="bg-gray-900 text-green-400 rounded-lg p-4 overflow-auto code-editor flex-1">
-            <pre style="font-size: 12px; line-height: 16px">{{ state.js2JsonCode }}</pre>
+          <div class="bg-gray-900 text-theme-light rounded-lg p-2 overflow-y-auto code-editor h-[300px] max-h-[300px] sm:h-[400px] sm:max-h-[400px] scrollbar-overlay lg:flex-1 lg:h-auto lg:min-h-0 lg:max-h-none">
+            <pre class="annotation-code whitespace-pre-wrap break-words">{{ state.js2JsonCode }}</pre>
           </div>
         </div>
 
         <!-- 表单预览区域 -->
-        <div class="bg-white rounded-xl shadow-lg p-4 fade-in flex flex-col overflow-overlay max-h-96 sm:max-h-full ">
-          <h2 class="text-lg font-semibold text-gray-800 mb-4">
-            <i class="fas fa-file-code mr-2 text-green-500"></i>
+        <div class="bg-white rounded-xl shadow-md border border-theme-lighter p-3 flex flex-col lg:overflow-hidden min-h-[300px] sm:min-h-[400px] lg:min-h-0 mb-2 mt-0">
+          <h2 class="text-base sm:text-lg font-semibold text-theme-dark mb-2 mt-0 flex items-center">
+            <i class="fas fa-eye mr-2 text-theme-medium"></i>
             表单预览
           </h2>
-          <div class="w-full code-editor focus:ring-2 focus:ring-blue-500 resize-none flex-1">
-            <h4 style="margin: 16px 0 16px 0">
+          <div class="w-full code-editor focus:ring-2 focus:ring-theme-medium resize-none lg:flex-1 lg:overflow-y-auto lg:min-h-0">
+            <h4 class="text-sm sm:text-base font-medium text-theme-dark mb-2 mt-0">
               <span>入参配置：</span>
             </h4>
             <BaseFormRender ref="inputFormRendererRef" :formJson="state.formJson.input" />
-            <h4 style="margin: 16px 0 16px 0">
+            <h4 class="text-sm sm:text-base font-medium text-theme-dark mb-2 mt-0">
               <span>出参配置</span>
             </h4>
             <BaseFormRender ref="outputFormRendererRef" :formJson="state.formJson.output" />
-            <h4>备注：</h4>
+            <h4 class="text-sm sm:text-base font-medium text-theme-dark mb-2 mt-0">备注：</h4>
             <el-input
               type="textarea"
-              rows="5"
+              :rows="5"
               maxlength="200"
               show-word-limit
               v-model="state.funcDesc"
               placeholder="请输入备注....."
+              class="w-full"
             />
           </div>
         </div>
       </div>
 
       <!-- 工具说明 -->
-      <div class="bg-white rounded-xl shadow-lg p-4 mt-4 fade-in">
-        <h2 class="text-lg font-semibold text-gray-800 mb-4">
-          <i class="fas fa-tools mr-2 text-orange-500"></i>
+      <div class="bg-white rounded-xl shadow-md border border-theme-lighter p-3 mt-2">
+        <h2 class="text-sm sm:text-base font-semibold text-theme-dark mb-2 mt-0 flex items-center">
+          <i class="fas fa-tools mr-1.5 text-theme-medium text-sm"></i>
           工具说明
         </h2>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div class="bg-blue-50 p-4 rounded-lg">
-            <h3 class="font-semibold text-blue-800">JSDoc语法</h3>
-            <p class="text-sm text-gray-600">语法支持 <a class="text-blue-800 font-semibold" href="https://jsdoc.nodejs.cn/" target="_blank">JSDoc</a></p>
-          </div>
-          <div class="bg-green-50 p-4 rounded-lg">
-            <h3 class="font-semibold text-green-800">自主解析JSDoc</h3>
-            <p>
-              <p class="text-sm text-gray-600">已接入<strong>@param</strong>、<strong>@return</strong>、<strong>@example</strong>等...</p>
-              <p class="text-sm text-gray-600">轻量级解析器，专注于注释解析，注解陆续接入解析中...</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+          <div class="bg-theme-lightest border border-theme-lighter p-2 rounded-lg hover:shadow-md transition-shadow">
+            <h3 class="font-semibold text-theme-dark mb-1 mt-0 text-xs sm:text-sm">JSDoc语法</h3>
+            <p class="text-xs text-gray-700 leading-snug mt-0 mb-0">
+              语法支持 
+              <a 
+                class="text-theme-medium hover:text-theme-dark font-semibold underline decoration-theme-light hover:decoration-theme-medium transition-colors" 
+                href="https://jsdoc.nodejs.cn/" 
+                target="_blank"
+              >
+                JSDoc
+              </a>
             </p>
           </div>
-          <div class="bg-purple-50 p-4 rounded-lg">
-            <h3 class="font-semibold text-purple-800">自主解析表单</h3>
-            <p class="text-sm text-gray-600">轻量级表单生成器</p>
+          <div class="bg-theme-lightest border border-theme-lighter p-2 rounded-lg hover:shadow-md transition-shadow">
+            <h3 class="font-semibold text-theme-dark mb-1 mt-0 text-xs sm:text-sm">自主解析JSDoc</h3>
+            <div class="text-xs text-gray-700 leading-snug space-y-1">
+              <p class="mt-0 mb-0">已接入<strong class="text-theme-dark">@param</strong>、<strong class="text-theme-dark">@return</strong>、<strong class="text-theme-dark">@example</strong>等...</p>
+              <p class="mt-0 mb-0">轻量级解析器，专注于注释解析，注解陆续接入解析中...</p>
+            </div>
+          </div>
+          <div class="bg-theme-lightest border border-theme-lighter p-2 rounded-lg hover:shadow-md transition-shadow sm:col-span-2 lg:col-span-1">
+            <h3 class="font-semibold text-theme-dark mb-1 mt-0 text-xs sm:text-sm">自主解析表单</h3>
+            <p class="text-xs text-gray-700 leading-snug mt-0 mb-0">轻量级表单生成器</p>
           </div>
         </div>
       </div>
@@ -465,30 +496,128 @@ onActivated(() => {
 </script>
 
 <style lang="scss" scoped>
-.overflow-overlay {
-  overflow: overlay;
+// 确保背景颜色在所有设备上正确显示并铺满高度
+.bg-theme-lightest {
+  background-color: #ecf5fc !important;
 }
 
-.gradient-bg {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
 .code-editor {
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
 }
-.fade-in {
-  animation: fadeIn 0.5s ease-in;
+
+// 注解解析代码块样式
+.annotation-code {
+  font-size: 12px;
+  line-height: 16px;
+  margin: 0;
+  padding: 0;
 }
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
+
+// 悬浮滚动条样式（不占用宽度，无背景）
+.scrollbar-overlay {
+  // 自定义滚动条样式（Webkit浏览器 - Chrome, Safari, Edge）
+  &::-webkit-scrollbar {
+    width: 6px;
+    background: transparent;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  
+  &::-webkit-scrollbar-track {
+    background: transparent;
   }
+  
+  &::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+    border: 1px solid transparent;
+    background-clip: padding-box;
+    
+    &:hover {
+      background: rgba(0, 0, 0, 0.3);
+      background-clip: padding-box;
+    }
+  }
+  
+  // Firefox 滚动条样式
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
 }
-.el-button + .el-button {
+
+// 宽度为0的滚动条样式（移动端/平板端代码编辑器使用）
+.scrollbar-zero {
+  // 隐藏横向滚动条
+  overflow-x: hidden;
+  
+  // 纵向滚动条宽度为0（Webkit浏览器）
+  &::-webkit-scrollbar {
+    width: 0;
+    background: transparent;
+  }
+  
+  &::-webkit-scrollbar-track {
+    display: none;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    display: none;
+  }
+  
+  // Firefox 滚动条样式
+  scrollbar-width: none;
+  scrollbar-color: transparent transparent;
+}
+
+// 确保按钮之间没有默认间距
+:deep(.el-button + .el-button) {
   margin-left: 0;
+}
+
+// 自定义按钮样式
+:deep(.el-button) {
+  transition: all 0.3s ease;
+  
+  &.bg-theme-light {
+    background-color: #77a2cc;
+    border-color: #77a2cc;
+    color: white;
+    
+    &:hover {
+      background-color: #3c79b4;
+      border-color: #3c79b4;
+    }
+  }
+  
+  &.bg-theme-medium {
+    background-color: #3c79b4;
+    border-color: #3c79b4;
+    color: white;
+    
+    &:hover {
+      background-color: #014f9c;
+      border-color: #014f9c;
+    }
+  }
+  
+  &.bg-theme-lighter {
+    background-color: #b1cce4;
+    border-color: #b1cce4;
+    color: #014f9c;
+    
+    &:hover {
+      background-color: #77a2cc;
+      border-color: #77a2cc;
+      color: white;
+    }
+  }
+  
+  &.bg-theme-dark {
+    background-color: #014f9c;
+    border-color: #014f9c;
+    color: white;
+    
+    &:hover {
+      background-color: #3c79b4;
+      border-color: #3c79b4;
+    }
+  }
 }
 </style>
