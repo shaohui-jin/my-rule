@@ -49,9 +49,6 @@ return _M
 
 const functionStore = useFunctionStore()
 
-// 表单是否禁用
-const formDisabled = ref(false)
-
 const inputFormRendererRef = ref()
 const outputFormRendererRef = ref()
 const JsEditorRef = ref()

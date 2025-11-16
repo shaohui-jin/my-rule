@@ -1,8 +1,8 @@
 <template>
   <el-form
     :model="formData"
-    :disabled="disabled"
-    :label-width="labelWidth"
+    :label-width="formJson.formConfig?.labelWidth || '70px'"
+    :label-position="formJson.formConfig?.labelPosition || 'right'"
     class="simple-form-renderer"
     ref="formRef"
     @submit.prevent
@@ -158,7 +158,7 @@
   </el-form>
 </template>
 
-<script setup>
+<script lang="ts" setup>
 import { ref, watch, computed, onMounted } from 'vue'
 import {
   ElForm,
@@ -174,24 +174,13 @@ import {
 } from 'element-plus'
 import { Switch as SwitchIcon } from '@element-plus/icons-vue'
 import BaseFunctionExpression from '@/components/BaseFunctionExpression/index.vue'
-import { useParamStore } from '@/store/modules/params'
+import { FromConfig, DEFAULT_FORM_CONFIG } from '@/utils/parser/FormParser'
+import { WorkflowData } from '@/type/workflow'
 
-const paramStore = useParamStore()
 const props = defineProps({
   formJson: {
-    type: Object,
-    default: () => ({
-      formConfig: {},
-      widgetList: []
-    })
-  },
-  disabled: {
-    type: Boolean,
-    default: false
-  },
-  labelWidth: {
-    type: String,
-    default: '70px'
+    type: Object as PropType<FromConfig>,
+    default: DEFAULT_FORM_CONFIG
   },
   showModeToggle: {
     type: Boolean,
@@ -241,86 +230,75 @@ const paramList = ref([])
 
 // 处理字段配置
 const fields = computed(() => {
-  // console.log('props.formJson', props.formJson)
-  // eslint-disable-next-line vue/no-side-effects-in-computed-properties
-  // console.log('props.formJson.widgetList',props.nodeOptions,props.formJson.widgetList)
-  // console.log('fields====', fields.value)
-  props.formJson.widgetList.forEach((item, index) => {
+  console.log('props.formJson', props.formJson)
+  props.formJson.compList.forEach((item, index) => {
     item.options = item.options?.map(e => ({ ...e, type: item.attributes.paramType }))
   })
   // console.log('portSelects.value====', portSelects)
   return (
-    props.formJson.widgetList?.map((widget, index) => ({
-      id: widget.id || `field_${index}`, // 为没有id的字段生成唯一id
-      type: widget.type,
-      label: widget.attributes?.label || widget.label,
-      placeholder: widget.attributes?.placeholder,
-      disabled: widget.attributes?.disabled,
-      rules: widget.rules || [],
-      attributes: widget.attributes || {},
-      defaultValue: props.inputMode === 'node' && !widget.defaultValue ? '' : widget.defaultValue,
-      options: widget.options || []
+    props.formJson.compList?.map((comp, index) => ({
+      id: comp.id || `field_${comp}`, // 为没有id的字段生成唯一id
+      type: comp.attributes.compType,
+      label: comp.attributes.label,
+      placeholder: comp.attributes?.placeholder,
+      disabled: comp.attributes?.disabled,
+      rules: comp.rules || [],
+      attributes: comp.attributes || {},
+      defaultValue: comp.defaultValue,
+      // defaultValue: props.inputMode === 'node' && !comp.defaultValue ? '' : comp.defaultValue,
+      options: comp.options || []
     })) || []
   )
 })
 
 // 自动填充默认值
-watch(
-  fields,
-  newFields => {
-    // console.log('field==watch==', newFields, portSelects)
-    newFields.forEach((field,index) => {
-      // console.log('field====', field)
-      if (
-        formData.value[field.id] === undefined &&
-        field.defaultValue !== undefined &&
-        field.defaultValue !== null &&
-        field.defaultValue !== ''
-      ) {
-        formData.value[field.id] = field.defaultValue
-        // console.log('field.defaultValue', field.defaultValue)
-      }
-      // 在ifelse的情况下需要判断是否有下拉列表如果没有则不能赋值
-
-      // console.log("====11=====")
-      // console.log('formData.value[field.id]===', formData.value[field.id])
-      // 20250826修复在迭代器连接的两个节点删除一个后，抽屉面板的下拉框无法自动选中的问题
-      // if(!formData.value[field.id] && props.inputMode === 'node') {
-      //   formData.value[field.id] = field.defaultValue = (portSelects[index][0] && portSelects[index][0].value)
-      // }
-    })
-  },
-  { immediate: true }
-)
+// watch(
+//   fields,
+//   newFields => {
+//     // console.log('field==watch==', newFields, portSelects)
+//     newFields.forEach((field,index) => {
+//       // console.log('field====', field)
+//       if (
+//         formData.value[field.id] === undefined &&
+//         field.defaultValue !== undefined &&
+//         field.defaultValue !== null &&
+//         field.defaultValue !== ''
+//       ) {
+//         formData.value[field.id] = field.defaultValue
+//         // console.log('field.defaultValue', field.defaultValue)
+//       }
+//       // 在ifelse的情况下需要判断是否有下拉列表如果没有则不能赋值
+//
+//       // console.log("====11=====")
+//       // console.log('formData.value[field.id]===', formData.value[field.id])
+//       // 20250826修复在迭代器连接的两个节点删除一个后，抽屉面板的下拉框无法自动选中的问题
+//       // if(!formData.value[field.id] && props.inputMode === 'node') {
+//       //   formData.value[field.id] = field.defaultValue = (portSelects[index][0] && portSelects[index][0].value)
+//       // }
+//     })
+//   },
+//   { immediate: true }
+// )
 
 // 处理字段变化
 const handleFieldChange = (fieldId, value) => {
   emit('change', { fieldId, value, formData: formData.value })
 }
 
-// 监听数据变化
-watch(
-  formData,
-  newData => {
-    for (const key in newData) {
-      // console.log('newData[key]==',JSON.parse(JSON.stringify(newData[key])), JSON.parse(JSON.stringify(formData.value)))
-      if(!newData[key])return // 20250827修改输入框无法清除值问题bug245362
-      // console.log("=====formDaga====")
-      emit('change', { fieldId: key, value: newData[key], formData: formData.value })
-    }
-  },
-  { deep: true }
-)
+// // 监听数据变化
+// watch(
+//   formData,
+//   newData => {
+//     for (const key in newData) {
+//       // console.log('newData[key]==',JSON.parse(JSON.stringify(newData[key])), JSON.parse(JSON.stringify(formData.value)))
+//       if(!newData[key])return // 20250827修改输入框无法清除值问题bug245362
+//       // console.log("=====formDaga====")
+//       emit('change', { fieldId: key, value: newData[key], formData: formData.value })
+//     }
+//   },
+//   { deep: true }
+// )
 
-// 监听外部数据变化
-watch(
-  () => props.formJson,
-  () => {
-    // 重置表单数据
-    formData.value = {}
-  },
-  { deep: true }
-)
 
 // 暴露方法 - 兼容原有 FormRenderer 的 API
 defineExpose({

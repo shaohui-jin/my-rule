@@ -36,9 +36,9 @@ const SUPPORTED_COMPONENT_TYPES: SupportedType[] = [
 ]
 
 // 默认表单配置
-const DEFAULT_FORM_CONFIG: FromConfig = {
+export const DEFAULT_FORM_CONFIG: FromConfig = {
   formConfig: {
-    labelWidth: 'auto',
+    labelWidth: '70px',
     labelPosition: 'right',
     size: 'default',
     events: { onMounted: '' },
@@ -97,6 +97,7 @@ export default class FormParser {
           ['object', 'object[]'].includes(param.type)
             ? `${JSON.stringify(param.typeRecord)}${param.type.includes('[]') ? '[]' : ''}`
             : param.type,
+        compType: componentType,
         placeholder: param.type.endsWith('[]')
           ? `请输入${param.name || param.name}（$${
             ['string', 'number'].includes(param.type.replace('[]', ''))

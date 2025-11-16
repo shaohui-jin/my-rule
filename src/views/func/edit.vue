@@ -79,11 +79,11 @@
             <h4 class="text-sm sm:text-base font-medium text-theme-dark mb-2 mt-0">
               <span>入参配置：</span>
             </h4>
-            <BaseFormRender ref="inputFormRendererRef" :formJson="state.formJson.input" />
+            <BaseFormRender ref="inputFormRendererRef" :formJson="formJson.input" />
             <h4 class="text-sm sm:text-base font-medium text-theme-dark mb-2 mt-0">
               <span>出参配置</span>
             </h4>
-            <BaseFormRender ref="outputFormRendererRef" :formJson="state.formJson.output" />
+            <BaseFormRender ref="outputFormRendererRef" :formJson="formJson.output" />
             <h4 class="text-sm sm:text-base font-medium text-theme-dark mb-2 mt-0">备注：</h4>
             <el-input
               type="textarea"
@@ -137,7 +137,7 @@
 
 <script setup lang="ts">
 import BaseEditor from '@/components/BaseEditor/index.vue'
-import JSDocParser, {Function, JsDocData} from '@/utils/parser/JSDocParser'
+import JSDocParser, { JsDocData } from '@/utils/parser/JSDocParser'
 import FormParser, { FromConfig } from '@/utils/parser/FormParser'
 import SimpleFormRenderer from '@/components/funcForm/SimpleFormRenderer.vue'
 import BaseFormRender from '@/components/BaseFormRender/index.vue'
