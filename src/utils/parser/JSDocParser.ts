@@ -1,6 +1,4 @@
-import {ElMessage, ElNotification} from "element-plus";
-
-type ParamsType = 'number' | 'string' | 'object'
+import { Config, SUPPORTED_COMPONENT_TYPES } from './FormParser'
 
 interface FuncTag {
   tag: string
@@ -19,6 +17,7 @@ export interface InputAndOutput {
   typeRecord?: {
     [key: string]: string
   }
+  config: Config
 }
 
 export interface Function {
@@ -214,12 +213,23 @@ export default class JSDocParser {
     return functionInfo.input.length > 0 || functionInfo.output ? functionInfo : null;
   }
 
-  matchAndPush(tagContent: string, tagType: string, functionInfo: Function, pushKey: 'input' | 'output') {
-    const paramMatch = tagContent.match(/\{([^}]+)\}\s+(\S+)(?:\s+-\s+(.*))?/);
+  /**
+   * 解析函数字段配置
+   * @param tagContent
+   * @param ｛string｝ tagType 上一个字段类型
+   * @param {Function} functionInfo 函数基本信息，处理input或output数据
+   * @param {'input'|'output'} pushKey  输入或输出
+   * @returns {string} 当前字段类型
+   */
+  matchAndPush(tagContent: string, tagType: string, functionInfo: Function, pushKey: 'input' | 'output'): string {
+    const paramMatch = tagContent.match(/\{(.*)\}\s+(\S+)\s+(\S+)(\s+\#\s+(.*))?/);
     if (paramMatch) {
       const type = paramMatch[1];
       const key = paramMatch[2];
+      const name = paramMatch[3];
+      const config = this.extractConfig(paramMatch[4] || '#', type)
       const index = functionInfo[pushKey].length - 1
+
       // 说明是前面对象的参数
       if (key.includes('.') && !shouldTypeRecord(type) && tagType === key.split('.')[0]) {
         if (!functionInfo[pushKey][index]['typeRecord']) {
@@ -229,10 +239,42 @@ export default class JSDocParser {
       } else {
         tagType = key;
         functionInfo[pushKey].push({
-          key, type, name: paramMatch[3] || ''
+          key, type, name, config
         });
       }
     }
     return tagType
   }
+
+  /**
+   * 从字段配置中提取配置
+   * @param {string} config 配置字符串
+   * @param {string} type 解析的数据类型
+   */
+  extractConfig(config: string, type: string): Config {
+    const has = Object.prototype.hasOwnProperty
+    const option: Config =  config.split('#')[1].split(';').reduce((acc, cur) => {
+      const index = cur.indexOf(':')
+      if (index !== -1) {
+        acc[cur.substr(0,index).trim()] = cur.substr(index + 1).trim()
+      }
+      return acc
+    }, {})
+    if (has.call(option, 'value')) {
+      option.value = type === 'number' ? Number(option.value) : option.value;
+    }
+    if (has.call(option, 'options')) {
+      option.options = eval(option?.options as string || '[]')
+    }
+    if (has.call(option, 'props')) {
+      // option.props = eval(`(${option?.props as string})`)
+      option.props = new Function(`return ${option?.props as string}`)()
+    }
+    if (has.call(option, 'compType') && !SUPPORTED_COMPONENT_TYPES.includes(option.compType)) {
+      delete option.compType
+    }
+    return option
+  }
 }
+
+

@@ -268,7 +268,7 @@ const Lua2FormJson = () => {
     })
     return
   }
-  try {
+  // try {
     const ast = LuaParser.parse(state.luaScript, { luaVersion: '5.2' })
     const functionComments = ast.comments
       ?.filter((comment: any) => comment.type === 'Comment' && comment.value.trim().startsWith('@'))
@@ -286,19 +286,19 @@ const Lua2FormJson = () => {
     console.log('state.formJson.output', state.formJson.output)
     // 设置入参默认值
     setInputFormData(functionComments)
-    ElNotification({
-      message: '函数解析表单成功！',
-      type: 'success',
-      duration: 1000
-    })
-  } catch (error) {
-    ElNotification({
-      title: '解析失败',
-      message: error.message,
-      type: 'error',
-      duration: 1000
-    })
-  }
+    // ElNotification({
+    //   message: '函数解析表单成功！',
+    //   type: 'success',
+    //   duration: 1000
+    // })
+  // } catch (error) {
+  //   ElNotification({
+  //     title: '解析失败',
+  //     message: error.message,
+  //     type: 'error',
+  //     duration: 1000
+  //   })
+  // }
 }
 
 // 提取函数定义信息

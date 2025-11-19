@@ -33,6 +33,7 @@
           <!-- 手动输入模式 -->
           <template v-if="inputMode === 'manual'">
             <!-- select 类型特殊处理，自动渲染下拉选项 -->
+<!--            {{ formData[field.id] }}-->
             <el-select
               v-if="field.type === 'select'"
               v-model="formData[field.id]"
@@ -46,17 +47,10 @@
               @change="handleFieldChange(field.id, $event)"
             >
               <el-option
-                v-for="opt in (
-                  field.attributes.defaultOptions
-                  ? [
-                    ...paramList.filter(item => item.type === field.attributes.paramType),
-                    ...field.options
-                  ]
-                  : field.options || []
-                )"
-                :key="opt.value"
-                :label="opt.label"
-                :value="opt.value"
+                v-for="(opt, index) in field.options"
+                :key="index"
+                :label="opt[field.props.label] || opt.label"
+                :value="opt[field.props.value] || opt.value"
               >
                 <el-tooltip
                   v-if="opt.desc"
@@ -231,54 +225,22 @@ const paramList = ref([])
 // 处理字段配置
 const fields = computed(() => {
   console.log('props.formJson', props.formJson)
-  props.formJson.compList.forEach((item, index) => {
-    item.options = item.options?.map(e => ({ ...e, type: item.attributes.paramType }))
-  })
-  // console.log('portSelects.value====', portSelects)
-  return (
-    props.formJson.compList?.map((comp, index) => ({
-      id: comp.id || `field_${comp}`, // 为没有id的字段生成唯一id
+  return props.formJson.compList?.map((comp, index) => {
+    formData.value[comp.id] = comp.attributes.value
+    return {
+      id: comp.id, // 为没有id的字段生成唯一id
       type: comp.attributes.compType,
       label: comp.attributes.label,
       placeholder: comp.attributes?.placeholder,
       disabled: comp.attributes?.disabled,
-      rules: comp.rules || [],
+      defaultValue: comp.attributes.value,
       attributes: comp.attributes || {},
-      defaultValue: comp.defaultValue,
       // defaultValue: props.inputMode === 'node' && !comp.defaultValue ? '' : comp.defaultValue,
-      options: comp.options || []
-    })) || []
-  )
+      options: comp.attributes.options || [],
+      props: comp.attributes.props || []
+    }
+  })
 })
-
-// 自动填充默认值
-// watch(
-//   fields,
-//   newFields => {
-//     // console.log('field==watch==', newFields, portSelects)
-//     newFields.forEach((field,index) => {
-//       // console.log('field====', field)
-//       if (
-//         formData.value[field.id] === undefined &&
-//         field.defaultValue !== undefined &&
-//         field.defaultValue !== null &&
-//         field.defaultValue !== ''
-//       ) {
-//         formData.value[field.id] = field.defaultValue
-//         // console.log('field.defaultValue', field.defaultValue)
-//       }
-//       // 在ifelse的情况下需要判断是否有下拉列表如果没有则不能赋值
-//
-//       // console.log("====11=====")
-//       // console.log('formData.value[field.id]===', formData.value[field.id])
-//       // 20250826修复在迭代器连接的两个节点删除一个后，抽屉面板的下拉框无法自动选中的问题
-//       // if(!formData.value[field.id] && props.inputMode === 'node') {
-//       //   formData.value[field.id] = field.defaultValue = (portSelects[index][0] && portSelects[index][0].value)
-//       // }
-//     })
-//   },
-//   { immediate: true }
-// )
 
 // 处理字段变化
 const handleFieldChange = (fieldId, value) => {

@@ -9,11 +9,21 @@ export type FromConfig = {
     size: 'default' // 组件大小
     events: { onMounted: '' } // 事件
   },
-  compList: Array<any>
+  compList: Array<Attribute>
 }
 
-export type FormAttribute = {
-  defaultValue: any,
+export interface Config {
+  value?: string | number // 默认值
+  options?: string | Array<any> // 默认数组
+  props?: string | {
+    label?: string, // 数组默认显示内容
+    value?: string // 数组默认值
+    desc?: string // 数组详情描述
+  }
+  compType?: SupportedType // 组件类型
+}
+
+export type FormAttribute = Config & {
   label: string // 文案
   placeholder:  string
   labelWidth: '' // 单独文案宽度
@@ -22,11 +32,16 @@ export type FormAttribute = {
   paramType: string // 参数类型
   compType: SupportedType // 组件类型
   min: number
-  max: number
+  max: number,
+}
+
+interface Attribute {
+  id: string,
+  attributes: FormAttribute
 }
 
 // 支持的组件类型列表
-const SUPPORTED_COMPONENT_TYPES: SupportedType[] = [
+export const SUPPORTED_COMPONENT_TYPES: SupportedType[] = [
   'input',
   'select',
   'switch',
@@ -48,7 +63,7 @@ export const DEFAULT_FORM_CONFIG: FromConfig = {
 
 // 默认组价配置
 const DEFAULT_COMP_ATTRIBUTE: FormAttribute = {
-  defaultValue: '',
+  value: '',
   label: '这是组件文案',
   placeholder: '这是组件未填充提示文案',
   labelWidth: '',
@@ -88,7 +103,7 @@ export default class FormParser {
       return null
     }
 
-    let baseAttributes = {
+    let baseAttributes: Attribute = {
       id: param.key,
       attributes: {
         ...JSON.parse(JSON.stringify(DEFAULT_COMP_ATTRIBUTE)),
@@ -99,12 +114,13 @@ export default class FormParser {
             : param.type,
         compType: componentType,
         placeholder: param.type.endsWith('[]')
-          ? `请输入${param.name || param.name}（$${
+          ? `请输入${param.name || param.name}（${
             ['string', 'number'].includes(param.type.replace('[]', ''))
               ? '多个值用逗号分隔'
               : 'JSON格式'
           }）`
-          : ''
+          : '',
+        ...param.config,
       }
     }
 
@@ -116,13 +132,7 @@ export default class FormParser {
    * @param param
    */
   getCompType(param: InputAndOutput): SupportedType {
-    // // 如果有选项，优先使用select或switch
-    // if (param.options && Array.isArray(param.options)) {
-    //   if (param.type === 'boolean' && param.componentType !== 'select') {
-    //     return 'switch'
-    //   }
-    //   return 'select'
-    // }
+    console.log('getCompType', param)
     // 根据类型确定组件
     switch (param.type) {
       case 'string':
@@ -138,13 +148,17 @@ export default class FormParser {
         return 'function'
       default:
         // 处理数组类型
+        if (param.config.compType === 'select') {
+          return 'select'
+        }
         if (param.type.endsWith('[]')) {
           const elementType = param.type.replace('[]', '')
           // 简单类型使用input，复杂类型使用textarea
           return ['string', 'number'].includes(elementType) ? 'input' : 'textarea'
         }
-        return 'input'
+        // return 'input'
     }
   }
 
 }
+

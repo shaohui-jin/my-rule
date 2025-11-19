@@ -160,18 +160,20 @@ const formParser = new FormParser()
 const getTemplate = () => {
   return `
 /**
-* 透传员工
-* @param {object} employee - 员工
-* @param {string} employee.name - 员工名字
-* @param {number} employee.price - 员工工资
-* @param {object[]} employees[] - 多员工
-* @param {string} employees[].name - 员工名字
-* @param {number} employees[].price - 员工工资
-* @param {string} name - 名字
-* @param {number} price - 工资
-* @returns {object} employee - 员工
-* @returns {string} employee.name - 员工名字
-* @returns {number} employee.price - 员工工资
+* 函数demo
+* @param {string} name 名字
+* @param {number} price 工资 # value: 1
+* @param {object} employee 员工 # value: 1; options: [{ id: 1, name: '默认员工名称', price: 100 }]; props: { label: 'name', value: 'id', desc: 'price' }; compType: select
+* @param {number} employee.id 员工ID
+* @param {string} employee.name 员工名字
+* @param {number} employee.price 员工工资
+* @param {object[]} employees[] 多员工 # value: 1; options: [{ id: 1, name: '默认员工名称', price: 100 }]; props: { label: 'name', value: 'id', desc: 'price' };
+* @param {number} employees[].id 员工Id
+* @param {string} employees[].name 员工名字
+* @param {number} employees[].price 员工工资
+* @returns {object} employee 员工
+* @returns {string} employee.name 员工名字
+* @returns {number} employee.price 员工工资
 * @example log({ name: '张三', price: 3000 }, [{ name: '张三', price: 3000 }, { name: '李四', price: 2000 }]); // {name: '张三', price: 3000}
 */
 function log(employee, employees, name, price) {
