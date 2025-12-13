@@ -23,16 +23,16 @@ export interface InputAndOutput {
 export interface Function {
   desc: string
   input: InputAndOutput[]
-  output: InputAndOutput[],
+  output: InputAndOutput[]
   examples: string[]
 }
 
 export interface JsDocData {
   metadata: {
-    parsedAt: string,
+    parsedAt: string
     version: string
-  },
-  functions: Function[],
+  }
+  functions: Function[]
   classes: Array<any>
   summary: {
     totalFunctions: number
@@ -57,7 +57,7 @@ export default class JSDocParser {
   }
 
   init() {
-    this.funcTags = [];
+    this.funcTags = []
   }
   /**
    * 解析JavaScript代码并提取JSDoc注释
@@ -67,10 +67,10 @@ export default class JSDocParser {
   parseCode(code: string): JsDocData {
     this.init()
     try {
-      this.extractJSDocComments(code);
-      return this.generateOutput();
+      this.extractJSDocComments(code)
+      return this.generateOutput()
     } catch (error) {
-      throw new Error(`解析失败: ${error.message}`);
+      throw new Error(`解析失败: ${error.message}`)
     }
   }
 
@@ -79,15 +79,15 @@ export default class JSDocParser {
    * @param {string} code - JavaScript源代码
    */
   extractJSDocComments(code: string) {
-    const jsdocRegex = /\/\*\*[\s\S]*?\*\//g;
-    const comments = code.match(jsdocRegex) || [];
+    const jsdocRegex = /\/\*\*[\s\S]*?\*\//g
+    const comments = code.match(jsdocRegex) || []
 
     comments.forEach(comment => {
-      const jsdocInfo = this.parseJSDocComment(comment);
+      const jsdocInfo = this.parseJSDocComment(comment)
       if (jsdocInfo) {
-        this.funcTags.push(jsdocInfo);
+        this.funcTags.push(jsdocInfo)
       }
-    });
+    })
   }
 
   /**
@@ -99,36 +99,34 @@ export default class JSDocParser {
     let content = comment
       .replace(/^\/\*\*?/, '')
       .replace(/\*\/$/, '')
-      .trim();
+      .trim()
 
-    const lines = content.split('\n').map(line =>
-      line.replace(/^\s*\*?\s?/, '')
-    );
+    const lines = content.split('\n').map(line => line.replace(/^\s*\*?\s?/, ''))
 
     const funcTags = {
       desc: '',
       tags: []
-    };
+    }
 
     // 函数描述可能会换行
-    let funcDescList = [];
+    let funcDescList = []
 
     lines.forEach(line => {
       if (line.startsWith('@')) {
-        const tagMatch = line.match(/^@(\w+)\s+(.*)/);
+        const tagMatch = line.match(/^@(\w+)\s+(.*)/)
         if (tagMatch) {
-          const [, tagName, tagContent] = tagMatch;
+          const [, tagName, tagContent] = tagMatch
           funcTags.tags.push({
             tag: tagName,
             content: tagContent.trim()
-          });
+          })
         }
       } else {
-        funcDescList.push(line);
+        funcDescList.push(line)
       }
-    });
-    funcTags.desc = funcDescList.join('\n').trim();
-    return funcTags.desc || funcTags.tags.length > 0 ? funcTags : null;
+    })
+    funcTags.desc = funcDescList.join('\n').trim()
+    return funcTags.desc || funcTags.tags.length > 0 ? funcTags : null
   }
 
   /**
@@ -138,7 +136,10 @@ export default class JSDocParser {
   generateOutput(): JsDocData {
     const output: JsDocData = {
       metadata: {
-        parsedAt: new Date().toLocaleDateString().replaceAll('/', '-') + " "+  new Date().toLocaleTimeString(),
+        parsedAt:
+          new Date().toLocaleDateString().replaceAll('/', '-') +
+          ' ' +
+          new Date().toLocaleTimeString(),
         version: '1.0.0'
       },
       functions: [],
@@ -148,22 +149,20 @@ export default class JSDocParser {
         totalClasses: 0,
         totalTags: 0
       }
-    };
+    }
 
     this.funcTags.forEach((item: FuncTags) => {
-      const functionInfo: Function = this.extractFunctionInfo(item);
+      const functionInfo: Function = this.extractFunctionInfo(item)
       if (functionInfo) {
-        output.functions.push(functionInfo);
+        output.functions.push(functionInfo)
       }
-    });
+    })
 
-    output.summary.totalFunctions = output.functions.length;
-    output.summary.totalClasses = output.classes.length;
-    output.summary.totalTags = this.funcTags.reduce((sum, curr) =>
-      sum + curr.tags.length, 0
-    );
+    output.summary.totalFunctions = output.functions.length
+    output.summary.totalClasses = output.classes.length
+    output.summary.totalTags = this.funcTags.reduce((sum, curr) => sum + curr.tags.length, 0)
 
-    return output;
+    return output
   }
 
   /**
@@ -177,25 +176,25 @@ export default class JSDocParser {
       input: [],
       output: [],
       examples: []
-    };
-    let tagParamType = '';
-    let tagReturnType = '';
+    }
+    let tagParamType = ''
+    let tagReturnType = ''
     for (let i = 0; i < funcTag.tags.length; i++) {
-      const tag = funcTag.tags[i];
+      const tag = funcTag.tags[i]
       switch (tag.tag) {
         case 'param':
           tagParamType = this.matchAndPush(tag.content, tagParamType, functionInfo, 'input')
-          break;
+          break
         case 'return':
         case 'returns':
           tagReturnType = this.matchAndPush(tag.content, tagReturnType, functionInfo, 'output')
-          break;
+          break
         case 'example':
-          functionInfo.examples.push(tag.content);
-          break;
+          functionInfo.examples.push(tag.content)
+          break
         case 'class':
           // 处理类信息
-          break;
+          break
       }
     }
 
@@ -210,7 +209,7 @@ export default class JSDocParser {
       throw new Error('函数输出字段存在重复')
     }
     console.log('functionInfo', functionInfo)
-    return functionInfo.input.length > 0 || functionInfo.output ? functionInfo : null;
+    return functionInfo.input.length > 0 || functionInfo.output ? functionInfo : null
   }
 
   /**
@@ -221,12 +220,17 @@ export default class JSDocParser {
    * @param {'input'|'output'} pushKey  输入或输出
    * @returns {string} 当前字段类型
    */
-  matchAndPush(tagContent: string, tagType: string, functionInfo: Function, pushKey: 'input' | 'output'): string {
-    const paramMatch = tagContent.match(/\{(.*)\}\s+(\S+)\s+(\S+)(\s+\#\s+(.*))?/);
+  matchAndPush(
+    tagContent: string,
+    tagType: string,
+    functionInfo: Function,
+    pushKey: 'input' | 'output'
+  ): string {
+    const paramMatch = tagContent.match(/\{(.*)\}\s+(\S+)\s+(\S+)(\s+\#\s+(.*))?/)
     if (paramMatch) {
-      const type = paramMatch[1];
-      const key = paramMatch[2];
-      const name = paramMatch[3];
+      const type = paramMatch[1]
+      const key = paramMatch[2]
+      const name = paramMatch[3]
       const config = this.extractConfig(paramMatch[4] || '#', type)
       const index = functionInfo[pushKey].length - 1
 
@@ -237,10 +241,13 @@ export default class JSDocParser {
         }
         functionInfo[pushKey][index]['typeRecord'][key.split('.')[1]] = type
       } else {
-        tagType = key;
+        tagType = key
         functionInfo[pushKey].push({
-          key, type, name, config
-        });
+          key,
+          type,
+          name,
+          config
+        })
       }
     }
     return tagType
@@ -253,18 +260,23 @@ export default class JSDocParser {
    */
   extractConfig(config: string, type: string): Config {
     const has = Object.prototype.hasOwnProperty
-    const option: Config =  config.split('#')[1].split(';').reduce((acc, cur) => {
-      const index = cur.indexOf(':')
-      if (index !== -1) {
-        acc[cur.substr(0,index).trim()] = cur.substr(index + 1).trim()
-      }
-      return acc
-    }, {})
+    const option: Config = config
+      .split('#')[1]
+      .split(';')
+      .reduce((acc, cur) => {
+        const index = cur.indexOf(':')
+        if (index !== -1) {
+          acc[cur.substr(0, index).trim()] = cur.substr(index + 1).trim()
+        }
+        return acc
+      }, {})
     if (has.call(option, 'value')) {
-      option.value = type === 'number' ? Number(option.value) : option.value;
+      console.log('props', option)
+      console.log('type', type)
+      option.value = type === 'number' ? Number(option.value) : option.value
     }
     if (has.call(option, 'options')) {
-      option.options = eval(option?.options as string || '[]')
+      option.options = eval((option?.options as string) || '[]')
     }
     if (has.call(option, 'props')) {
       // option.props = eval(`(${option?.props as string})`)
@@ -276,5 +288,3 @@ export default class JSDocParser {
     return option
   }
 }
-
-

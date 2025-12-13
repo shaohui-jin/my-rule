@@ -1,5 +1,4 @@
-import { Graph, Node } from '@antv/x6'
-import { Transform } from '@antv/x6-plugin-transform'
+import { Graph, Node, Transform } from '@antv/x6'
 import { createIteratorNodeInstance } from './NodeFactory'
 import { type WorkflowData, LogicType, WorkflowNode } from '@/type/workflow'
 import type { Ref } from 'vue'
@@ -47,7 +46,7 @@ export class IteratorManager {
         enabled: false // 禁用旋转功能
       }
     })
-    
+
     this.graph.use(this.transformPlugin)
   }
 
@@ -57,7 +56,7 @@ export class IteratorManager {
    */
   private calculateIteratorMinSize(iteratorNode: IteratorNode): { width: number; height: number } {
     const children = iteratorNode.getChildren()
-    
+
     if (!children || children.length === 0) {
       // 如果没有子节点，返回默认最小尺寸
       return { width: 450, height: 300 }
@@ -71,7 +70,7 @@ export class IteratorManager {
     // 遍历所有子节点，计算包围盒
     children.forEach(child => {
       if (!child.isNode()) return
-      
+
       const bbox = child.getBBox().inflate(this.embedPadding)
       minX = Math.min(minX, bbox.x)
       minY = Math.min(minY, bbox.y)
@@ -85,7 +84,7 @@ export class IteratorManager {
 
     // 标题区域高度（40px）+ 顶部额外内边距（40px）+ 内容高度 + 底部内边距（20px）
     const totalHeight = this.topPadding + contentHeight + this.embedPadding
-    
+
     // 左右内边距（20px）+ 内容宽度 + 右侧内边距（20px）
     const totalWidth = this.embedPadding + contentWidth
 
@@ -103,11 +102,11 @@ export class IteratorManager {
     if (!this.transformPlugin || iteratorNode.isCollapsed) return
 
     const minSize = this.calculateIteratorMinSize(iteratorNode)
-    
+
     // 由于X6 Transform插件不支持动态更新配置，我们需要重新创建插件实例
     // 先移除旧的插件
     this.graph.disposePlugins(['transform'])
-    
+
     // 重新创建Transform插件，使用新的最小尺寸配置
     this.transformPlugin = new Transform({
       resizing: {
@@ -129,7 +128,7 @@ export class IteratorManager {
         enabled: false // 禁用旋转功能
       }
     })
-    
+
     // 重新注册插件
     this.graph.use(this.transformPlugin)
 
@@ -162,7 +161,7 @@ export class IteratorManager {
   private handleIteratorResized(iteratorNode: IteratorNode): void {
     // 调用节点的尺寸变化完成处理方法
     iteratorNode.onResizeComplete()
-    
+
     // 同步数据到workflowData
     this.syncIteratorData()
   }
@@ -218,7 +217,11 @@ export class IteratorManager {
     })
   }
   // 复制迭代器节点
-  copyIteratorData(copiedNodeData: WorkflowNode, newChildList: string[], oldChildList: string[]): void {
+  copyIteratorData(
+    copiedNodeData: WorkflowNode,
+    newChildList: string[],
+    oldChildList: string[]
+  ): void {
     copiedNodeData.pos.y = copiedNodeData.pos.y + copiedNodeData.height + 20
 
     const iteratorNode = this.createNewIteratorNode(
@@ -260,7 +263,12 @@ export class IteratorManager {
   }
 
   // 创建新的迭代器节点 复制和解析都用这个方法
-  createNewIteratorNode(copiedNodeData: WorkflowNode, id: string, newChildList: string[], addId: boolean = false): Node {
+  createNewIteratorNode(
+    copiedNodeData: WorkflowNode,
+    id: string,
+    newChildList: string[],
+    addId: boolean = false
+  ): Node {
     const iteratorNode = createIteratorNodeInstance({
       id: id,
       x: copiedNodeData.pos.x,
@@ -347,7 +355,7 @@ export class IteratorManager {
       }
       if (node.shape === 'iteratorNode') {
         // 开始节点位置不允许变更
-        (node as IteratorNode).resetStartNodePos()
+        ;(node as IteratorNode).resetStartNodePos()
       }
 
       this.graph.startBatch('iterator-manager-node-change-position')
@@ -456,7 +464,7 @@ export class IteratorManager {
     this.graph.on('node:iterator_collapse', ({ node }: { node: any }) => {
       this.graph.startBatch('iterator-node-collapse')
       node.toggleCollapse()
-      
+
       // 根据折叠状态处理尺寸控制器
       if (node.isCollapsed) {
         this.clearTransformWidgets()
@@ -471,7 +479,7 @@ export class IteratorManager {
   public destroy(): void {
     // 清除所有尺寸控制器
     this.clearTransformWidgets()
-    
+
     // 清理Transform插件引用
     this.transformPlugin = null
   }

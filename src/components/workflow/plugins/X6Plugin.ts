@@ -1,9 +1,5 @@
 import type { Graph } from '@antv/x6'
-import { MiniMap } from '@antv/x6-plugin-minimap'
-import { History } from '@antv/x6-plugin-history'
-import { Snapline } from '@antv/x6-plugin-snapline'
-import { Clipboard } from '@antv/x6-plugin-clipboard'
-import { Selection } from '@antv/x6-plugin-selection'
+import { MiniMap, History, Snapline, Clipboard, Selection } from '@antv/x6'
 import * as dagre from 'dagre'
 
 // 内部管理selectionPlugin实例

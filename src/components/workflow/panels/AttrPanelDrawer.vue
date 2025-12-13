@@ -10,13 +10,8 @@
             <span class="node-id">{{ nodeData?.id || '' }}</span>
             <div class="node-title-container" @click="startEditTitle">
               <p class="node-title" v-if="props.disabled">{{ nodeData?.title || '节点名称' }}</p>
-              <template v-else-if="!isEditingTitle" >
-                <el-tooltip
-                  class="box-item"
-                  effect="dark"
-                  content="单击编辑标题"
-                  placement="top"
-                >
+              <template v-else-if="!isEditingTitle">
+                <el-tooltip class="box-item" effect="dark" content="单击编辑标题" placement="top">
                   <p class="node-title">{{ nodeData?.title || '节点名称' }}</p>
                 </el-tooltip>
               </template>
@@ -77,7 +72,7 @@ import FuncNodePanel from './FuncNodePanel.vue'
 import ConditionNodePanel from './ConditionNodePanel.vue'
 import CalculatorNodePanel from './CalculatorNodePanel.vue'
 import { Close } from '@element-plus/icons-vue'
-import NodeTypeIcon from '@/components/NodeTypeIcon/index.vue'
+import NodeTypeIcon from '@/components/BaseNodeIcon/index.vue'
 
 const isWujie = window.__POWERED_BY_WUJIE__
 
@@ -294,8 +289,8 @@ function handleNodeBaseDataUpdate(nodeId: string) {
   width: 25px;
   height: 25px;
   border-radius: 50%;
-  border: 2px solid #409EFF;
-  color: #409EFF;
+  border: 2px solid #409eff;
+  color: #409eff;
   font-weight: 600;
   font-size: 14px;
   margin-right: 6px;

@@ -1,124 +1,18 @@
 <template>
   <div class="rule-edit-layout">
-    <!-- 收缩按钮 -->
-    <div class="fold" @click="foldMenu">
-      <el-tooltip :content="foldStatus ? '展开左侧功能面板' : '隐藏左侧功能面板'" placement="top">
-        <LeftOutlined v-if="!foldStatus"></LeftOutlined>
-        <RightOutlined v-else></RightOutlined>
-        <InfoCircleOutlined />
-      </el-tooltip>
-    </div>
+    <DndPanel
+      @node-mouse-down="(e, node) => onNodeMouseDown('logic', node, e)"
+      @node-mouse-enter="(e, node) => onNodeMouseEnter('logic', node, e)"
+      @node-mouse-leave="(e, node) => onNodeMouseleave('logic', node, e)"
+    />
 
     <!-- 左侧 DnD 面板：用于拖拽创建节点 -->
-    <div
-      :class="{
-        'side-panel': true,
-        'dnd-panel': true,
-        collapsed: foldStatus
-      }"
-    >
-      <!-- 使用Element Plus的Tabs组件实现分类展示 -->
-      <el-tabs v-model="activeTab" class="dnd-tabs" tab-position="left" stretch>
-        <el-tab-pane v-for="tab in tabList" :key="tab.name" :label="tab.label" :name="tab.name">
-          <template #label>
-            <span class="custom-tabs-label">
-              <component :is="tab.compenent" />
-              <span>{{ tab.label }}</span>
-            </span>
-          </template>
-          <!-- 抽象函数面板--业务节点 -->
-          <DndPanel
-            ref="dndPanelRef"
-            v-if="tab.name === 'abstract'"
-            :nodeTypes="dndPageFuncData"
-            :tabName="tab.name"
-            :pageNo="pageNo"
-            :pageSize="pageSize"
-            :total="total"
-            :searchKeyword="searchKeyword"
-            :onSearch="handleSearch"
-            :showSearch="true"
-            @node-mouse-down="(e, node) => onNodeMouseDown('func', node, e)"
-          >
-            <!-- 自定义节点渲染模板 -->
-            <template #default="">
-              <div class="dnd-icon abstract">
-                <NodeTypeIcon type="func" :size="32" />
-              </div>
-            </template>
-          </DndPanel>
-          <!-- 逻辑函数面板 --基础组件-->
-          <DndPanel
-            v-if="tab.name === 'logic'"
-            :nodeTypes="logicList"
-            :tabName="tab.name"
-            :total="0"
-            :pageNo="1"
-            :pageSize="16"
-            :onPageChange="() => {}"
-            :showSearch="false"
-            @node-mouse-down="(e, node) => onNodeMouseDown('logic', node, e)"
-            @node-mouse-enter="(e, node) => onNodeMouseEnter('logic', node, e)"
-            @node-mouse-leave="(e, node) => onNodeMouseleave('logic', node, e)"
-          >
-            <!-- 复用相同的节点渲染模板 -->
-            <template #default="{ item }">
-              <div class="dnd-icon logic">
-                <NodeTypeIcon :type="item.type" :size="32" />
-              </div>
-            </template>
-          </DndPanel>
-          <div v-if="tab.name === 'collection'">我是收藏</div>
-          <!-- 我是画布管理 -->
-          <div v-if="tab.name === 'canvasManage'" class="dnd-canvas">
-            <ul>
-              <li
-                v-for="(item, index) in workflowData.nodeList"
-                :key="item.funcId"
-                @click="toNode(item, index)"
-                :class="{ active: index == currentIndex }"
-              >
-                <template v-if="item.title.length > 20">
-                  <el-tooltip placement="top" :content="item.title">
-                    <p>{{ item.id }}.{{ item.title }}</p>
-                  </el-tooltip>
-                </template>
-                <template v-else>
-                  <p>{{ item.id }}.{{ item.title }}</p>
-                </template>
-                <i @mouseenter="showWorkFlowInfo(item, index)">
-                  <el-tooltip placement="right" :show-after="500">
-                    <template #content>
-                      <ul class="tooltipul">
-                        <li v-for="content in contentTip">
-                          <span>{{ content.label }}：</span>
-                          <span>{{ content.desc }}</span>
-                        </li>
-                      </ul>
-                    </template>
-                    <InfoCircleOutlined />
-                  </el-tooltip>
-                </i>
-              </li>
-            </ul>
-          </div>
-        </el-tab-pane>
-      </el-tabs>
-      <!-- 帮助按钮，仅基础函数tab显示 -->
-      <div v-if="activeTab === 'logic'" class="help-btn-fixed" @click="helpDialogVisible = true">
-        帮助
-      </div>
-      <!-- 折叠和展开按钮 -->
-      <div class="btn-fold" v-if="activeTab === 'abstract'">
-        <el-tooltip placement="top" content="折叠">
-          <span @click="foldBtnMenu(0)"><Fold></Fold></span>
-        </el-tooltip>
-        <em>|</em>
-        <el-tooltip placement="top" content="展开">
-          <span @click="foldBtnMenu(1)"><UnFold></UnFold></span>
-        </el-tooltip>
-      </div>
-    </div>
+    <!--    <div-->
+    <!--      :class="{-->
+    <!--        'side-panel': true,-->
+    <!--        'dnd-panel': true-->
+    <!--      }"-->
+    <!--    ></div>-->
 
     <!-- 中间画布区域：用于展示和编辑工作流 -->
     <div class="center-panel">
@@ -132,8 +26,6 @@
           @save-as-data="handleSaveAs"
           @test-lua="handleTestLua"
           @show-save-modal="handleShowSaveModel"
-          @show-search-modal="handleShowSearchModal"
-          @close-search-modal="handleCloseSearchModal"
           :nodeId="nodeId"
           :isTesting="isTesting"
         />
@@ -153,12 +45,6 @@
       @removePortData="removePortData"
       @nodeBaseDataUpdate="onNodeBaseDataUpdate"
     />
-
-<!--    <BaseFuncHelpDialog-->
-<!--      :visible="helpDialogVisible"-->
-<!--      :onClose="() => (helpDialogVisible = false)"-->
-<!--      :funcList="dndPageFuncData"-->
-<!--    />-->
 
     <!-- 另存对话框 -->
     <el-dialog
@@ -187,14 +73,6 @@
 
     <!-- 测试抽屉 -->
     <TestDrawer @node-click="handleNodeClick" ref="testDrawerRef" @close="closeTestDrawer" />
-
-    <!-- 搜索页面弹窗 -->
-    <NodeSearchModal
-      v-model:visible="showSearchModal"
-      :search-function="handleSearchFunction"
-      :data="searchModalData"
-      @select-node="handleSelectSearchNode"
-    />
 
     <CommonDialog
       ref="saveDialogRef"
@@ -231,7 +109,7 @@ import {
 } from 'vue'
 import { onBeforeRouteLeave, useRoute } from 'vue-router'
 import WorkflowDesigner from '@/components/workflow/WorkflowDesigner.vue'
-import DndPanel from '@/components/workflow/panels/DndPanel.vue'
+import DndPanel from '@/components/BaseDndPanel/index.vue'
 import AttrPanelDrawer from '@/components/workflow/panels/AttrPanelDrawer.vue'
 import { LogicType, type WorkflowData } from '@/type/workflow'
 import {
@@ -245,16 +123,13 @@ import { useRuleStore, useCanvasStore } from '@/store/modules/ruleCache'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { nodeIdFactory } from '@/utils/workflow/NodeIdFactory'
 import { compressParamData, expandParamData } from '@/utils/workflow/DataOptimizer'
-// import BaseFuncHelpDialog from '@/components/workflow/BaseFuncHelpDialog.vue'
 import Detail from '@/views/rule/detail.vue'
 import { http } from '@/axios'
 import TestDrawer from '@/components/TestDrawer/index.vue'
-import NodeTypeIcon from '@/components/NodeTypeIcon/index.vue'
-import NodeSearchModal from '@/components/workflow/NodeSearchModal.vue'
+import NodeTypeIcon from '@/components/BaseNodeIcon/index.vue'
 import { emitter } from '@/utils/mitt'
 import { bus } from 'wujie'
 import { useParamStore } from '@/store/modules/params'
-import BusinessPort from '@/assets/rsvg/businessport.svg'
 import Basic from '@/assets/rsvg/basic.svg'
 import StarOutlined from '@/assets/rsvg/StarOutlined.svg'
 import PartitionOutlined from '@/assets/rsvg/PartitionOutlined.svg'
@@ -270,7 +145,6 @@ import { useDialogDrag } from '@/hooks/useDialogDrag'
 const paramStore = useParamStore()
 const { initDialog } = useDialogDrag()
 
-// import BusinessPort from "@/assets/rsvg/businessport.svg";
 defineOptions({
   name: 'ruleEdit'
 })
@@ -452,193 +326,13 @@ async function saveRuleData(
   }
 }
 
-/**
- * 拖拽相关状态
- * activeTab: 当前激活的标签页
- * tabList: 标签页配置
- * logicList: 逻辑函数列表
- * functionList: 函数列表
- * pageNo: 分页参数
- * pageSize: 分页参数
- * total: 分页参数
- */
 const activeTab = ref('abstract')
 const tabList = [
-  { label: '业务节点', name: 'abstract', compenent: BusinessPort },
   { label: '基础组件', name: 'logic', compenent: Basic },
   // { label: '收藏', name: 'collection', compenent: StarOutlined },
   { label: '画布管理', name: 'canvasManage', compenent: PartitionOutlined }
 ]
-const logicList = ref([
-  {
-    type: 'condition',
-    title: '条件函数',
-    icon: 'icon-condition',
-    funcId: '9',
-    show: false,
-    text:
-      '（1）条件判断（if如果 else否则），用于根据条件的真假来执行不同的“下一步”，“下一步”可能是输出结果（如产品的id和name、固定数值、空值等),也有可能再接入下一层的逻辑判断，直到返回产品检测所需要的结果。\n' +
-      '（2）支持else if多条件判断（if 条件1，else if条件2…），输出不同的分支。\n' +
-      '（3）经过条件判断节点的对象，数据类型不会被改变，用条件判断函数连接的两个节点，出入参的数据类型需要一致（如前一个节点的出参是part[]一维数组，后一个节点的入参也需要是part[]）。\n'
-  },
-  {
-    type: 'aggregate',
-    title: '聚合函数',
-    icon: 'icon-aggregate',
-    funcId: '2',
-    show: false,
-    text:
-      '支持任意多个节点接入，将多个节点数据进行合并去重。\n' +
-      '用法：可以连接任意多个节点接入，对多种类型的数据结构进行合并去重。\n' +
-      '注意事项：合并方式会以第一个节点接入的数据结构为主，在不输入ukey的情况下会默认以id为key。\n'
-  },
-  {
-    type: 'global_param',
-    title: '全局参数',
-    icon: 'icon-global-param',
-    funcId: '3',
-    show: false,
-    text: '引用全局参数①Root(全场景数据，如参数化产品、软装、硬装素材），②Target(指定素材列表，通常用于生产数据），并将对应的值直接返回给下一个节点。'
-  },
-  {
-    type: 'sub_property_extractor',
-    title: '属性获取',
-    icon: 'icon-sub-property',
-    funcId: '4',
-    show: false,
-    text:
-      '用于提取数据源的子属性值。\n' +
-      '用法：根据参数配置，提取数据源的子属性。\n' +
-      '注意事项：\n' +
-      '1. 条件的写法需要遵从 lua 格式规范；\n' +
-      '2. 以item为变量名，表示当前遍历的对象 （若非遍历：则表示上游节点结果； 若遍历：则表示上游节点中的每个元素）；\n' +
-      "3. 暂不支持混搭路径 如： 'id, [2]' 这种暂时不支持；\n" +
-      '4. 开启遍历的情况下，只有多路径非索引开头的情况下，结果会输出成对象，其余的都是数组。\n'
-  },
-  {
-    type: 'global_variable',
-    title: '全局变量',
-    icon: 'icon-global-variable',
-    funcId: '5',
-    show: false,
-    text:
-      '用于获取工作流中指定节点的结果数据。\n' +
-      '用法：通过选择节点Id 参数，获取指定节点的执行结果。\n' +
-      '注意事项：\n' +
-      '1. 目标节点必须在当前节点之前执行完成；\n' +
-      '2. 全局变量不需要接受入参，直接通过参数下拉即可选择；\n' +
-      '3. 支持获取任意类型的数据结构（对象、数组、基本类型等）。\n' +
-      '参数描述：\n' +
-      '1. nodeId：指定要获取结果的节点ID，可以是数字或字符串；\n' +
-      '2. 结果变量：当前节点的结果变量名格式为 result_当前节点ID。\n' +
-      '逻辑：\n' +
-      '1. 根据输入的 nodeId 参数，获取对应节点的执行结果；\n' +
-      '2. 将目标节点的结果直接赋值给当前节点的结果变量；\n' +
-      '3. 适用于需要在工作流中复用其他节点结果的场景，尤其是在ifelse分支下。\n'
-  },
-  // { type: 'type_converter', title: '类型转换', icon: 'icon-type-converter', funcId: '6', show: false ,  text: ''},
-  {
-    type: 'dimension_converter',
-    title: '数据转换',
-    icon: 'icon-dimension-converter',
-    funcId: '12',
-    show: false,
-    text:
-      '将上游节点传递的值强制转换成指定类型\n' +
-      '用法：根据转换方式配置，将上游节点的结果强制转换成指定类型\n' +
-      '注意事项：\n' +
-      '1. 转换方式支持：转成字符串、转成数值、转成table、转成布尔\n' +
-      '2. 转成table 会将原值塞进table中\n' +
-      '3. 转成布尔值 只会执行判断值是否非nil/undefined 并返回true/false\n' +
-      '4. 不能将table的值 转成其他基础类型\n' +
-      '新增功能：\n' +
-      '1、增加【升维和降维操作】的能力\n' +
-      '2、增加自动类型转换的能力\n'
-  },
-  {
-    type: 'custom_function',
-    title: '自定义函数',
-    icon: 'icon-custom-function',
-    funcId: '7',
-    show: false,
-    text: '支持画布中编辑节点时，输入研发人员编程后的lua程序脚本后直接进行使用。'
-  },
-  {
-    type: 'iterator',
-    title: '迭代',
-    icon: 'icon-iterator',
-    funcId: '8',
-    show: false,
-    text:
-      '对数组数据进行遍历处理，支持复杂的内部逻辑和结果汇总。\n' +
-      '用法：选择迭代函数，在函数内部增加函数节点和处理逻辑，对每个元素执行相同的操作\n' +
-      '注意事项：\n' +
-      '1. 迭代器会自动创建起始节点，用于接收遍历的单个元素，进入迭代后数据类型默认转换为单个对象；\n' +
-      '2. 内部节点只能连接到迭代器内部，不能连接到外部，按住CTRL键可以将节点移出到迭代外部；\n' +
-      '3. 支持条件节点和普通节点的混合使用；\n' +
-      '4. 最终结果会将所有迭代结果汇总成数组（在输出结果的数据类型上进行升维，比如”输出结果“函数为一维数组，那么迭代输出结果是二维数组）。\n'
-  },
-  {
-    type: 'decision_tables_function',
-    title: '决策表',
-    icon: 'icon-iterator',
-    funcId: '10',
-    show: false,
-    text:
-      '采用”表格“条件决策逻辑的方式，简化多条件下的结果生成方式。\n' +
-      '用法：配置决策表规则，根据输入数据匹配对应规则并输出结果。\n' +
-      '注意事项：\n' +
-      '1. 决策表数据必须包含完整的行配置；\n' +
-      '2. 表达式类型为BOOLEAN时，会生成自定义计算函数；\n' +
-      '3. 支持多种数据类型：string、number、boolean；\n' +
-      '4. 测试模式下会生成额外的调试信息。\n' +
-      '参数描述：\n' +
-      '1. data：输入数据源，通常是数组类型的数据；\n' +
-      '2. decisionTableData：决策表配置数据，包含行列表；\n' +
-      '3. rowList：规则行列表，每行包含输入、输出和注释配置。\n' +
-      '逻辑：\n' +
-      '1. 遍历输入数据的每个元素；\n' +
-      '2. 根据决策表规则进行条件匹配；\n' +
-      '3. 匹配成功后应用输出规则；\n' +
-      '4. 支持自定义表达式计算；\n' +
-      '5. 返回处理后的数据。\n'
-  },
-  {
-    type: 'external_data_table',
-    title: '外部数据表',
-    icon: 'icon-external-data',
-    funcId: '11',
-    show: false,
-    text:
-      '用于从外部数据源查询数据，支持动态表达式和列选择。\n' +
-      '用法：配置外部数据源（如通用配置-线条配置表等）、查询表达式和输出列，动态查询外部数据。\n' +
-      '注意事项：\n' +
-      '1. 所有入参source字段都必须有值，不能为空；\n' +
-      '2. 表达式支持Lua语法，可以引用上游数据；\n' +
-      '3. 输出列必须是数据表中实际存在的字段。\n' +
-      '参数描述：\n' +
-      '1. mainObj：主对象参数，用于表达式计算的数据源；\n' +
-      '2. source：外部数据源配置，包含数据库ID和表名；\n' +
-      '3. expression：查询表达式，支持Lua代码，用于动态生成查询条件；\n' +
-      '4. outputContent：输出列列表，指定要返回的字段。\n' +
-      '逻辑：\n' +
-      '1. 根据配置的数据源获取表信息；\n' +
-      '2. 将表达式转换为Lua函数；\n' +
-      '3. 调用外部数据查询函数获取结果；\n' +
-      '4. 返回指定列的数据。\n'
-  },
-  {
-    type: 'calculator',
-    title: '计算器',
-    icon: 'icon-external-data',
-    funcId: '12',
-    show: false,
-    text:
-      '支持通过提取画布内的变量，进行运算公式定义，并按运算公式输出运算结果（为数值）。\n' +
-      '1.入参（不限数据类型）：引入画布内已有的变量及变量值，进行运算公式定义（表达式）；\n' +
-      '2.出参（不限数据类型）：基于运算公式，进行运算结果输出。\n'
-  }
-])
+const logicList = ref()
 const allFuncData = ref(new Map<string, FunctionNode>())
 const dndPageFuncData = ref<FunctionNode[]>([])
 const pageNo = ref(1)
@@ -937,64 +631,6 @@ const debugLuaScript = async () => {
 const route = useRoute()
 
 onMounted(async () => {
-  // fetchFunctionList(1, '')
-  //
-  // // 数据恢复优先级：ruleStore.currentRule > canvasStore.cachedCanvas > 默认空数据
-  // const ruleData = ruleStore.getCurrentRule(route.query?.ruleId)
-  // const cachedCanvas = canvasStore.getCurrentCanvas(route.query?.ruleId)
-  //
-  // let baseData = workflowData.value
-  // if (ruleData) {
-  //   // 优先级1：使用从其他页面跳转过来的规则数据
-  //   paramStore.setCanvasList(route.query?.ruleId, ruleData?.variableSet || '[]')
-  //   baseData = {
-  //     ...workflowData.value,
-  //     id: ruleData.id,
-  //     ruleName: ruleData.ruleName,
-  //     lua: ruleData.luaScript
-  //   }
-  //   const ids = ruleData.funcIds || []
-  //   if (ids) {
-  //     // 获取画布可能需要的函数节点
-  //     await getFunctionNodesByIds(ids)
-  //     try {
-  //       const wfd = JSON.parse(ruleData.configData)
-  //       // 关键：第一时间做参数展开，兼容历史数据
-  //       const expandedWfd = expandWorkflowData(wfd)
-  //       baseData.nodeList = expandedWfd.nodeList
-  //       baseData.edges = expandedWfd.edges
-  //       baseData.groupList = expandedWfd?.groupList || []
-  //     } catch (error) {
-  //       console.error('解析工作流数据失败:', error)
-  //     }
-  //   }
-  //   // 清空跳转数据
-  //   ruleStore.clearCurrentRule(route.query?.ruleId)
-  // } else if (cachedCanvas) {
-  //   // 优先级2：使用缓存的画布数据
-  //   baseData = {
-  //     ...workflowData.value,
-  //     id: cachedCanvas.id,
-  //     ruleName: cachedCanvas.ruleName,
-  //     lua: cachedCanvas.lua,
-  //     nodeList: cachedCanvas.nodeList,
-  //     edges: cachedCanvas.edges,
-  //     groupList: cachedCanvas.groupList
-  //   }
-  //
-  //   // 如果有缓存的函数ID，获取函数节点
-  //   if (cachedCanvas.funcIds && cachedCanvas.funcIds.length > 0) {
-  //     await getFunctionNodesByIds(cachedCanvas.funcIds)
-  //   }
-  //
-  //   // 清空缓存数据
-  //   canvasStore.clearCachedCanvas(route.query?.ruleId)
-  // }
-  //
-  // updateWorkflowData(baseData)
-})
-
-onActivated(async () => {
   const ruleId = route.query?.ruleId as string
 
   fetchFunctionList(1, '')
@@ -1093,7 +729,6 @@ onActivated(async () => {
   // 监听页签关闭检查事件
   emitter.on('tabCloseCheck', async ({ name, resolve }) => {
     if (name === 'ruleEdit') {
-
       // 检查是否有未保存的修改
       const hasUnsaved = hasUnsavedChanges()
       if (hasUnsaved) {
@@ -1104,14 +739,13 @@ onActivated(async () => {
       } else {
         resolve(false)
       }
-
     } else {
       resolve(false)
     }
   })
 })
 
-onDeactivated(() => {
+onUnmounted(() => {
   // 清理浏览器事件监听
   window.removeEventListener('beforeunload', handleBeforeUnload)
 
@@ -1134,7 +768,6 @@ onDeactivated(() => {
   // 移除自动保存定时器清理
   // clearAutoSaveTimer()
 })
-
 
 // 另存相关方法
 const handleSaveAs = (data: any) => {
@@ -1261,89 +894,9 @@ const closeTestDrawer = () => {
   isTesting.value = false
 }
 
-/**
- * 处理显示搜索页面
- */
-const handleShowSearchModal = (data: any) => {
-  searchModalData.value = data
-  showSearchModal.value = true
-}
-
-/**
- * 处理关闭搜索页面
- */
-const handleCloseSearchModal = () => {
-  showSearchModal.value = false
-}
-
-/**
- * 搜索函数接口（供搜索页面调用）
- */
-const handleSearchFunction = async (keyword: string): Promise<FunctionNode[]> => {
-  try {
-    // const response = await getFunctionList({
-    //   pageNo: 1,
-    //   pageSize: 50, // 搜索时使用较大的页面大小
-    //   keyword: keyword,
-    //   funcCategory: '',
-    //   isMyFunction: false
-    // })
-    // const tempList = response.rows.map(item => transformFunctionData(item))
-    const response = await getFunctionList()
-    resList = JSON.parse(JSON.stringify(response))
-    let tempArr: any[] = []
-    tempArr = repeatLoop(response, tempArr)
-    // dnd面板用
-    // console.log('response===222==999',response)
-    dndPageFuncData.value = response as any
-    // dndPageFuncData.value = tempList
-    // 全量数据缓存
-    setFuncNodeData(tempArr)
-    // 更新全量数据缓存
-    // setFuncNodeData(tempList)
-    return tempArr
-  } catch (error) {
-    console.error('搜索函数失败:', error)
-    return []
-  }
-}
-
-/**
- * 处理从搜索页面选择的节点
- */
-const handleSelectSearchNode = (node: any, data: any) => {
-  if (node.funcType === 'logic') {
-    editorRef.value.directContectNode(node, data)
-  } else {
-    if (!('inputData' in node)) {
-      // 从历史记录找的 可能没有全量数据 需要重新加载一波
-      getFunctionNodesByIds([node.funcId])
-        .then(res => {
-          const funcNode = allFuncData.value.get(node.funcId)
-          if (funcNode) {
-            editorRef.value.directContectNode(funcNode, data)
-          } else {
-            console.error('获取函数节点失败:', node.funcId)
-          }
-        })
-        .catch(err => {
-          console.error('获取函数节点失败:', err)
-        })
-    } else {
-      editorRef.value.directContectNode(node, data)
-    }
-  }
-}
 // 收缩菜单
 const foldStatus = ref(true)
 
-const foldMenu = () => {
-  if (foldStatus.value) {
-    foldStatus.value = false
-  } else {
-    foldStatus.value = true
-  }
-}
 // 展开折叠基础函数
 const dndPanelRef = ref(null)
 function foldBtnMenu(type: number) {
@@ -1397,9 +950,8 @@ function showWorkFlowInfo(item: any, index: number) {
   height: 100%;
   align-items: center;
   justify-content: center;
-  padding: 10px !important;
+
   position: relative;
-  gap: 10px;
 }
 
 .fold {
@@ -1650,34 +1202,6 @@ function showWorkFlowInfo(item: any, index: number) {
   }
   .dnd-canvas li:hover i {
     display: block;
-  }
-  .btn-fold {
-    display: flex;
-    align-items: center;
-    position: absolute;
-    left: 100px;
-    bottom: 32px;
-    font-size: 10px;
-    cursor: pointer;
-    z-index: 99;
-    background: #fff;
-    padding: 1px 8px 0 8px;
-    transition: color 0.2s, border-color 0.2s;
-    box-shadow: 0 2px 8px rgba(255, 77, 79, 0.04);
-    user-select: none;
-    background: #f4f5f5;
-    border-radius: 9px 9px 9px 9px;
-    width: 62px;
-    height: 30px;
-  }
-  .btn-fold span {
-    width: 30px;
-    height: 30px;
-    background: #f4f5f5;
-    align-content: center;
-  }
-  .btn-fold em {
-    color: #dce0e1;
   }
 }
 

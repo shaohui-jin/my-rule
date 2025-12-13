@@ -2,10 +2,6 @@ export default {
   path: '/',
   name: 'main',
   redirect: '/func/edit',
-  meta: {
-    title: '规则模块',
-    rank: 1,
-  },
   children: [
     {
       path: '/func/list',
@@ -20,7 +16,7 @@ export default {
       name: 'functionEdit',
       component: () => import('@/views/func/edit.vue'),
       meta: {
-        title: '函数编辑',
+        title: '函数JSDoc解析器'
       }
     },
     {
@@ -28,7 +24,7 @@ export default {
       name: 'functionEditLua',
       component: () => import('@/views/func/edit-lua.vue'),
       meta: {
-        title: '函数编辑',
+        title: '函数编辑'
       }
     },
     {
@@ -44,7 +40,7 @@ export default {
       name: 'ruleEdit',
       component: () => import('@/views/rule/edit.vue'),
       meta: {
-        title: '规则编辑',
+        title: '规则编辑'
       }
     },
     {
@@ -52,7 +48,7 @@ export default {
       name: 'test',
       component: () => import('@/views/test/index.vue'),
       meta: {
-        title: '规则测试',
+        title: '规则测试'
       }
     }
   ]

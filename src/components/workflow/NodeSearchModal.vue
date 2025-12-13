@@ -36,13 +36,18 @@
               >
                 <div class="result-item-content">
                   <span class="result-name">{{ item.title }}</span>
-                  <span class="result-type">{{ item.type === 'logic' ? '逻辑函数' : '抽象函数' }}</span>
+                  <span class="result-type">
+                    {{ item.type === 'logic' ? '逻辑函数' : '抽象函数' }}
+                  </span>
                 </div>
               </div>
             </div>
 
             <!-- 搜索结果为空提示 -->
-            <div v-if="hasSearched && searchKeyword && searchResults.length === 0" class="no-results">
+            <div
+              v-if="hasSearched && searchKeyword && searchResults.length === 0"
+              class="no-results"
+            >
               未找到匹配的节点
             </div>
           </div>
@@ -102,13 +107,13 @@ interface Props {
   visible: boolean
   searchFunction: (keyword: string) => Promise<FunctionNode[]>
   data?: {
-    x: number,
-    y: number,
-    nodeId: string,
-    portId: string,
-    fromEdgeAdd: boolean,
-    fromBlankAdd: boolean,
-    fromBlankX: number,
+    x: number
+    y: number
+    nodeId: string
+    portId: string
+    fromEdgeAdd: boolean
+    fromBlankAdd: boolean
+    fromBlankX: number
     fromBlankY: number
   }
 }
@@ -131,7 +136,8 @@ const modalPosition = ref({ x: 0, y: 0 }) // 新增：弹窗位置
 
 // 计算属性
 const useCustomPosition = computed(() => !!props.data) // 新增：是否使用自定义位置
-const modalStyle = computed(() => { // 新增：弹窗样式
+const modalStyle = computed(() => {
+  // 新增：弹窗样式
   if (!useCustomPosition.value) return {}
   return {
     left: `${modalPosition.value.x}px`,
@@ -158,7 +164,7 @@ function calculateModalPosition() {
   let y = props.data.y
 
   // 确保弹窗不超出右边界
-  console.log('x:', x + modalWidth , viewportWidth)
+  console.log('x:', x + modalWidth, viewportWidth)
   console.log('y:', y + modalHeight, viewportHeight)
 
   if (x + modalWidth > viewportWidth) {
@@ -179,37 +185,43 @@ function calculateModalPosition() {
 
 // 推荐节点配置（默认推荐logic类型的属性获取、类型转换、条件判断）
 const defaultRecommendNodes = [
-  { type: 'sub_property_extractor', title: '属性获取', funcId: '4',  funcType: 'logic'},
+  { type: 'sub_property_extractor', title: '属性获取', funcId: '4', funcType: 'logic' },
   // { type: 'type_converter', title: '类型转换', funcId: '6', funcType: 'logic'},
-  { type: 'dimension_converter', title: '类型转换', funcId: '12', funcType: 'logic'},
-  { type: 'condition', title: '条件函数', funcId: '9' ,  funcType: 'logic'},
-  { type: 'aggregate', title: '聚合函数', funcId: '2' ,  funcType: 'logic'},
-  { type: 'iterator', title: '迭代', funcId: '8' ,  funcType: 'logic'},
-  { type: 'decision_tables_function', title: '决策表', funcId: '10' ,  funcType: 'logic'},
-  { type: 'external_data_table', title: '外部数据表', funcId: '11' ,  funcType: 'logic'},
+  { type: 'dimension_converter', title: '类型转换', funcId: '12', funcType: 'logic' },
+  { type: 'condition', title: '条件函数', funcId: '1', funcType: 'logic' },
+  { type: 'aggregate', title: '聚合函数', funcId: '2', funcType: 'logic' },
+  { type: 'iterator', title: '迭代', funcId: '8', funcType: 'logic' },
+  { type: 'decision_tables_function', title: '决策表', funcId: '10', funcType: 'logic' },
+  { type: 'external_data_table', title: '外部数据表', funcId: '11', funcType: 'logic' }
 ]
 
 // 监听器
-watch(() => props.visible, (newVal) => {
-  if (newVal) {
-    loadSearchHistory()
-    loadRecommendNodes()
-    calculateModalPosition() // 新增：计算弹窗位置
+watch(
+  () => props.visible,
+  newVal => {
+    if (newVal) {
+      loadSearchHistory()
+      loadRecommendNodes()
+      calculateModalPosition() // 新增：计算弹窗位置
+    }
   }
-})
+)
 
 // 监听位置变化
-watch(() => props.data, () => {
-  if (props.visible) {
-    calculateModalPosition() // 新增：位置变化时重新计算
+watch(
+  () => props.data,
+  () => {
+    if (props.visible) {
+      calculateModalPosition() // 新增：位置变化时重新计算
+    }
   }
-})
+)
 
 // 方法
 function handleSearchClear() {
   searchKeyword.value = ''
   hasSearched.value = false // 重置搜索状态
-  searchResults.value = []  //下拉框隐藏
+  searchResults.value = [] //下拉框隐藏
 }
 
 async function handleSearch() {

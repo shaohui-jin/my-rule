@@ -1,4 +1,4 @@
-import { InputAndOutput, JsDocData } from "@/utils/parser/JSDocParser";
+import { InputAndOutput, JsDocData } from '@/utils/parser/JSDocParser'
 
 export type SupportedType = 'input' | 'select' | 'switch' | 'inputNumber' | 'textarea' | 'function'
 
@@ -8,35 +8,38 @@ export type FromConfig = {
     labelPosition: string // 文案排布
     size: 'default' // 组件大小
     events: { onMounted: '' } // 事件
-  },
+  }
   compList: Array<Attribute>
 }
 
 export interface Config {
   value?: string | number // 默认值
   options?: string | Array<any> // 默认数组
-  props?: string | {
-    label?: string, // 数组默认显示内容
-    value?: string // 数组默认值
-    desc?: string // 数组详情描述
-  }
+  props?:
+    | string
+    | {
+        label?: string // 数组默认显示内容
+        value?: string // 数组默认值
+        desc?: string // 数组详情描述
+      }
   compType?: SupportedType // 组件类型
 }
 
 export type FormAttribute = Config & {
   label: string // 文案
-  placeholder:  string
+  placeholder: string
   labelWidth: '' // 单独文案宽度
   disabled: false // 禁用状态
   cssClass: string[]
   paramType: string // 参数类型
+  paramTypeRecord: string // 参数类型详细描述
   compType: SupportedType // 组件类型
   min: number
-  max: number,
+  max: number
 }
 
 interface Attribute {
-  id: string,
+  id: string
   attributes: FormAttribute
 }
 
@@ -56,7 +59,7 @@ export const DEFAULT_FORM_CONFIG: FromConfig = {
     labelWidth: '70px',
     labelPosition: 'right',
     size: 'default',
-    events: { onMounted: '' },
+    events: { onMounted: '' }
   },
   compList: []
 }
@@ -70,13 +73,13 @@ const DEFAULT_COMP_ATTRIBUTE: FormAttribute = {
   disabled: false,
   cssClass: [],
   paramType: undefined,
+  paramTypeRecord: undefined,
   compType: undefined,
   min: undefined,
-  max: undefined,
+  max: undefined
 }
 
 export default class FormParser {
-
   constructor() {}
 
   /**
@@ -86,7 +89,7 @@ export default class FormParser {
     // 创建基础表单配置
     const formConfig = JSON.parse(JSON.stringify(DEFAULT_FORM_CONFIG))
 
-    common.forEach((item) => {
+    common.forEach(item => {
       const comp = this.createComponent(item, SUPPORTED_COMPONENT_TYPES)
       if (comp) {
         formConfig.compList.push(comp)
@@ -108,22 +111,22 @@ export default class FormParser {
       attributes: {
         ...JSON.parse(JSON.stringify(DEFAULT_COMP_ATTRIBUTE)),
         label: param.name,
-        paramType:
-          ['object', 'object[]'].includes(param.type)
-            ? `${JSON.stringify(param.typeRecord)}${param.type.includes('[]') ? '[]' : ''}`
-            : param.type,
+        paramType: param.type,
+        paramTypeRecord: ['object', 'object[]'].includes(param.type)
+          ? `${JSON.stringify(param.typeRecord)}${param.type.includes('[]') ? '[]' : ''}`
+          : '',
         compType: componentType,
         placeholder: param.type.endsWith('[]')
           ? `请输入${param.name || param.name}（${
-            ['string', 'number'].includes(param.type.replace('[]', ''))
-              ? '多个值用逗号分隔'
-              : 'JSON格式'
-          }）`
+              ['string', 'number'].includes(param.type.replace('[]', ''))
+                ? '多个值用逗号分隔'
+                : 'JSON格式'
+            }）`
           : '',
-        ...param.config,
+        ...param.config
       }
     }
-
+    console.log('baseAttributes', baseAttributes)
     return baseAttributes
   }
 
@@ -156,9 +159,7 @@ export default class FormParser {
           // 简单类型使用input，复杂类型使用textarea
           return ['string', 'number'].includes(elementType) ? 'input' : 'textarea'
         }
-        // return 'input'
+      // return 'input'
     }
   }
-
 }
-

@@ -47,51 +47,83 @@
           <el-option value="50%"></el-option>
           <el-option value="25%"></el-option>
         </el-select>
-        <Increase @click="handleIncrease"/>
+        <Increase @click="handleIncrease" />
         <el-tooltip content="一键折叠" placement="top">
-          <Collapse @click="handleCollpase(true)"/>
+          <Collapse @click="handleCollpase(true)" />
         </el-tooltip>
         <el-tooltip content="一键展开" placement="top">
-          <expand @click="handleCollpase(false)"/>
+          <expand @click="handleCollpase(false)" />
         </el-tooltip>
         <el-tooltip content="适应视图" placement="top">
-          <AdaptView @click="handleFit"/>
+          <AdaptView @click="handleFit" />
         </el-tooltip>
         <el-tooltip content="一键排列" placement="top">
-          <Layout @click="handleLayout"/>
+          <Layout @click="handleLayout" />
         </el-tooltip>
         <el-tooltip content="视图浏览" placement="top">
-          <Browsing @click="() => showMiniMap = !showMiniMap"/>
+          <Browsing @click="() => (showMiniMap = !showMiniMap)" />
         </el-tooltip>
       </div>
       <div class="workflow-actions">
-
-          <el-button link @click="handleUndo" :disabled="!canUndo || props.isTesting"><Reset />撤销</el-button>
-          <el-button link @click="handleRedo" :disabled="!canRedo || props.isTesting"><Recover />恢复</el-button>
-          <el-button link @click="handleNew" :disabled="props.isTesting"><Clear />清空</el-button>
-          <el-button link @click="handleNewTab" :disabled="props.isTesting"><Add />新建</el-button>
-          <el-button link @click="handleSaveAs" :disabled="props.isTesting"><SaveAs />另存为</el-button>
-          <el-button link @click="handleImport" :disabled="props.isTesting"><Import />导入</el-button>
-          <el-button link @click="handleExport" :disabled="props.isTesting"><Export />导出</el-button>
-<!--        <el-button link disabled><Setting />版本管理</el-button>-->
-        <el-button link @click="handleTest" :disabled="!props.data.id"><Test />测试</el-button>
-<!--        <el-button link disabled><Check />检查</el-button>-->
+        <el-button link @click="handleUndo" :disabled="!canUndo || props.isTesting">
+          <Reset />
+          撤销
+        </el-button>
+        <el-button link @click="handleRedo" :disabled="!canRedo || props.isTesting">
+          <Recover />
+          恢复
+        </el-button>
+        <el-button link @click="handleNew" :disabled="props.isTesting">
+          <Clear />
+          清空
+        </el-button>
+        <el-button link @click="handleNewTab" :disabled="props.isTesting">
+          <Add />
+          新建
+        </el-button>
+        <el-button link @click="handleSaveAs" :disabled="props.isTesting">
+          <SaveAs />
+          另存为
+        </el-button>
+        <el-button link @click="handleImport" :disabled="props.isTesting">
+          <Import />
+          导入
+        </el-button>
+        <el-button link @click="handleExport" :disabled="props.isTesting">
+          <Export />
+          导出
+        </el-button>
+        <!--        <el-button link disabled><Setting />版本管理</el-button>-->
+        <el-button link @click="handleTest" :disabled="!props.data.id">
+          <Test />
+          测试
+        </el-button>
+        <!--        <el-button link disabled><Check />检查</el-button>-->
         <template v-if="props.data.id">
           <el-button type="primary" @click="handleSave">保存</el-button>
         </template>
         <template v-else>
           <el-button type="primary" disabled>保存</el-button>
         </template>
-
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onActivated, onDeactivated, onUnmounted, watch, defineExpose, h, nextTick, computed } from 'vue'
+import {
+  ref,
+  onActivated,
+  onDeactivated,
+  onUnmounted,
+  watch,
+  defineExpose,
+  h,
+  nextTick,
+  computed
+} from 'vue'
 import { Graph, Shape } from '@antv/x6'
-import { Dnd } from '@antv/x6-plugin-dnd'
+import { Dnd } from '@antv/x6'
 import { InputData, LogicType, type WorkflowData, WorkflowNode } from '@/type/workflow'
 import { CustomNode, getCustomNodeConfig } from '@/utils/workflow/CustomNode'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -135,8 +167,7 @@ import Decrease from '@/assets/ruleEditToolSvg/decrease.svg'
 import Expand from '@/assets/ruleEditToolSvg/expand.svg'
 import Increase from '@/assets/ruleEditToolSvg/increase.svg'
 import Layout from '@/assets/ruleEditToolSvg/layout.svg'
-import { useRuleStore } from "@/store/modules/ruleCache";
-
+import { useRuleStore } from '@/store/modules/ruleCache'
 
 const paramStore = useParamStore()
 /**
@@ -145,10 +176,10 @@ const paramStore = useParamStore()
  * @property {any[]} functionNodes - 函数节点列表
  */
 const props = defineProps<{
-  data: WorkflowData;
-  functionNodes: Map<string, FunctionNode>;
-  nodeId: number;
-  isTesting: boolean;
+  data: WorkflowData
+  functionNodes: Map<string, FunctionNode>
+  nodeId: number
+  isTesting: boolean
 }>()
 const emit = defineEmits([
   'update:data',
@@ -182,7 +213,6 @@ const minDevicePixelRatio = 0.2
 const ruleStore = useRuleStore()
 
 const showMiniMap = ref(false)
-
 
 // 移除重复的搜索相关状态，由父组件统一管理
 // const showSearchModal = ref(false)
@@ -230,8 +260,7 @@ watch(
   () => props.nodeId,
   val => {
     if (val) {
-      selectNodeOnly(val+'')
-
+      selectNodeOnly(val + '')
     }
     // graph.centerContent()
   }
@@ -315,7 +344,7 @@ function registerGraphBaseEvents() {
   graph.on('scale', ({ sx, sy }) => {
     // 在这里执行你需要的同步逻辑
     devicePixelRatio.value = (Number(sx.toFixed(2)) * 100).toFixed() + '%'
-  });
+  })
 
   // 监听历史记录变化
   graph.on('history:change', () => {
@@ -534,9 +563,8 @@ function registerGraphBaseEvents() {
       sourceNode.clearPortCount()
     }
 
-
     // 添加这一行来根据距离更新连接线样式
-    updateEdgeConnectorBasedOnDistance(edge);
+    updateEdgeConnectorBasedOnDistance(edge)
 
     validateEdgeTypeAndSetColor(edge)
     refreshPanel()
@@ -568,7 +596,7 @@ function registerGraphBaseEvents() {
       const upstreamNodeIds = findUpstreamNonConditionNodes(sourceNodeId, workflowData)
 
       // 清理 source是当前节点或其上游非条件节点的数据
-      if(node.id == delPortNodeId) {
+      if (node.id == delPortNodeId) {
         node.inputData.forEach((inp: any) => {
           if (inp.source === sourceNodeId || upstreamNodeIds.includes(inp.source)) {
             inp.source = ''
@@ -576,17 +604,19 @@ function registerGraphBaseEvents() {
         })
       }
       // 如果下游节点是条件节点 则清理条件节点的后续节点
-      if(node?.logicData?.logicType === LogicType.IFELSE) {
-        workflowData.value.edges.filter(e => e.source === targetNodeId)?.forEach(edge => {
-          const tempNode = workflowData.value.nodeList.find(n => n.id === edge.target)
-          if(tempNode) {
-            tempNode.inputData.forEach((inp: any) => {
-              if (inp.source === sourceNodeId || upstreamNodeIds.includes(inp.source)) {
-                inp.source = ''
-              }
-            })
-          }
-        })
+      if (node?.logicData?.logicType === LogicType.IFELSE) {
+        workflowData.value.edges
+          .filter(e => e.source === targetNodeId)
+          ?.forEach(edge => {
+            const tempNode = workflowData.value.nodeList.find(n => n.id === edge.target)
+            if (tempNode) {
+              tempNode.inputData.forEach((inp: any) => {
+                if (inp.source === sourceNodeId || upstreamNodeIds.includes(inp.source)) {
+                  inp.source = ''
+                }
+              })
+            }
+          })
       }
     }
 
@@ -602,65 +632,63 @@ function registerGraphBaseEvents() {
     edge.attr('line/strokeWidth', 3)
     // 添加箭头
 
-
     edge.addTools([
-        {
-          name: 'target-arrowhead',
-          args: { attrs: { fill: edge.hasCorrectionText ? '#ff6b6b' : '#1890ff' } }
-        },
-        {
-          name: 'button-remove',
-          args: {
-            distance: 0.5,
-            size: 10
-          },
-        },
-        // {
-        //   name: 'button',
-        //   args: {
-        //     markup: [
-        //       {
-        //         tagName: 'circle',
-        //         selector: 'button',
-        //         attrs: {
-        //           r: 10,
-        //           fill: '#147FFA',
-        //           cursor: 'pointer',
-        //         },
-        //       },
-        //       {
-        //         tagName: 'text',
-        //         textContent: '+',
-        //         selector: 'icon',
-        //         attrs: {
-        //           fill: 'white',
-        //           fontSize: 20,
-        //           textAnchor: 'middle',
-        //           pointerEvents: 'none',
-        //           y: '6px',
-        //         },
-        //       },
-        //     ],
-        //     distance: 0.5,
-        //     onClick({cell, e}: any) {
-        //       if(cell && cell.isEdge && cell.isEdge()){
-        //         const edge = cell
-        //         const sourceNodeId = edge.getSourceCellId()
-        //         const sourcePortId = edge.getSourcePortId()
-        //         const targetNodeId = edge.getTargetCellId()
-        //         const targetPortId = edge.getTargetPortId()
-        //         edgeCorrectionManager.searchTarget = {
-        //           targetNodeId: targetNodeId,
-        //           targetPortId: targetPortId,
-        //           edgeId: edge.id
-        //         }
-        //         emit('show-search-modal', { x: e.clientX + 10, y: e.clientY, nodeId: sourceNodeId, portId: sourcePortId, fromEdgeAdd: true, fromBlankAdd: false })
-        //       }
-        //     },
-        //   },
-        // }
-      ])
-
+      {
+        name: 'target-arrowhead',
+        args: { attrs: { fill: edge.hasCorrectionText ? '#ff6b6b' : '#1890ff' } }
+      },
+      {
+        name: 'button-remove',
+        args: {
+          distance: 0.5,
+          size: 10
+        }
+      }
+      // {
+      //   name: 'button',
+      //   args: {
+      //     markup: [
+      //       {
+      //         tagName: 'circle',
+      //         selector: 'button',
+      //         attrs: {
+      //           r: 10,
+      //           fill: '#147FFA',
+      //           cursor: 'pointer',
+      //         },
+      //       },
+      //       {
+      //         tagName: 'text',
+      //         textContent: '+',
+      //         selector: 'icon',
+      //         attrs: {
+      //           fill: 'white',
+      //           fontSize: 20,
+      //           textAnchor: 'middle',
+      //           pointerEvents: 'none',
+      //           y: '6px',
+      //         },
+      //       },
+      //     ],
+      //     distance: 0.5,
+      //     onClick({cell, e}: any) {
+      //       if(cell && cell.isEdge && cell.isEdge()){
+      //         const edge = cell
+      //         const sourceNodeId = edge.getSourceCellId()
+      //         const sourcePortId = edge.getSourcePortId()
+      //         const targetNodeId = edge.getTargetCellId()
+      //         const targetPortId = edge.getTargetPortId()
+      //         edgeCorrectionManager.searchTarget = {
+      //           targetNodeId: targetNodeId,
+      //           targetPortId: targetPortId,
+      //           edgeId: edge.id
+      //         }
+      //         emit('show-search-modal', { x: e.clientX + 10, y: e.clientY, nodeId: sourceNodeId, portId: sourcePortId, fromEdgeAdd: true, fromBlankAdd: false })
+      //       }
+      //     },
+      //   },
+      // }
+    ])
   })
 
   graph.on('edge:mouseleave', ({ edge }: { edge: any }) => {
@@ -689,23 +717,26 @@ function registerGraphBaseEvents() {
   })
 
   // 连接桩点击事件
-  graph.on('node:port:click', ({ node, port, x, y }: { node: any; port: any; x: number; y: number }) => {
-    // if (node && node.shape === 'customNode' && port && port.indexOf('out') != -1) {
-    //   const isSelect = node.showSearchCheck(port)
-    //   if (isSelect) {
-    //     // 显示搜索页面
-    //     const clientCoords = graph.localToClient(x, y)
-    //     emit('show-search-modal', { x: clientCoords.x + 10, y: clientCoords.y, nodeId: node.id, portId: port, fromEdgeAdd: false, fromBlankAdd: false })
-    //     setTimeout(() => {
-    //       clearSelection()
-    //       onNodeSelected(null)
-    //     }, 10);
-    //   }
-    // }
-  })
+  graph.on(
+    'node:port:click',
+    ({ node, port, x, y }: { node: any; port: any; x: number; y: number }) => {
+      // if (node && node.shape === 'customNode' && port && port.indexOf('out') != -1) {
+      //   const isSelect = node.showSearchCheck(port)
+      //   if (isSelect) {
+      //     // 显示搜索页面
+      //     const clientCoords = graph.localToClient(x, y)
+      //     emit('show-search-modal', { x: clientCoords.x + 10, y: clientCoords.y, nodeId: node.id, portId: port, fromEdgeAdd: false, fromBlankAdd: false })
+      //     setTimeout(() => {
+      //       clearSelection()
+      //       onNodeSelected(null)
+      //     }, 10);
+      //   }
+      // }
+    }
+  )
 
   // 决策表编辑按钮点击事件
-  graph.on('node:edit_decisionTables', ({ node, e }: { node: any, e: any }) => {
+  graph.on('node:edit_decisionTables', ({ node, e }: { node: any; e: any }) => {
     // 阻止事件冒泡，避免触发容器的点击事件
     if (e) {
       e.stopPropagation()
@@ -717,7 +748,7 @@ function registerGraphBaseEvents() {
 
 function registerGraphFullEvents() {
   // 监听空白区域双击事件
-  graph.on('blank:dblclick', ({ e, x, y}) => {
+  graph.on('blank:dblclick', ({ e, x, y }) => {
     emit('show-search-modal', {
       x: e.clientX,
       y: e.clientY,
@@ -728,7 +759,7 @@ function registerGraphFullEvents() {
       fromBlankX: x,
       fromBlankY: y
     })
-  });
+  })
 
   function createNewNode(nodeData: WorkflowNode): Node {
     const newId = nodeIdFactory.next()
@@ -854,7 +885,7 @@ function registerGraphFullEvents() {
   })
 
   // 添加节点事件 只存在一个源桩点，同时线也最多只有一条
-  graph.on('node:add_mouseenter', (event) => {
+  graph.on('node:add_mouseenter', event => {
     const { node, e } = event
     e.stopPropagation()
 
@@ -894,7 +925,7 @@ function registerGraphFullEvents() {
 
     if (oldTargetNode && oldTargetNode.inputData) {
       oldTargetNode.inputData.forEach((inp: any) => {
-        if(inp.source === newSource || upstreamNodeIds.includes(inp.source)) {
+        if (inp.source === newSource || upstreamNodeIds.includes(inp.source)) {
           inp.source = ''
         }
       })
@@ -910,11 +941,10 @@ function registerGraphFullEvents() {
       targetParams = newTargetNode.inputData.filter((inp: any) => inp.sourceType === 'node')
       const index = Number(newTargetPort.split('_')[1])
 
-      if(targetParams.length >= index) {
+      if (targetParams.length >= index) {
         targetParams[index - 1].source = upstreamNodeIds.length > 0 ? upstreamNodeIds[0] : newSource
       }
     }
-
 
     if (wfEdge) {
       wfEdge.source = newSource
@@ -923,9 +953,8 @@ function registerGraphFullEvents() {
       wfEdge.targetPort = newTargetPort
     }
 
-
     // 添加这一行来根据距离更新连接线样式
-    updateEdgeConnectorBasedOnDistance(edge);
+    updateEdgeConnectorBasedOnDistance(edge)
 
     // // 连接后进行类型验证并设置颜色
     validateEdgeTypeAndSetColor(edge)
@@ -945,25 +974,24 @@ const handleRegister = () => {
 
 // 在文件中添加以下函数，用于根据节点距离设置连接线样式
 function updateEdgeConnectorBasedOnDistance(edge: any) {
-  const sourceCell = edge.getSourceCell();
-  const targetCell = edge.getTargetCell();
+  const sourceCell = edge.getSourceCell()
+  const targetCell = edge.getTargetCell()
 
   if (sourceCell && targetCell) {
     // 获取源节点和目标节点的位置及尺寸
-    const sourceBBox = sourceCell.getBBox();
-    const targetBBox = targetCell.getBBox();
+    const sourceBBox = sourceCell.getBBox()
+    const targetBBox = targetCell.getBBox()
     // console.log(sourceCell.size(), 'size')
     // console.log(targetCell.size(), 'size')
     // 计算两个节点中心点之间的距离
-    const sourceCenterX = sourceBBox.center.x;
-    const sourceCenterY = sourceBBox.center.y;
-    const targetCenterX = targetBBox.center.x;
-    const targetCenterY = targetBBox.center.y;
+    const sourceCenterX = sourceBBox.center.x
+    const sourceCenterY = sourceBBox.center.y
+    const targetCenterX = targetBBox.center.x
+    const targetCenterY = targetBBox.center.y
 
     const distance = Math.sqrt(
-      Math.pow(targetCenterX - sourceCenterX, 2) +
-      Math.pow(targetCenterY - sourceCenterY, 2)
-    );
+      Math.pow(targetCenterX - sourceCenterX, 2) + Math.pow(targetCenterY - sourceCenterY, 2)
+    )
     // if (distance < 400) {
     //   edge.setRouter('normal')
     //   edge.setConnector('normal');
@@ -971,25 +999,25 @@ function updateEdgeConnectorBasedOnDistance(edge: any) {
     //   edge.setRouter('manhattan')
     //   edge.setConnector('rounded', { radius: 30 });
     // }
-    const sourceHeight = sourceCell.size().height;
-    const targetHeight = targetCell.size().height;
+    const sourceHeight = sourceCell.size().height
+    const targetHeight = targetCell.size().height
     // 如果距离小于阈值（例如150像素），使用直线连接；否则使用曲线连接
     // 当前是水平有重叠
-    if((targetCenterX - sourceCenterX) < 400) {
+    if (targetCenterX - sourceCenterX < 400) {
       // 同时垂直有重叠
       // console.log('水平重叠距离小于300，使用直线连接', targetCenterY - sourceCenterY, (targetHeight / 2 + sourceHeight / 2))
       // console.log('===', targetBBox.height / 2 + sourceBBox.height / 2)
-      if(Math.abs(targetCenterY - sourceCenterY) < (targetHeight / 2 + sourceHeight / 2)) {
+      if (Math.abs(targetCenterY - sourceCenterY) < targetHeight / 2 + sourceHeight / 2) {
         // console.log('垂直重叠距离小于300，使用直线连接')
         edge.setRouter('normal')
-        edge.setConnector('normal');
+        edge.setConnector('normal')
       } else {
         edge.setRouter('manhattan')
-        edge.setConnector('rounded', { radius: 30 });
+        edge.setConnector('rounded', { radius: 30 })
       }
     } else {
       edge.setRouter('manhattan')
-      edge.setConnector('rounded', { radius: 30 });
+      edge.setConnector('rounded', { radius: 30 })
     }
   }
 }
@@ -1047,7 +1075,7 @@ function initNodesAndEdges(graph: any, data: WorkflowData) {
     })
 
     // 添加这一行来根据距离更新连接线样式
-    updateEdgeConnectorBasedOnDistance(x6Edge);
+    updateEdgeConnectorBasedOnDistance(x6Edge)
 
     // 验证边的类型兼容性并设置颜色
     validateEdgeTypeAndSetColor(x6Edge)
@@ -1103,7 +1131,7 @@ const initGraph = () => {
       createEdge: () => new Shape.Edge(),
       allowMulti: true,
       validateConnection(args) {
-        if(edgeCorrectionManager) {
+        if (edgeCorrectionManager) {
           edgeCorrectionManager.edgePreviewColor(args)
         }
         const sourceMagnet = args.sourceMagnet as Element | null | undefined
@@ -1228,7 +1256,6 @@ const visible = ref(false)
 const containerX = ref(0)
 const containerY = ref(0)
 
-
 const content = ref('')
 const registerPortTooltip = (container: Element, port: any) => {
   if (!port || !container) return
@@ -1236,20 +1263,20 @@ const registerPortTooltip = (container: Element, port: any) => {
     container.addEventListener('mouseenter', (e: MouseEvent) => {
       visible.value = true
       const tooltip = document.querySelector('.x6-tooltip') as HTMLElement
-      if(!port.attrs.desc) {
-        content.value = '';
-        if(port.attrs.portTitle.length > 14) {
+      if (!port.attrs.desc) {
+        content.value = ''
+        if (port.attrs.portTitle.length > 14) {
           content.value = port.attrs.portTitle
         }
       } else {
-        if(port.attrs.portTitle.length > 14) {
+        if (port.attrs.portTitle.length > 14) {
           content.value = port.attrs.portTitle + ':' + port.attrs.desc
         } else {
           content.value = port.attrs.desc
         }
       }
       nextTick(() => {
-        if(content.value) {
+        if (content.value) {
           tooltip.style.top = `${e.clientY - containerY.value - tooltip.offsetHeight - 20}px`
           tooltip.style.left = `${e.clientX - containerX.value - 30}px`
         } else {
@@ -1261,8 +1288,6 @@ const registerPortTooltip = (container: Element, port: any) => {
       visible.value = false
     })
   }
-
-
 }
 
 /**
@@ -1271,14 +1296,14 @@ const registerPortTooltip = (container: Element, port: any) => {
 const handleDecrease = () => {
   let dpr = Number(devicePixelRatio.value.split('%')[0])
   const _newDpr = (dpr - devicePixelRatioStep) / 100
-  graph.zoomTo(_newDpr <=  minDevicePixelRatio ?  minDevicePixelRatio : _newDpr)
+  graph.zoomTo(_newDpr <= minDevicePixelRatio ? minDevicePixelRatio : _newDpr)
 }
 
 /**
  * 设置缩放倍率
  * @param val
  */
-const handleDpr = (val) => {
+const handleDpr = val => {
   graph.zoomTo(Number(val.split('%')[0]) / 100)
 }
 
@@ -1288,7 +1313,7 @@ const handleDpr = (val) => {
 const handleIncrease = () => {
   let dpr = Number(devicePixelRatio.value.split('%')[0])
   const _newDpr = (dpr + devicePixelRatioStep) / 100
-  graph.zoomTo(_newDpr >=  maxDevicePixelRatio ?  maxDevicePixelRatio : _newDpr)
+  graph.zoomTo(_newDpr >= maxDevicePixelRatio ? maxDevicePixelRatio : _newDpr)
 }
 
 /**
@@ -1302,17 +1327,20 @@ const handleFit = () => {
  * 折叠展开
  * @param bool 折叠状态
  */
-const handleCollpase = (bool) => {
+const handleCollpase = bool => {
   let nodeList = workflowData.value.nodeList
 
   // 获取迭代列表
-  const iteratorIdArr = nodeList.filter(node => node.funcType === 'logic' && node.logicData.logicType === LogicType.ITERATOR).map(node => node.id)
-  nodeList = nodeList.filter((node => !iteratorIdArr.includes(node.id)))
+  const iteratorIdArr = nodeList
+    .filter(node => node.funcType === 'logic' && node.logicData.logicType === LogicType.ITERATOR)
+    .map(node => node.id)
+  nodeList = nodeList.filter(node => !iteratorIdArr.includes(node.id))
 
   // 获取节点的cell信息，同时过滤掉迭代的子项 以及 折叠状态相同的cell
-  const cellList = nodeList.map(node => {
-    return graph.getCellById(node.id)
-  })
+  const cellList = nodeList
+    .map(node => {
+      return graph.getCellById(node.id)
+    })
     .filter(cell => !cell.parent || !iteratorIdArr.includes(cell.parent.id))
     .filter(cell => cell.isCollapsed === !bool)
 
@@ -1320,8 +1348,6 @@ const handleCollpase = (bool) => {
     cell.toggleCollapse()
   })
 }
-
-
 
 /**
  * 一键布局功能
@@ -1470,10 +1496,17 @@ async function getFlowData(options?: { isGenerateTestLuaScript?: boolean }) {
     console.log('函数配置数据未加载')
   }
 
-  const { expressionLuaCodeMap, expressionParamArr } = await getLuaCodeMapByExpression(workflowData.value.nodeList)
+  const { expressionLuaCodeMap, expressionParamArr } = await getLuaCodeMapByExpression(
+    workflowData.value.nodeList
+  )
   if (!expressionLuaCodeMap) return
   // 生成lua代码
-  const luaCode = luaGenerator.generate(workflowData.value, functionNodes, isGenerateTestLuaScript, expressionLuaCodeMap)
+  const luaCode = luaGenerator.generate(
+    workflowData.value,
+    functionNodes,
+    isGenerateTestLuaScript,
+    expressionLuaCodeMap
+  )
   console.log(luaCode)
   return { luaCode, allFuncId, expressionParamArr }
 }
@@ -1532,7 +1565,9 @@ const handleExport = () => {
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `workflow_${workflowData.value.ruleName || 'unnamed'}_${new Date().toISOString().slice(0, 10)}.json`
+    link.download = `workflow_${workflowData.value.ruleName || 'unnamed'}_${new Date()
+      .toISOString()
+      .slice(0, 10)}.json`
 
     // 触发下载
     document.body.appendChild(link)
@@ -1838,7 +1873,7 @@ function removePortData(index: number, nodeId: string, type?: string) {
       //
       workflowData.value.edges.forEach(i => {
         // console.log('===',i.sourcePort === removedData.portId, i.sourcePort, removedData.portId)
-        if(i.sourcePort === removedData[0].portId) {
+        if (i.sourcePort === removedData[0].portId) {
           delPortNodeId = i.target
         }
       })
@@ -1903,10 +1938,10 @@ function directContectNode(node: any, data: any) {
   const x6Node = createX6Node(nodeData, true)
 
   if (x6Node) {
-    if(nodeData?.logicData?.logicType === LogicType.ITERATOR) {
+    if (nodeData?.logicData?.logicType === LogicType.ITERATOR) {
       // 需要模拟一下拖拽的流程 确保生成开始节点
-      graph.addNode(x6Node, {stencil: "v5"})
-    }else {
+      graph.addNode(x6Node, { stencil: 'v5' })
+    } else {
       graph.addNode(x6Node)
     }
     if (data.fromBlankAdd) {
@@ -1927,13 +1962,13 @@ function directContectNode(node: any, data: any) {
           target: { cell: x6Node.id, port: 'in_1' }
         })
         // 修复聚合函数在入桩是input的情况下无法自动连接问题
-        if(nodeData.inputData[0].sourceType === 'input') {
+        if (nodeData.inputData[0].sourceType === 'input') {
           nodeData.inputData[0].sourceType = 'node'
           onNodeDataUpdate(nodeData, 'in')
         }
         if (fromEdgeAdd) {
           edgeCorrectionManager.addNodeBySearch(x6Node, edge)
-        }else {
+        } else {
           edgeCorrectionManager.fixEdgeTargetNode(edge)
         }
         validateEdgeTypeAndSetColor(edge)
@@ -2004,7 +2039,7 @@ function syncData() {
     iteratorManager.syncIteratorData()
   }
   // console.log('this.workflowData.value===', )
-  workflowData.value.nodeList.forEach( iteratorData => {
+  workflowData.value.nodeList.forEach(iteratorData => {
     const iteratorNode = graph.getCellById(iteratorData.id) as any
     iteratorData.isCollapsed = iteratorNode.isCollapsed
   })
@@ -2035,7 +2070,10 @@ function getAvailableSourceOptions(node: any, param: any) {
           // 常规节点
           let edgeSource = itSourceNode.id
           // 条件节点 需要往上找
-          if( itSourceNode.funcType === 'logic' && itSourceNode.logicData.logicType === LogicType.IFELSE) {
+          if (
+            itSourceNode.funcType === 'logic' &&
+            itSourceNode.logicData.logicType === LogicType.IFELSE
+          ) {
             const upstreamNodes = findUpstreamNodes(edge.source, true, workflowData, new Set())
             itSourceNode = upstreamNodes[0].node
             edgeSource = upstreamNodes[0].node.id
@@ -2049,14 +2087,20 @@ function getAvailableSourceOptions(node: any, param: any) {
               label: `${itSourceNode?.title || curEdgeSourceId} [迭代项]`,
               value: curEdgeSourceId,
               currentLabel: e.targetPort === param.portId ? param.attributes?.label : '',
-              currentPort: e.targetPort,currentId:node.id,
+              currentPort: e.targetPort,
+              currentId: node.id,
               currentSource: e.source
             })
           } else {
             // 迭代的多个入参 也允许选择
-            options.push({ label: itSourceNode?.title || edgeSource, value: edgeSource,currentLabel: e.targetPort === param.portId ? param.attributes?.label : '', currentPort: e.targetPort,currentId:node.id,
+            options.push({
+              label: itSourceNode?.title || edgeSource,
+              value: edgeSource,
+              currentLabel: e.targetPort === param.portId ? param.attributes?.label : '',
+              currentPort: e.targetPort,
+              currentId: node.id,
               currentSource: e.source
-             })
+            })
           }
         }
         return options
@@ -2079,7 +2123,8 @@ function getAvailableSourceOptions(node: any, param: any) {
             : upNode?.title || upNode.id,
           value: upNode.id,
           currentLabel: e.targetPort === param.portId ? param.attributes?.label : '',
-          currentPort: e.targetPort,currentId:node.id,
+          currentPort: e.targetPort,
+          currentId: node.id,
           currentSource: e.source
         })
       }
@@ -2153,14 +2198,23 @@ const handlerEventListener = (node, view) => {
   const addIcon = view.container.querySelector('.x6-graph-pannable [event="node:add_mouseenter"]')
   const copyIcon = view.container.querySelector('.x6-graph-pannable [event="node:copy_mouseenter"]')
   const delIcon = view.container.querySelector('.x6-graph-pannable [event="node:del_mouseenter"]')
-  const collapseIcon = view.container.querySelector('.x6-graph-pannable [event="node:customer_collapse"]')
-  const titleIcon = view.container.querySelector('.x6-graph-pannable [event="node:custom_titletip"]')
+  const collapseIcon = view.container.querySelector(
+    '.x6-graph-pannable [event="node:customer_collapse"]'
+  )
+  const titleIcon = view.container.querySelector(
+    '.x6-graph-pannable [event="node:custom_titletip"]'
+  )
   const infoIcon = view.container.querySelector('.x6-graph-pannable [event="node:info_mouseenter"]')
 
   const addFn = () => showInfoPanel(node, 'addButton', '新增节点')
   const copyFn = () => showInfoPanel(node, 'copyButton', '复制节点')
   const delFn = () => showInfoPanel(node, 'delButton', '删除节点')
-  const collapseFn = () => showInfoPanel(node, 'foldButton', collapseIcon.getAttribute('xlink:href').includes('UnFold') ? '展开' : '折叠')
+  const collapseFn = () =>
+    showInfoPanel(
+      node,
+      'foldButton',
+      collapseIcon.getAttribute('xlink:href').includes('UnFold') ? '展开' : '折叠'
+    )
   const titleFn = () => showInfoPanel(node, 'title', titleIcon.getAttribute('text'))
   const infoFn = () => showInfoPanel(node, 'infoButton', node.data.remark)
 
@@ -2209,7 +2263,8 @@ function closeInfoPanel() {
 function showInfoPanel(
   node: any,
   type: 'title' | 'remark' | 'addButton' | 'copyButton' | 'delButton' | 'foldButton' | 'infoButton',
-  desc: string) {
+  desc: string
+) {
   // 如果已有信息面板，先移除
   if (infoPanelNode.value) {
     graph.removeCell(infoPanelNode.value)
@@ -2232,7 +2287,6 @@ function showInfoPanel(
   }
 }
 
-
 /**
  * 决策表编辑面板相关状态
  */
@@ -2240,8 +2294,8 @@ const showDecisionTablePanel = ref(false) // 控制决策表编辑面板的显�
 const currentDecisionTableNode = ref<WorkflowNode>(null) // 当前编辑的决策表节点数据
 const currentDecisionTableData = ref<any[]>([]) // 当前决策表的数据
 /**
-* 关闭决策表编辑面板
-*/
+ * 关闭决策表编辑面板
+ */
 function closeDecisionTableEditPanel() {
   showDecisionTablePanel.value = false
   currentDecisionTableNode.value = null
@@ -2252,7 +2306,7 @@ function closeDecisionTableEditPanel() {
 /**
  * 显示决策表函数编辑面板
  */
- function showDecisionTablesEditPanel(node: any) {
+function showDecisionTablesEditPanel(node: any) {
   // 获取节点数据
   const nodeData = workflowData.value.nodeList.find(n => n.id === node.id)
   if (!nodeData) {
@@ -2268,7 +2322,11 @@ function closeDecisionTableEditPanel() {
   // 从节点数据中获取决策表数据
   let decisionTableData: any[] = []
 
-  if (nodeData.decisionTableData && nodeData.decisionTableData.rowList?.length > 0 && Array.isArray(nodeData.decisionTableData.rowList)) {
+  if (
+    nodeData.decisionTableData &&
+    nodeData.decisionTableData.rowList?.length > 0 &&
+    Array.isArray(nodeData.decisionTableData.rowList)
+  ) {
     // 转换数据结构：将 inputList/outputList/annotationList 转换为 Input/Output/Annotations
     decisionTableData = nodeData.decisionTableData.rowList.map(row => ({
       id: row.id,
@@ -2397,7 +2455,7 @@ function validateWorkflow() {
     }
   }
 
-  if(result.isValid) {
+  if (result.isValid) {
     // 如果校验通过，则关闭验证错误弹窗
     closeValidationModal()
   }
@@ -2459,7 +2517,8 @@ function findUpstreamNonConditionNodes(nodeId: string, workflowData: any): strin
   :deep(.snapline) {
     border-color: #1890ff;
     border-style: dashed;
-    .x6-widget-snapline-vertical,.x6-widget-snapline-horizontal {
+    .x6-widget-snapline-vertical,
+    .x6-widget-snapline-horizontal {
       stroke: #1890ff;
       stroke-width: 1px;
       stroke-dasharray: 3, 3;
@@ -2633,19 +2692,19 @@ function findUpstreamNonConditionNodes(nodeId: string, workflowData: any): strin
 
 /* 滚动条样式  */
 .table-container::-webkit-scrollbar {
-width: 8px;
-height: 8px;
+  width: 8px;
+  height: 8px;
 }
 .table-container::-webkit-scrollbar-track {
-background: #f1f1f1;
-border-radius: 4px;
+  background: #f1f1f1;
+  border-radius: 4px;
 }
 .table-container::-webkit-scrollbar-thumb {
-background: #c1c1c1;
-border-radius: 4px;
+  background: #c1c1c1;
+  border-radius: 4px;
 }
 .table-container::-webkit-scrollbar-thumb:hover {
-background: #a8a8a8;
+  background: #a8a8a8;
 }
 /* 决策表编辑面板样式 */
 .decision-table-panel-overlay {
@@ -2669,9 +2728,9 @@ background: #a8a8a8;
 /* 创建节点样式 */
 .common-tip {
   max-width: 300px;
-  color:#fff;
-  border:1px solid #303133;
-  background:#303133;
+  color: #fff;
+  border: 1px solid #303133;
+  background: #303133;
   border-radius: 4px;
   padding: 5px 11px;
   z-index: 100;
@@ -2702,6 +2761,4 @@ background: #a8a8a8;
     transform: rotate(45deg);
   }
 }
-
-
 </style>

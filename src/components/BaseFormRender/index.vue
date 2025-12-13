@@ -1,31 +1,28 @@
 <template>
   <el-form
-    :model="formData"
     :label-width="formJson.formConfig?.labelWidth || '70px'"
     :label-position="formJson.formConfig?.labelPosition || 'right'"
     class="simple-form-renderer"
     ref="formRef"
     @submit.prevent
   >
-    <el-form-item v-for="(field, index) in fields" :key="field.id" :prop="field.id" :rules="field.rules">
+    <el-form-item
+      v-for="(field, index) in fields"
+      :key="field.id + index"
+      :prop="field.id"
+      :rules="field.rules"
+    >
       <!-- 自定义标签插槽 -->
       <template #label>
-        <el-tooltip
-          v-if="field.attributes?.paramSubType"
-          :content="field.attributes.paramSubType"
-          placement="top"
-        >
+        <el-tooltip :disabled="!field.attributes.paramTypeRecord" placement="top">
+          <template #content>
+            {{ field.attributes.paramTypeRecord }}
+          </template>
           <div class="param-label-col">
             <span class="param-label">{{ field.label }}</span>
-            <span class="param-type-under">({{ field.attributes?.paramType }})</span>
+            <span class="param-type-under">({{ field.attributes.paramType }})</span>
           </div>
         </el-tooltip>
-        <template v-else>
-          <div class="param-label-col">
-            <span class="param-label">{{ field.label }}</span>
-            <span class="param-type-under">({{ field.attributes?.paramType }})</span>
-          </div>
-        </template>
       </template>
 
       <div class="form-field-container">
@@ -33,18 +30,16 @@
           <!-- 手动输入模式 -->
           <template v-if="inputMode === 'manual'">
             <!-- select 类型特殊处理，自动渲染下拉选项 -->
-<!--            {{ formData[field.id] }}-->
             <el-select
               v-if="field.type === 'select'"
               v-model="formData[field.id]"
               :placeholder="field.placeholder"
-              :disabled="field.disabled || disabled"
+              :disabled="field.disabled"
               filterable
               clearable
               allow-create
               default-first-option
               :multiple="field.attributes.multiple"
-              @change="handleFieldChange(field.id, $event)"
             >
               <el-option
                 v-for="(opt, index) in field.options"
@@ -59,44 +54,40 @@
                   placement="top"
                   :show-after="500"
                   popper-class="field-desc-tooltip"
-                  :popper-style="{ maxWidth: '300px', wordWrap: 'break-word', wordBreak: 'break-all' }"
+                  :popper-style="{
+                    maxWidth: '300px',
+                    wordWrap: 'break-word',
+                    wordBreak: 'break-all'
+                  }"
                 >
                   <div>
                     <span style="float: left">
                       {{ opt.name }}
                       <span>{{ opt.label }}</span>
                     </span>
-                    <span style="float: right;">
+                    <span style="float: right">
                       {{ opt.type }}
                     </span>
                   </div>
                 </el-tooltip>
               </el-option>
             </el-select>
-            <!-- 其他类型 -->
             <component
               v-else
               :is="getComponent(field.type)"
               v-model="formData[field.id]"
-              v-bind="field.attributes"
               :placeholder="field.placeholder"
-              :disabled="field.disabled || disabled"
-              :type="['textarea', 'function'].includes(field.type) ? 'textarea' : field.attributes?.inputType || 'text'"
-              :nodeData="nodeData"
-              :workflowData="workflowData"
-              @change="handleFieldChange(field.id, $event)"
+              :disabled="field.disabled"
+              :type="
+                ['textarea', 'function'].includes(field.type)
+                  ? 'textarea'
+                  : field.attributes?.inputType || 'text'
+              "
             />
           </template>
           <!-- 节点选择模式 -->
-          <template v-else-if="inputMode === 'node'">
-            <el-select
-              v-model="formData[field.id]"
-              placeholder="请选择节点"
-              :disabled="disabled"
-              filterable
-              clearable
-              @change="handleFieldChange(field.id, $event)"
-            >
+          <template v-else>
+            <el-select v-model="formData[field.id]" placeholder="请选择节点" filterable clearable>
               <el-option
                 v-for="opt in nodeOptions || []"
                 :key="opt.value"
@@ -105,47 +96,30 @@
               />
             </el-select>
           </template>
-          <el-tooltip
-            v-if="field.attributes?.desc"
-            :content="field.attributes.desc"
-            placement="top"
-            :show-after="500"
-            popper-class="field-desc-tooltip"
-            :popper-style="{ maxWidth: '300px', wordWrap: 'break-word', wordBreak: 'break-all' }"
-          >
-            <div class="field-attributes-desc">
+          <el-tooltip placement="top" :content="field.attributes?.desc">
+            <div class="field-attributes-desc" v-if="field.attributes?.desc">
               {{ field.attributes.desc }}
             </div>
           </el-tooltip>
         </div>
         <!-- 模式切换按钮 -->
-         <!--showModeToggle为true是入参-->
-           <template v-if="showModeToggle">
-            <div v-if="field.attributes?.paramType === 'table'">
-              <el-button  class="mode-toggle-btn" :disabled="true" @click="$emit('mode-change')">
-                <el-icon><SwitchIcon /></el-icon>
-              </el-button>
-            </div>
-            <div v-else>
-              <el-tooltip
-                content="数据类型切换"
-                placement="top"
-                :show-after="500"
-                popper-class="field-desc-tooltip"
-                :popper-style="{ maxWidth: '300px', wordWrap: 'break-word', wordBreak: 'break-all' }"
-              >
-                <el-button  class="mode-toggle-btn" @click="$emit('mode-change')">
-                  <el-icon><SwitchIcon /></el-icon>
-                </el-button>
-              </el-tooltip>
-            </div>
-           </template>
-           <template v-else>
-            <el-button  class="mode-toggle-btn" :disabled="inputMode === 'node'" @click="$emit('mode-change')">
-              <el-icon><SwitchIcon /></el-icon>
-            </el-button>
-           </template>
-
+        <!--showModeToggle为true是入参-->
+        <el-tooltip
+          :disabled="!field.attributes.paramTypeRecord"
+          content="数据类型切换"
+          placement="top"
+          :show-after="500"
+          popper-class="field-desc-tooltip"
+          :popper-style="{ maxWidth: '300px', wordWrap: 'break-word', wordBreak: 'break-all' }"
+        >
+          <el-button
+            class="mode-toggle-btn"
+            :disabled="!field.attributes.paramTypeRecord || inputMode === 'node'"
+            @click="$emit('mode-change')"
+          >
+            <el-icon><SwitchIcon /></el-icon>
+          </el-button>
+        </el-tooltip>
       </div>
     </el-form-item>
     <div v-if="fields.length === 0" class="form-desc">-</div>
@@ -153,7 +127,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, watch, computed, onMounted } from 'vue'
+import { ref, watch, computed, onMounted, reactive } from 'vue'
 import {
   ElForm,
   ElFormItem,
@@ -178,7 +152,7 @@ const props = defineProps({
   },
   showModeToggle: {
     type: Boolean,
-    default: false
+    default: true
   },
   inputMode: {
     type: String,
@@ -193,7 +167,7 @@ const props = defineProps({
   },
   workflowData: {
     type: Object
-  },
+  }
 })
 
 const emit = defineEmits(['update:modelValue', 'change', 'mode-change'])
@@ -201,9 +175,8 @@ const emit = defineEmits(['update:modelValue', 'change', 'mode-change'])
 // 表单引用
 const formRef = ref()
 
-// 表单数据
-const formData = ref({})
-
+// 表单数据 - 使用 reactive 确保深度响应式
+let formData = reactive({})
 
 // 组件映射表
 const componentMap = {
@@ -223,44 +196,39 @@ const getComponent = type => {
 const paramList = ref([])
 
 // 处理字段配置
-const fields = computed(() => {
-  console.log('props.formJson', props.formJson)
-  return props.formJson.compList?.map((comp, index) => {
-    formData.value[comp.id] = comp.attributes.value
-    return {
-      id: comp.id, // 为没有id的字段生成唯一id
-      type: comp.attributes.compType,
-      label: comp.attributes.label,
-      placeholder: comp.attributes?.placeholder,
-      disabled: comp.attributes?.disabled,
-      defaultValue: comp.attributes.value,
-      attributes: comp.attributes || {},
-      // defaultValue: props.inputMode === 'node' && !comp.defaultValue ? '' : comp.defaultValue,
-      options: comp.attributes.options || [],
-      props: comp.attributes.props || []
-    }
-  })
-})
+const fields = ref([])
 
-// 处理字段变化
-const handleFieldChange = (fieldId, value) => {
-  emit('change', { fieldId, value, formData: formData.value })
-}
+watch(
+  () => props.formJson.compList,
+  compList => {
+    // 初始化或更新 formData
+    compList.forEach(comp => {
+      if (!(comp.id in formData)) {
+        // 只在不存在时才初始化，避免覆盖已有值
+        formData[comp.id] = comp.attributes.value
+      }
+    })
 
-// // 监听数据变化
-// watch(
-//   formData,
-//   newData => {
-//     for (const key in newData) {
-//       // console.log('newData[key]==',JSON.parse(JSON.stringify(newData[key])), JSON.parse(JSON.stringify(formData.value)))
-//       if(!newData[key])return // 20250827修改输入框无法清除值问题bug245362
-//       // console.log("=====formDaga====")
-//       emit('change', { fieldId: key, value: newData[key], formData: formData.value })
-//     }
-//   },
-//   { deep: true }
-// )
-
+    fields.value = compList.map((comp, index) => {
+      return {
+        id: comp.id, // 为没有id的字段生成唯一id
+        type: comp.attributes.compType,
+        label: comp.attributes.label,
+        placeholder: comp.attributes?.placeholder,
+        disabled: comp.attributes?.disabled,
+        defaultValue: comp.attributes.value,
+        attributes: comp.attributes || {},
+        // defaultValue: props.inputMode === 'node' && !comp.defaultValue ? '' : comp.defaultValue,
+        options: comp.attributes.options || [],
+        props: comp.attributes.props || []
+      }
+    })
+  },
+  {
+    deep: true,
+    once: true
+  }
+)
 
 // 暴露方法 - 兼容原有 FormRenderer 的 API
 defineExpose({
@@ -269,18 +237,18 @@ defineExpose({
     // eslint-disable-next-line no-useless-catch
     try {
       await formRef.value?.validate()
-      return formData.value
+      return formData
     } catch (error) {
       throw error
     }
   },
   // 设置表单数据
   setFormData: data => {
-    formData.value = { ...data }
+    formData = data
   },
   // 重置表单
   resetForm: () => {
-    formData.value = {}
+    formData = {}
     formRef.value?.resetFields()
   },
   // 设置表单配置 - 兼容原有 API
@@ -322,6 +290,8 @@ defineExpose({
     position: relative; /* 添加相对定位 */
   }
 
+  /* 保持 ElementPlus 原有的 hover 交互，不覆盖默认行为 */
+
   /* 确保所有输入控件宽度一致 */
   :deep(.el-input),
   :deep(.el-select),
@@ -360,7 +330,6 @@ defineExpose({
   }
 }
 
-
 .form-field-container {
   flex: 1;
   min-width: 0;
@@ -368,6 +337,11 @@ defineExpose({
   justify-content: flex-start;
   align-items: flex-start;
   gap: 8px;
+
+  /* 响应式间距调整 */
+  @media (max-width: 640px) {
+    gap: 6px;
+  }
 }
 
 .main-control {
@@ -376,15 +350,18 @@ defineExpose({
 }
 
 .mode-toggle-btn {
+  @apply text-theme-medium hover:text-theme-dark hover:bg-theme-lightest;
   margin-top: 2px;
   flex-shrink: 0;
   height: 30px;
   padding: 6px;
   width: 30px;
+  transition: all 0.2s ease;
 }
 
 /* 默认标签样式 */
 .default-label {
+  @apply text-theme-dark;
   font-size: 14px;
   font-weight: 500;
   line-height: 32px;
@@ -403,14 +380,24 @@ defineExpose({
   flex-direction: column;
   align-items: flex-end;
   user-select: none;
-  gap: 1px;
+  gap: 2px;
   padding: 4px 0;
   width: 100%; /* 确保宽度撑满 */
   min-width: 0; /* 允许内容收缩 */
+
+  /* 鼠标悬停时的交互效果 */
+  &:hover .param-label {
+    @apply text-theme-medium;
+  }
+
+  &:hover .param-type-under {
+    @apply text-theme-light;
+    opacity: 1;
+  }
 }
 
 .param-label {
-  color: #333;
+  @apply text-theme-dark;
   font-size: 13px;
   font-weight: 500;
   text-align: right;
@@ -423,37 +410,39 @@ defineExpose({
 }
 
 .param-type-under {
-  color: #aaa;
+  @apply text-theme-medium;
   font-size: 11px;
   text-align: right;
   width: 100%; /* 确保宽度撑满 */
   user-select: none;
   line-height: 1;
+  opacity: 0.8;
 }
 
 /* 字段描述文案样式 */
 .field-attributes-desc {
+  @apply text-theme-medium;
   font-size: 12px;
-  color: #999;
   margin-top: 4px;
   line-height: 1.4;
-  word-break: break-all;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: break-word;
   display: -webkit-box;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   cursor: pointer;
+  opacity: 0.85;
 }
 
-
-
 /* 全局tooltip样式覆盖 */
-:global(.field-desc-tooltip) {
+.field-desc-tooltip {
   max-width: 300px !important;
 }
 
-:global(.field-desc-tooltip .el-tooltip__content) {
+.field-desc-tooltip .el-tooltip__content {
   max-width: 300px !important;
   word-wrap: break-word !important;
   word-break: break-all !important;

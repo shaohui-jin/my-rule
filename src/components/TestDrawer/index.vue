@@ -2,7 +2,11 @@
   <!-- 全屏编辑器 - 移到 body 层级 -->
   <Teleport to="body">
     <!-- XML编辑器全屏 -->
-    <div v-if="isFullscreen.xml" class="fullscreen-editor-overlay" :class="{ 'fullscreen-editor-overlay-wujie': isWujie }">
+    <div
+      v-if="isFullscreen.xml"
+      class="fullscreen-editor-overlay"
+      :class="{ 'fullscreen-editor-overlay-wujie': isWujie }"
+    >
       <div class="fullscreen-editor-container">
         <div class="editor-toolbar">
           <el-button type="primary" size="small" circle @click.stop="handleDownloadXml">
@@ -20,7 +24,11 @@
     </div>
 
     <!-- 脚本编辑器全屏 -->
-    <div v-if="isFullscreen.script" class="fullscreen-editor-overlay" :class="{ 'fullscreen-editor-overlay-wujie': isWujie }">
+    <div
+      v-if="isFullscreen.script"
+      class="fullscreen-editor-overlay"
+      :class="{ 'fullscreen-editor-overlay-wujie': isWujie }"
+    >
       <div class="fullscreen-editor-container">
         <div class="editor-toolbar">
           <el-button type="primary" size="small" circle @click.stop="handleDownloadScript">
@@ -38,32 +46,45 @@
     </div>
 
     <!-- 节点编辑器全屏 -->
-    <div v-if="nodeFullscreen" class="fullscreen-editor-overlay" :class="{ 'fullscreen-editor-overlay-wujie': isWujie }">
+    <div
+      v-if="nodeFullscreen"
+      class="fullscreen-editor-overlay"
+      :class="{ 'fullscreen-editor-overlay-wujie': isWujie }"
+    >
       <div class="fullscreen-editor-container">
         <div class="editor-toolbar">
-          <el-button type="primary" size="small" circle @click.stop="handleDownloadJSON(nodeFullscreen.nodeId, nodeFullscreen.type as 'input' | 'output')">
+          <el-button
+            type="primary"
+            size="small"
+            circle
+            @click.stop="handleDownloadJSON(nodeFullscreen.nodeId, nodeFullscreen.type as 'input' | 'output')"
+          >
             <el-icon><Download /></el-icon>
           </el-button>
-          <el-button type="primary" size="small" circle @click.stop="copyNodeContent(nodeFullscreen.nodeId, nodeFullscreen.type as 'input' | 'output')">
+          <el-button
+            type="primary"
+            size="small"
+            circle
+            @click.stop="copyNodeContent(nodeFullscreen.nodeId, nodeFullscreen.type as 'input' | 'output')"
+          >
             <el-icon><DocumentCopy /></el-icon>
           </el-button>
-          <el-button type="primary" size="small" circle @click.stop="toggleNodeFullscreen(nodeFullscreen.nodeId, nodeFullscreen.type as 'input' | 'output')">
+          <el-button
+            type="primary"
+            size="small"
+            circle
+            @click.stop="toggleNodeFullscreen(nodeFullscreen.nodeId, nodeFullscreen.type as 'input' | 'output')"
+          >
             <el-icon><Close /></el-icon>
           </el-button>
         </div>
         <div ref="nodeEditorFullscreenContainer" class="monaco-editor-container"></div>
       </div>
     </div>
-
-
   </Teleport>
 
   <!-- 遮罩层 -->
-  <div
-    v-if="drawerVisible && showMask"
-    class="drawer-mask"
-    @click="handleMaskClick"
-  ></div>
+  <div v-if="drawerVisible && showMask" class="drawer-mask" @click="handleMaskClick"></div>
 
   <!-- 自定义测试抽屉 -->
   <div class="test-drawer" :class="{ 'drawer-open': drawerVisible, 'iframe-mode': isIframe }">
@@ -90,7 +111,7 @@
                 placeholder="part节点ID"
                 class="part-id-input"
                 :disabled="isPreviewMode"
-                style="width: 150px;"
+                style="width: 150px"
                 clearable
               />
               <div class="upload-section">
@@ -115,22 +136,31 @@
                   v-for="testCase in testCases"
                   :key="testCase.id"
                   class="test-case-item"
-                  :class="{ 'active': selectedTestCase?.id === testCase.id }"
+                  :class="{ active: selectedTestCase?.id === testCase.id }"
                   @click="selectTestCase(testCase)"
                 >
                   <div class="test-case-info">
-                    <div v-if="testCase.partName && testCase.partName.length > 0" class="test-case-name-with-part">
-                      <div class="test-case-name" :title="testCase.fileCName">{{ testCase.fileCName }}</div>
-                      <div class="test-case-part-name" :title="testCase.partName">{{ testCase.partName }}</div>
+                    <div
+                      v-if="testCase.partName && testCase.partName.length > 0"
+                      class="test-case-name-with-part"
+                    >
+                      <div class="test-case-name" :title="testCase.fileCName">
+                        {{ testCase.fileCName }}
+                      </div>
+                      <div class="test-case-part-name" :title="testCase.partName">
+                        {{ testCase.partName }}
+                      </div>
                     </div>
-                    <div v-else class="test-case-name-full" :title="testCase.fileCName">{{ testCase.fileCName }}</div>
+                    <div v-else class="test-case-name-full" :title="testCase.fileCName">
+                      {{ testCase.fileCName }}
+                    </div>
                   </div>
                   <div class="test-case-actions">
                     <span
                       v-if="!isPreviewMode"
                       class="delete-text-btn"
                       @click.stop="deleteTestCase(testCase)"
-                      :class="{ 'loading': deletingTestCaseId === testCase.id }"
+                      :class="{ loading: deletingTestCaseId === testCase.id }"
                     >
                       {{ deletingTestCaseId === testCase.id ? '删除中...' : '删除' }}
                     </span>
@@ -176,7 +206,12 @@
                   :value="option.id"
                 />
               </el-select>
-              <el-button v-if="!isPreviewMode" type="primary" :loading="isExecuting" @click.stop="executeTest">
+              <el-button
+                v-if="!isPreviewMode"
+                type="primary"
+                :loading="isExecuting"
+                @click.stop="executeTest"
+              >
                 {{ isExecuting ? '执行中...' : '执行测试' }}
               </el-button>
             </div>
@@ -188,7 +223,12 @@
                 <el-button type="primary" size="small" circle @click.stop="copyScriptContent">
                   <el-icon><DocumentCopy /></el-icon>
                 </el-button>
-                <el-button type="primary" size="small" circle @click.stop="toggleFullscreen('script')">
+                <el-button
+                  type="primary"
+                  size="small"
+                  circle
+                  @click.stop="toggleFullscreen('script')"
+                >
                   <el-icon><component :is="isFullscreen.script ? Close : FullScreen" /></el-icon>
                 </el-button>
               </div>
@@ -202,17 +242,23 @@
             <div v-if="testResult.message" class="result-container">
               <div class="result-header">
                 <div class="result-baseInfo">
-                  <div class="result-status" :class="{'success': testResult.success}">
-                    <span class="result-status-icon" :class="{'success': testResult.success}">
+                  <div class="result-status" :class="{ success: testResult.success }">
+                    <span class="result-status-icon" :class="{ success: testResult.success }">
                       <el-icon><component :is="testResult.success ? Check : Close" /></el-icon>
                     </span>
-                    <span class="result-status-text">{{ testResult.success ? '成功' : '失败' }}</span>
+                    <span class="result-status-text">
+                      {{ testResult.success ? '成功' : '失败' }}
+                    </span>
                   </div>
-                  <div class="result-time" v-if="testResult.duration">规则执行时长：{{ formatMilliseconds(testResult.duration) }}</div>
+                  <div class="result-time" v-if="testResult.duration">
+                    规则执行时长：{{ formatMilliseconds(testResult.duration) }}
+                  </div>
                 </div>
                 <div class="result-message" v-if="!testResult.success">
                   <div class="result-message-title">执行失败原因</div>
-                  <div class="result-message-content">{{ testResult.message || '暂无执行结果' }}</div>
+                  <div class="result-message-content">
+                    {{ testResult.message || '暂无执行结果' }}
+                  </div>
                 </div>
 
                 <!-- 成功时显示最后一个节点的output -->
@@ -225,10 +271,12 @@
                       <el-button type="primary" size="small" @click.stop="saveAsExpectedResult">
                         保存为预期结果
                       </el-button>
-                      <el-icon class="output-icon"><component :is="outputExpanded ? ArrowDown : ArrowRight" /></el-icon>
+                      <el-icon class="output-icon">
+                        <component :is="outputExpanded ? ArrowDown : ArrowRight" />
+                      </el-icon>
                     </div>
                   </div>
-                  <div class="output-content" :class="{ 'expanded': outputExpanded }">
+                  <div class="output-content" :class="{ expanded: outputExpanded }">
                     <div ref="lastNodeOutputEditorContainer" class="monaco-editor-container"></div>
                   </div>
                 </div>
@@ -240,17 +288,27 @@
                       <span>预期结果</span>
                     </div>
                     <div class="output-actions">
-                      <el-icon class="output-icon"><component :is="expectedResultExpanded ? ArrowDown : ArrowRight" /></el-icon>
+                      <el-icon class="output-icon">
+                        <component :is="expectedResultExpanded ? ArrowDown : ArrowRight" />
+                      </el-icon>
                     </div>
                   </div>
-                  <div class="output-content" :class="{ 'expanded': expectedResultExpanded }">
+                  <div class="output-content" :class="{ expanded: expectedResultExpanded }">
                     <div ref="expectedResultEditorContainer" class="monaco-editor-container"></div>
                   </div>
                 </div>
               </div>
 
-              <div ref="resultDetailsContainer" class="result-details" v-if="testResult.funcStepLogs && testResult.funcStepLogs.length > 0">
-                <el-collapse v-model="activeNodePanels" accordion @change="handleNodeCollapseChange">
+              <div
+                ref="resultDetailsContainer"
+                class="result-details"
+                v-if="testResult.funcStepLogs && testResult.funcStepLogs.length > 0"
+              >
+                <el-collapse
+                  v-model="activeNodePanels"
+                  accordion
+                  @change="handleNodeCollapseChange"
+                >
                   <el-collapse-item
                     v-for="(node, index) in testResult.funcStepLogs"
                     :key="index"
@@ -274,20 +332,22 @@
                                 placement="top"
                                 :show-after="500"
                               >
-                                <span class="node-name">
-                                  {{ node.nodeId }} | {{ node.title }}
-                                </span>
+                                <span class="node-name">{{ node.nodeId }} | {{ node.title }}</span>
                               </el-tooltip>
                               <el-space>
                                 <span class="node-duration">
                                   {{ formatMilliseconds(node.duration) }}
                                 </span>
-                                <span class="node-status" :class="node.success ? 'success' : 'failure'">
-                                  <el-icon><component :is="node.success ? Check : Close" /></el-icon>
+                                <span
+                                  class="node-status"
+                                  :class="node.success ? 'success' : 'failure'"
+                                >
+                                  <el-icon>
+                                    <component :is="node.success ? Check : Close" />
+                                  </el-icon>
                                 </span>
                               </el-space>
                             </div>
-
                           </div>
                         </div>
                       </div>
@@ -299,17 +359,45 @@
                         <h4>请求参数</h4>
                         <div class="editor-container fixed-height">
                           <div class="editor-toolbar">
-                            <el-button type="primary" size="small" circle @click.stop="handleDownloadJSON(index.toString(), 'input')">
+                            <el-button
+                              type="primary"
+                              size="small"
+                              circle
+                              @click.stop="handleDownloadJSON(index.toString(), 'input')"
+                            >
                               <el-icon><Download /></el-icon>
                             </el-button>
-                            <el-button type="primary" size="small" circle @click.stop="copyNodeContent(index.toString(), 'input')">
+                            <el-button
+                              type="primary"
+                              size="small"
+                              circle
+                              @click.stop="copyNodeContent(index.toString(), 'input')"
+                            >
                               <el-icon><DocumentCopy /></el-icon>
                             </el-button>
-                            <el-button type="primary" size="small" circle @click.stop="toggleNodeFullscreen(index.toString(), 'input')">
-                              <el-icon><component :is="nodeFullscreen && nodeFullscreen.nodeId === index.toString() && nodeFullscreen.type === 'input' ? Close : FullScreen" /></el-icon>
+                            <el-button
+                              type="primary"
+                              size="small"
+                              circle
+                              @click.stop="toggleNodeFullscreen(index.toString(), 'input')"
+                            >
+                              <el-icon>
+                                <component
+                                  :is="
+                                    nodeFullscreen &&
+                                    nodeFullscreen.nodeId === index.toString() &&
+                                    nodeFullscreen.type === 'input'
+                                      ? Close
+                                      : FullScreen
+                                  "
+                                />
+                              </el-icon>
                             </el-button>
                           </div>
-                          <div :ref="el => setEditorRef(el, index.toString(), 'input')" class="monaco-editor-container"></div>
+                          <div
+                            :ref="el => setEditorRef(el, index.toString(), 'input')"
+                            class="monaco-editor-container"
+                          ></div>
                         </div>
                       </div>
                       <!-- 响应结果 -->
@@ -317,17 +405,45 @@
                         <h4>响应结果</h4>
                         <div class="editor-container fixed-height">
                           <div class="editor-toolbar">
-                            <el-button type="primary" size="small" circle @click.stop="handleDownloadJSON(index.toString(), 'output')">
+                            <el-button
+                              type="primary"
+                              size="small"
+                              circle
+                              @click.stop="handleDownloadJSON(index.toString(), 'output')"
+                            >
                               <el-icon><Download /></el-icon>
                             </el-button>
-                            <el-button type="primary" size="small" circle @click.stop="copyNodeContent(index.toString(), 'output')">
+                            <el-button
+                              type="primary"
+                              size="small"
+                              circle
+                              @click.stop="copyNodeContent(index.toString(), 'output')"
+                            >
                               <el-icon><DocumentCopy /></el-icon>
                             </el-button>
-                            <el-button type="primary" size="small" circle @click.stop="toggleNodeFullscreen(index.toString(), 'output')">
-                              <el-icon><component :is="nodeFullscreen && nodeFullscreen.nodeId === index.toString() && nodeFullscreen.type === 'output' ? Close : FullScreen" /></el-icon>
+                            <el-button
+                              type="primary"
+                              size="small"
+                              circle
+                              @click.stop="toggleNodeFullscreen(index.toString(), 'output')"
+                            >
+                              <el-icon>
+                                <component
+                                  :is="
+                                    nodeFullscreen &&
+                                    nodeFullscreen.nodeId === index.toString() &&
+                                    nodeFullscreen.type === 'output'
+                                      ? Close
+                                      : FullScreen
+                                  "
+                                />
+                              </el-icon>
                             </el-button>
                           </div>
-                          <div :ref="el => setEditorRef(el, index.toString(), 'output')" class="monaco-editor-container"></div>
+                          <div
+                            :ref="el => setEditorRef(el, index.toString(), 'output')"
+                            class="monaco-editor-container"
+                          ></div>
                         </div>
                       </div>
                     </div>
@@ -336,12 +452,10 @@
               </div>
             </div>
             <div v-else class="no-content-tip">
-              <el-empty description="暂无执行结果">
-              </el-empty>
+              <el-empty description="暂无执行结果"></el-empty>
             </div>
           </div>
         </el-tab-pane>
-
       </el-tabs>
     </div>
   </div>
@@ -350,14 +464,43 @@
 <script setup lang="ts">
 import { ref, defineEmits, defineExpose, watch, onUnmounted, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { DocumentCopy, FullScreen, Close, Check, Download, ArrowDown, ArrowRight } from '@element-plus/icons-vue'
+import {
+  DocumentCopy,
+  FullScreen,
+  Close,
+  Check,
+  Download,
+  ArrowDown,
+  ArrowRight
+} from '@element-plus/icons-vue'
 import { http } from '@/axios'
-import { getFormSign, FormSignRequestParams, FormSignResponse, debugRule, RuleDebugRequestParams, RuleDebugResponse, RuleItem, SimpleRuleItem, getAllRule, getSimpleRuleById, addExecutionRecord, AddExecutionRecordRequestParams, RuleDebugResponseResult, ExecutionRecordData, getTestCaseList, deleteTestCaseApi, TestCaseListRequestParams, saveAsExpectedResult as saveAsExpectedResultApi, SaveAsExpectedResultRequestParams, getSimpleRuleList } from '@/api/test'
+import {
+  getFormSign,
+  FormSignRequestParams,
+  FormSignResponse,
+  debugRule,
+  RuleDebugRequestParams,
+  RuleDebugResponse,
+  RuleItem,
+  SimpleRuleItem,
+  getAllRule,
+  getSimpleRuleById,
+  addExecutionRecord,
+  AddExecutionRecordRequestParams,
+  RuleDebugResponseResult,
+  ExecutionRecordData,
+  getTestCaseList,
+  deleteTestCaseApi,
+  TestCaseListRequestParams,
+  saveAsExpectedResult as saveAsExpectedResultApi,
+  SaveAsExpectedResultRequestParams,
+  getSimpleRuleList
+} from '@/api/test'
 import { LuaGenerator } from '@/utils/json2lua/LuaGenerator'
 import { getFunctionListByIds, transformFunctionData } from '@/api/workflow/WorkFlowApi'
 import { formatMilliseconds } from '@/utils'
-import NodeTypeIcon from '@/components/NodeTypeIcon/index.vue'
-import { getLuaCodeMapByExpression } from "@/utils/expression";
+import NodeTypeIcon from '@/components/BaseNodeIcon/index.vue'
+import { getLuaCodeMapByExpression } from '@/utils/expression'
 
 const isWujie = window.__POWERED_BY_WUJIE__
 
@@ -375,14 +518,13 @@ const isIframe = computed(() => {
 const DARK_THEME = 'vs'
 const LIGHT_THEME = 'vs'
 
-
 // 定义事件
 const emit = defineEmits(['close', 'node-click'])
 
 // 状态变量
 const drawerVisible = ref(false)
 const activeTab = ref('xml')
-const selectedRule = ref<number|null>(null)
+const selectedRule = ref<number | null>(null)
 const partId = ref('')
 const xmlContent = ref('')
 const scriptContent = ref('')
@@ -421,7 +563,9 @@ const lastNodeOutput = computed(() => {
     return null
   }
   const lastNode = testResult.value.funcStepLogs[testResult.value.funcStepLogs.length - 1]
-  return Object.prototype.hasOwnProperty.call(lastNode, 'result') ? JSON.stringify(lastNode.result, null, 2) : null
+  return Object.prototype.hasOwnProperty.call(lastNode, 'result')
+    ? JSON.stringify(lastNode.result, null, 2)
+    : null
 })
 
 // 计算当前选中用例的预期结果
@@ -439,7 +583,7 @@ const isFullscreen = ref({
 })
 
 // 节点编辑器全屏状态
-const nodeFullscreen = ref<{nodeId: string, type: string} | null>(null)
+const nodeFullscreen = ref<{ nodeId: string; type: string } | null>(null)
 
 // 编辑器容器引用
 const xmlEditorContainer = ref<HTMLElement | null>(null)
@@ -453,7 +597,6 @@ const xmlEditorFullscreenContainer = ref<HTMLElement | null>(null)
 const scriptEditorFullscreenContainer = ref<HTMLElement | null>(null)
 const nodeEditorFullscreenContainer = ref<HTMLElement | null>(null)
 
-
 // 编辑器实例
 let xmlEditor = null
 let scriptEditor = null
@@ -465,14 +608,15 @@ let xmlEditorFullscreen = null
 let scriptEditorFullscreen = null
 let nodeEditorFullscreen = null
 
-
- // 从API获取的规则选项
+// 从API获取的规则选项
 const ruleOptions = ref<SimpleRuleItem[]>([])
 // 使用 configData 生成 Lua 脚本
 const generateLuaFromConfig = async (configData: string): Promise<string> => {
   if (!configData) return ''
   const workFlowJson = JSON.parse(configData)
-  const allFuncId = workFlowJson.nodeList.filter((n: any) => n.funcType === 'func').map((n: any) => n.funcId)
+  const allFuncId = workFlowJson.nodeList
+    .filter((n: any) => n.funcType === 'func')
+    .map((n: any) => n.funcId)
   if (allFuncId.length === 0) {
     const luaCode = luaGenerator.generate(workFlowJson, [], true, {})
     return luaCode
@@ -536,7 +680,6 @@ const fetchTestCases = async (ruleId: number) => {
   }
 }
 
-
 // 选择用例
 const selectTestCase = async (testCase: ExecutionRecordData) => {
   selectedTestCase.value = testCase
@@ -550,15 +693,11 @@ const selectTestCase = async (testCase: ExecutionRecordData) => {
 // 删除用例
 const deleteTestCase = async (testCase: ExecutionRecordData) => {
   try {
-    await ElMessageBox.confirm(
-      `确定要删除用例 "${testCase.fileCName}" 吗？`,
-      '确认删除',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning',
-      }
-    )
+    await ElMessageBox.confirm(`确定要删除用例 "${testCase.fileCName}" 吗？`, '确认删除', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
 
     deletingTestCaseId.value = testCase.id
 
@@ -585,11 +724,13 @@ const deleteTestCase = async (testCase: ExecutionRecordData) => {
       id: testCase.id
     }
 
-    deleteTestCaseApi(deleteParam).then(() => {
-      ElMessage.success('用例删除成功')
-    }).catch(() => {
-      ElMessage.error('删除用例失败')
-    })
+    deleteTestCaseApi(deleteParam)
+      .then(() => {
+        ElMessage.success('用例删除成功')
+      })
+      .catch(() => {
+        ElMessage.error('删除用例失败')
+      })
   } catch (error) {
     if (error !== 'cancel') {
       console.error('删除用例失败:', error)
@@ -599,7 +740,6 @@ const deleteTestCase = async (testCase: ExecutionRecordData) => {
     deletingTestCaseId.value = null
   }
 }
-
 
 // 监听规则选择变化，自动加载对应的Lua脚本和用例列表
 watch(selectedRule, async (newRuleId: number) => {
@@ -636,7 +776,8 @@ watch(selectedRule, async (newRuleId: number) => {
 const copyXmlContent = () => {
   if (xmlEditor) {
     const content = xmlEditor.getValue()
-    navigator.clipboard.writeText(content)
+    navigator.clipboard
+      .writeText(content)
       .then(() => {
         ElMessage.success('XML内容已复制到剪贴板')
       })
@@ -650,7 +791,8 @@ const copyXmlContent = () => {
 const copyScriptContent = () => {
   if (scriptEditor) {
     const content = scriptEditor.getValue()
-    navigator.clipboard.writeText(content)
+    navigator.clipboard
+      .writeText(content)
       .then(() => {
         ElMessage.success('脚本内容已复制到剪贴板')
       })
@@ -677,12 +819,14 @@ const copyNodeContent = (nodeId: string, type: 'input' | 'output') => {
     const node = testResult.value.funcStepLogs[nodeIndex]
     if (!node) return
 
-    content = type === 'input'
-      ? JSON.stringify(node.inputParams || {}, null, 2)
-      : JSON.stringify(node.result || {}, null, 2)
+    content =
+      type === 'input'
+        ? JSON.stringify(node.inputParams || {}, null, 2)
+        : JSON.stringify(node.result || {}, null, 2)
   }
 
-  navigator.clipboard.writeText(content)
+  navigator.clipboard
+    .writeText(content)
     .then(() => {
       if (nodeId === 'last') {
         ElMessage.success('最后一个节点输出已复制到剪贴板')
@@ -745,7 +889,6 @@ const saveAsExpectedResult = async () => {
     ElMessage.error('保存预期结果失败')
   }
 }
-
 
 // 下载XML文件
 const handleDownloadXml = async () => {
@@ -810,7 +953,9 @@ const handleDownloadScript = () => {
     // 获取当前选中的规则名称
     let ruleName = 'unknown'
     if (selectedRule.value && ruleOptions.value.length > 0) {
-      const selectedRuleData = ruleOptions.value.find((rule: SimpleRuleItem) => rule.id === selectedRule.value)
+      const selectedRuleData = ruleOptions.value.find(
+        (rule: SimpleRuleItem) => rule.id === selectedRule.value
+      )
       if (selectedRuleData && selectedRuleData.ruleName) {
         // 清理规则名称中的特殊字符，避免文件名问题
         ruleName = selectedRuleData.ruleName.replace(/[<>:"/\\|?*]/g, '_').trim()
@@ -874,9 +1019,10 @@ const handleDownloadJSON = (nodeId?: string, type?: 'input' | 'output') => {
         return
       }
 
-      content = type === 'input'
-        ? JSON.stringify(node.inputParams || {}, null, 2)
-        : JSON.stringify(node.result || {}, null, 2)
+      content =
+        type === 'input'
+          ? JSON.stringify(node.inputParams || {}, null, 2)
+          : JSON.stringify(node.result || {}, null, 2)
 
       // 获取节点信息用于文件名
       const nodeTitle = String(node.title || node.nodeId || 'node')
@@ -907,9 +1053,10 @@ const handleDownloadJSON = (nodeId?: string, type?: 'input' | 'output') => {
         return
       }
 
-      content = nodeFullscreen.value.type === 'input'
-        ? JSON.stringify(node.inputParams || {}, null, 2)
-        : JSON.stringify(node.result || {}, null, 2)
+      content =
+        nodeFullscreen.value.type === 'input'
+          ? JSON.stringify(node.inputParams || {}, null, 2)
+          : JSON.stringify(node.result || {}, null, 2)
 
       // 获取节点信息用于文件名
       const nodeTitle = String(node.title || node.nodeId || 'node')
@@ -959,7 +1106,6 @@ const handleDownloadJSON = (nodeId?: string, type?: 'input' | 'output') => {
   }
 }
 
-
 // XML格式化辅助函数
 const formatXmlContent = (xmlString: string): string => {
   if (!xmlString.trim()) return xmlString
@@ -982,7 +1128,6 @@ const formatXmlContent = (xmlString: string): string => {
 
     // 手动添加换行和缩进以改善可读性
     return formatXmlString(formattedXml)
-
   } catch (error) {
     console.warn('XML格式化失败，返回原始内容:', error)
     return xmlString
@@ -993,32 +1138,38 @@ const formatXmlContent = (xmlString: string): string => {
 const formatXmlString = (xml: string): string => {
   // 添加换行和缩进
   let formatted = xml
-    .replace(/></g, '>\n<')  // 在标签之间添加换行
-    .replace(/^\s+|\s+$/g, '')  // 去除首尾空白
+    .replace(/></g, '>\n<') // 在标签之间添加换行
+    .replace(/^\s+|\s+$/g, '') // 去除首尾空白
 
   // 添加缩进
   const lines = formatted.split('\n')
   let indentLevel = 0
-  const indent = '  '  // 使用2个空格作为缩进
+  const indent = '  ' // 使用2个空格作为缩进
 
-  return lines.map(line => {
-    const trimmedLine = line.trim()
-    if (!trimmedLine) return ''
+  return lines
+    .map(line => {
+      const trimmedLine = line.trim()
+      if (!trimmedLine) return ''
 
-    // 减少缩进级别（对于结束标签）
-    if (trimmedLine.startsWith('</')) {
-      indentLevel = Math.max(0, indentLevel - 1)
-    }
+      // 减少缩进级别（对于结束标签）
+      if (trimmedLine.startsWith('</')) {
+        indentLevel = Math.max(0, indentLevel - 1)
+      }
 
-    const indentedLine = indent.repeat(indentLevel) + trimmedLine
+      const indentedLine = indent.repeat(indentLevel) + trimmedLine
 
-    // 增加缩进级别（对于开始标签，但不是自闭合标签）
-    if (trimmedLine.startsWith('<') && !trimmedLine.startsWith('</') && !trimmedLine.endsWith('/>')) {
-      indentLevel++
-    }
+      // 增加缩进级别（对于开始标签，但不是自闭合标签）
+      if (
+        trimmedLine.startsWith('<') &&
+        !trimmedLine.startsWith('</') &&
+        !trimmedLine.endsWith('/>')
+      ) {
+        indentLevel++
+      }
 
-    return indentedLine
-  }).join('\n')
+      return indentedLine
+    })
+    .join('\n')
 }
 
 // 根据partID在XML中查找节点name的函数
@@ -1127,8 +1278,7 @@ const toggleFullscreen = (type: 'xml' | 'script') => {
     if (type === 'xml' && xmlEditorFullscreen) {
       xmlEditorFullscreen.dispose()
       xmlEditorFullscreen = null
-    } else if (type === 'script'
-     && scriptEditorFullscreen) {
+    } else if (type === 'script' && scriptEditorFullscreen) {
       scriptEditorFullscreen.dispose()
       scriptEditorFullscreen = null
     }
@@ -1169,18 +1319,21 @@ const createFullscreenXmlEditor = () => {
 const createFullscreenScriptEditor = () => {
   if (scriptEditorFullscreen || !scriptEditorFullscreenContainer.value) return
 
-  scriptEditorFullscreen = monaco.editor.create(scriptEditorFullscreenContainer.value as HTMLElement, {
-    value: scriptContent.value,
-    language: 'lua',
-    theme: DARK_THEME,
-    readOnly: isPreviewMode.value,
-    minimap: { enabled: true },
-    scrollBeyondLastLine: false,
-    automaticLayout: true,
-    fontSize: 12,
-    lineNumbers: 'on',
-    folding: true
-  })
+  scriptEditorFullscreen = monaco.editor.create(
+    scriptEditorFullscreenContainer.value as HTMLElement,
+    {
+      value: scriptContent.value,
+      language: 'lua',
+      theme: DARK_THEME,
+      readOnly: isPreviewMode.value,
+      minimap: { enabled: true },
+      scrollBeyondLastLine: false,
+      automaticLayout: true,
+      fontSize: 12,
+      lineNumbers: 'on',
+      folding: true
+    }
+  )
 
   // 监听编辑器内容变更
   scriptEditorFullscreen.onDidChangeModelContent(() => {
@@ -1234,7 +1387,6 @@ const toggleNodeFullscreen = (nodeId: string, type: 'input' | 'output') => {
   }, 100)
 }
 
-
 // 创建全屏节点编辑器
 const createFullscreenNodeEditor = (nodeId: string, type: 'input' | 'output') => {
   if (nodeEditorFullscreen || !nodeEditorFullscreenContainer.value) return
@@ -1250,9 +1402,10 @@ const createFullscreenNodeEditor = (nodeId: string, type: 'input' | 'output') =>
     const node = testResult.value.funcStepLogs[nodeIndex]
     if (!node) return
 
-    content = type === 'input'
-      ? JSON.stringify(node.inputParams ?? null, null, 2)
-      : JSON.stringify(node.result ?? null, null, 2)
+    content =
+      type === 'input'
+        ? JSON.stringify(node.inputParams ?? null, null, 2)
+        : JSON.stringify(node.result ?? null, null, 2)
   }
 
   nodeEditorFullscreen = monaco.editor.create(nodeEditorFullscreenContainer.value as HTMLElement, {
@@ -1276,7 +1429,6 @@ const createFullscreenNodeEditor = (nodeId: string, type: 'input' | 'output') =>
   }, 100)
 }
 
-
 // 监听ESC键退出全屏
 const handleKeyDown = (e: KeyboardEvent) => {
   if (e.key === 'Escape') {
@@ -1291,7 +1443,10 @@ const handleKeyDown = (e: KeyboardEvent) => {
       e.stopPropagation()
     } else if (nodeFullscreen.value) {
       // 退出节点编辑器全屏
-      toggleNodeFullscreen(nodeFullscreen.value.nodeId, nodeFullscreen.value.type as 'input' | 'output')
+      toggleNodeFullscreen(
+        nodeFullscreen.value.nodeId,
+        nodeFullscreen.value.type as 'input' | 'output'
+      )
       e.preventDefault()
       e.stopPropagation()
     }
@@ -1300,7 +1455,12 @@ const handleKeyDown = (e: KeyboardEvent) => {
 
 const initTestCaseList = async () => {
   // 第一次打开XML标签页时加载用例列表
-  console.log('initTestCaseList 被调用，selectedRule.value:', selectedRule.value, 'testCases.value.length:', testCases.value.length)
+  console.log(
+    'initTestCaseList 被调用，selectedRule.value:',
+    selectedRule.value,
+    'testCases.value.length:',
+    testCases.value.length
+  )
   if (selectedRule.value) {
     await fetchTestCases(selectedRule.value)
   }
@@ -1470,7 +1630,10 @@ const getFileSign = async (file: File): Promise<FormSignResponse['data']> => {
 }
 
 // 上传文件到云存储
-const uploadFileToCloud = async (file: File, signData: FormSignResponse['data']): Promise<{ossPath: string}> => {
+const uploadFileToCloud = async (
+  file: File,
+  signData: FormSignResponse['data']
+): Promise<{ ossPath: string }> => {
   return new Promise((resolve, reject) => {
     const formData = new FormData()
     // 添加签名参数
@@ -1484,7 +1647,7 @@ const uploadFileToCloud = async (file: File, signData: FormSignResponse['data'])
     formData.append(signData.formFile, file)
     // 创建XMLHttpRequest进行上传
     const xhr = new XMLHttpRequest()
-    xhr.upload.onprogress = (event) => {
+    xhr.upload.onprogress = event => {
       if (event.lengthComputable) {
         const percentComplete = Math.round((event.loaded / event.total) * 100)
         console.log(`上传进度: ${percentComplete}%`)
@@ -1529,20 +1692,18 @@ const executeTest = async () => {
     }
 
     // 检查是否与现有用例重复
-    const isDuplicate = originalTestCases.value.some(testCase =>
-      testCase.ruleId === currentKey.ruleId &&
-      testCase.ossPath === currentKey.ossPath &&
-      (testCase.partId || '') === currentKey.partId
+    const isDuplicate = originalTestCases.value.some(
+      testCase =>
+        testCase.ruleId === currentKey.ruleId &&
+        testCase.ossPath === currentKey.ossPath &&
+        (testCase.partId || '') === currentKey.partId
     )
 
     // 2. 执行测试
     const params: RuleDebugRequestParams = {
       ossPath: uploadedOssPath.value,
       productId: partId.value?.trim(),
-      returnPartAttributes: [
-        "id",
-        "name"
-      ],
+      returnPartAttributes: ['id', 'name'],
       luaScript: scriptContent.value
     }
     const response: RuleDebugResponse = await debugRule(params)
@@ -1586,8 +1747,13 @@ const executeTest = async () => {
   }
 }
 
-
-const openDrawer = (data: ExecutionRecordData, isPreview: boolean = false, ismRuleEdit: boolean = false, targetTab?: string, mask: boolean = false) => {
+const openDrawer = (
+  data: ExecutionRecordData,
+  isPreview: boolean = false,
+  ismRuleEdit: boolean = false,
+  targetTab?: string,
+  mask: boolean = false
+) => {
   drawerVisible.value = true
   showMask.value = mask // 设置是否显示遮罩层
   isPreviewMode.value = isPreview
@@ -1626,7 +1792,7 @@ const openDrawer = (data: ExecutionRecordData, isPreview: boolean = false, ismRu
     nodeFullscreen.value = null
   }
 
-  if(isFromRuleEdit.value && data.ruleId){
+  if (isFromRuleEdit.value && data.ruleId) {
     selectedRule.value = data.ruleId
   }
 
@@ -1652,7 +1818,6 @@ const openDrawer = (data: ExecutionRecordData, isPreview: boolean = false, ismRu
     selectedRule.value = data.ruleId
   }
 
-
   if (data?.configData) {
     const configData = JSON.parse(data.configData)
     nodeMap.value = new Map<string, any>()
@@ -1662,8 +1827,10 @@ const openDrawer = (data: ExecutionRecordData, isPreview: boolean = false, ismRu
   }
 
   if (data?.executionResult) {
-    const result = typeof data.executionResult === 'string' ?
-      JSON.parse(data.executionResult) : data.executionResult
+    const result =
+      typeof data.executionResult === 'string'
+        ? JSON.parse(data.executionResult)
+        : data.executionResult
     result.funcStepLogs = result.funcStepLogs.map((log: any) => {
       const node = nodeMap.value.get(log.nodeId.toString())
       if (node) {
@@ -1797,7 +1964,7 @@ const saveTestResult = async () => {
   try {
     const partIdstr = partId.value?.trim()
     let partName = ''
-    if(partIdstr) {
+    if (partIdstr) {
       partName = findPartNameById(xmlContent.value, partIdstr)
     }
     // 构建保存参数
@@ -1842,7 +2009,7 @@ const saveTestResult = async () => {
 }
 
 // 监听抽屉显示状态，添加和移除键盘事件监听
-watch(drawerVisible, (visible) => {
+watch(drawerVisible, visible => {
   if (visible) {
     // 抽屉打开时添加键盘事件监听
     document.addEventListener('keydown', handleKeyDown)
@@ -1927,7 +2094,6 @@ const disposeEditors = () => {
   editorsMap.clear()
 }
 
-
 // 处理节点名称点击事件
 const handleNodeCollapseChange = (name: string) => {
   const node = testResult.value.funcStepLogs[parseInt(name)]
@@ -1969,8 +2135,6 @@ const toggleExpectedResultExpanded = () => {
     disposeExpectedResultEditor()
   }
 }
-
-
 
 // 初始化最后一个节点输出编辑器
 const initLastNodeOutputEditor = () => {
@@ -2073,10 +2237,13 @@ const disposeExpectedResultEditor = () => {
 }
 
 // 编辑器引用Map
-const editorsMap = new Map<string, {
-  input,
-  output
-}>()
+const editorsMap = new Map<
+  string,
+  {
+    input
+    output
+  }
+>()
 
 // 设置编辑器引用
 const setEditorRef = (el: any | null, nodeId: string, type: 'input' | 'output') => {
@@ -2096,9 +2263,14 @@ const setEditorRef = (el: any | null, nodeId: string, type: 'input' | 'output') 
 
   // 创建编辑器
   const editor = monaco.editor.create(el as HTMLElement, {
-    value: type === 'input'
-      ? JSON.stringify(testResult.value.funcStepLogs[parseInt(nodeId)]?.inputParams ?? null, null, 2)
-      : JSON.stringify(testResult.value.funcStepLogs[parseInt(nodeId)]?.result ?? null, null, 2),
+    value:
+      type === 'input'
+        ? JSON.stringify(
+            testResult.value.funcStepLogs[parseInt(nodeId)]?.inputParams ?? null,
+            null,
+            2
+          )
+        : JSON.stringify(testResult.value.funcStepLogs[parseInt(nodeId)]?.result ?? null, null, 2),
     language: 'json',
     theme: LIGHT_THEME,
     readOnly: true,
@@ -2127,7 +2299,11 @@ const setEditorRef = (el: any | null, nodeId: string, type: 'input' | 'output') 
   }, 100)
 
   // 如果当前节点处于全屏状态，需要触发布局更新
-  if (nodeFullscreen.value && nodeFullscreen.value.nodeId === nodeId && nodeFullscreen.value.type === type) {
+  if (
+    nodeFullscreen.value &&
+    nodeFullscreen.value.nodeId === nodeId &&
+    nodeFullscreen.value.type === type
+  ) {
     setTimeout(() => {
       editor.layout()
     }, 200)
@@ -2135,7 +2311,7 @@ const setEditorRef = (el: any | null, nodeId: string, type: 'input' | 'output') 
 }
 
 // 监听标签页切换，延迟初始化编辑器
-watch(activeTab, async (newTab) => {
+watch(activeTab, async newTab => {
   setTimeout(async () => {
     if (newTab === 'xml') {
       // 切换到XML标签页时，确保使用深色主题
@@ -2195,39 +2371,46 @@ watch(activeNodePanels, () => {
 })
 
 // 监听测试结果变化，当成功时自动展开最后一个节点输出
-watch(() => testResult.value.success, (newSuccess) => {
-  if (newSuccess && lastNodeOutput.value) {
-    setTimeout(() => {
-      initLastNodeOutputEditor()
-      // 总是初始化预期结果编辑器
-      expectedResultExpanded.value = true
-      initExpectedResultEditor()
-      scrollToLastNodeOutput()
-    }, 100)
+watch(
+  () => testResult.value.success,
+  newSuccess => {
+    if (newSuccess && lastNodeOutput.value) {
+      setTimeout(() => {
+        initLastNodeOutputEditor()
+        // 总是初始化预期结果编辑器
+        expectedResultExpanded.value = true
+        initExpectedResultEditor()
+        scrollToLastNodeOutput()
+      }, 100)
+    }
   }
-})
+)
 
 // 监听testResult变化，确保编辑器内容同步更新
-watch(() => testResult.value, (newTestResult) => {
-  // 如果当前在执行结果标签页且编辑器已存在，更新内容
-  if (activeTab.value === 'result' && testResult.value.success) {
-    setTimeout(() => {
-      // 更新最后一个节点输出编辑器
-      if (lastNodeOutputEditor && lastNodeOutput.value) {
-        lastNodeOutputEditor.setValue(lastNodeOutput.value)
-      } else if (lastNodeOutput.value) {
-        initLastNodeOutputEditor()
-      }
+watch(
+  () => testResult.value,
+  newTestResult => {
+    // 如果当前在执行结果标签页且编辑器已存在，更新内容
+    if (activeTab.value === 'result' && testResult.value.success) {
+      setTimeout(() => {
+        // 更新最后一个节点输出编辑器
+        if (lastNodeOutputEditor && lastNodeOutput.value) {
+          lastNodeOutputEditor.setValue(lastNodeOutput.value)
+        } else if (lastNodeOutput.value) {
+          initLastNodeOutputEditor()
+        }
 
-      // 更新预期结果编辑器
-      if (expectedResultEditor) {
-        expectedResultEditor.setValue(expectedResult.value || '')
-      } else if (expectedResult.value) {
-        initExpectedResultEditor()
-      }
-    }, 50)
-  }
-}, { deep: true })
+        // 更新预期结果编辑器
+        if (expectedResultEditor) {
+          expectedResultEditor.setValue(expectedResult.value || '')
+        } else if (expectedResult.value) {
+          initExpectedResultEditor()
+        }
+      }, 50)
+    }
+  },
+  { deep: true }
+)
 
 // 滚动到最后一个节点输出的位置
 const scrollToLastNodeOutput = () => {
@@ -2241,8 +2424,6 @@ const scrollToLastNodeOutput = () => {
     }
   }, 600)
 }
-
-
 
 onMounted(() => {
   // 添加窗口大小变化监听器，优化iframe环境下的抽屉高度

@@ -1,134 +1,146 @@
 <template>
-  <div class="h-full flex flex-col min-h-screen">
-    <!-- 导航栏 -->
-    <nav class="bg-gradient-to-r from-theme-dark to-theme-medium text-white shadow-md h-12 flex-shrink-0">
-      <div class="container mx-auto px-3 h-full">
-        <div class="flex items-center justify-between h-full">
-          <div class="flex items-center space-x-2 sm:space-x-3">
-            <i class="fas fa-code text-lg sm:text-xl text-theme-lightest"></i>
-            <h1 class="text-base sm:text-xl font-bold">函数JSDoc解析器</h1>
-          </div>
-        </div>
-      </div>
-    </nav>
-
-    <!-- 主内容区域 -->
-    <div class="container mx-auto px-3 py-3 flex-1 flex flex-col min-h-0 lg:overflow-hidden">
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 lg:flex-1 lg:overflow-hidden lg:min-h-0">
-        <!-- 代码输入区域 -->
-        <div class="bg-white rounded-xl shadow-md border border-theme-lighter p-3 flex flex-col lg:overflow-hidden min-h-[400px] lg:min-h-0 mb-2 mt-0">
-          <h2 class="text-base sm:text-lg font-semibold text-theme-dark mb-2 mt-0 flex items-center">
-            <i class="fas fa-edit mr-2 text-theme-medium"></i>
-            代码编辑器
-          </h2>
-          <div class="w-full code-editor focus:ring-2 focus:ring-theme-medium resize-none h-[400px] max-h-[400px] sm:h-[500px] sm:max-h-[500px] overflow-y-auto overflow-x-hidden scrollbar-zero lg:flex-1 lg:h-auto lg:min-h-0 lg:max-h-none lg:overflow-hidden">
-            <BaseEditor ref="JsEditorRef" v-model="state.jsCode" />
-          </div>
-
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 mt-2 border-t border-theme-lighter">
-            <el-button
-              :icon="Bottom"
-              @click="loadTemplate"
-              class="bg-theme-light hover:bg-theme-medium text-white border-theme-light"
-            >
-              模版
-            </el-button>
-            <el-button
-              :icon="Right"
-              @click="Js2FormJson"
-              class="bg-theme-medium hover:bg-theme-dark text-white border-theme-medium"
-            >
-              解析
-            </el-button>
-            <el-button
-              @click="clearCode"
-              class="bg-theme-lighter hover:bg-theme-light text-theme-dark border-theme-lighter"
-            >
-              <i class="fas fa-trash mr-2"></i>
-              清空
-            </el-button>
-            <el-button
-              type="primary"
-              @click="saveFuncData"
-              class="bg-theme-dark hover:bg-theme-medium text-white border-theme-dark"
-            >
-              <i class="fas fa-save mr-2"></i>
-              保存
-            </el-button>
-          </div>
-        </div>
-
-        <!-- 注解解析输出区域 -->
-        <div class="bg-white rounded-xl shadow-md border border-theme-lighter p-3 flex flex-col lg:overflow-hidden min-h-[300px] sm:min-h-[400px] lg:min-h-0 mb-2 mt-0">
-          <h2 class="text-base sm:text-lg font-semibold text-theme-dark mb-2 mt-0 flex items-center">
-            <i class="fas fa-file-code mr-2 text-theme-medium"></i>
-            注解解析
-          </h2>
-          <div class="bg-gray-900 text-theme-light rounded-lg p-2 overflow-y-auto code-editor h-[300px] max-h-[300px] sm:h-[400px] sm:max-h-[400px] scrollbar-overlay lg:flex-1 lg:h-auto lg:min-h-0 lg:max-h-none">
-            <pre class="annotation-code whitespace-pre-wrap break-words">{{ state.js2JsonCode }}</pre>
-          </div>
-        </div>
-
-        <!-- 表单预览区域 -->
-        <div class="bg-white rounded-xl shadow-md border border-theme-lighter p-3 flex flex-col lg:overflow-hidden min-h-[300px] sm:min-h-[400px] lg:min-h-0 mb-2 mt-0">
-          <h2 class="text-base sm:text-lg font-semibold text-theme-dark mb-2 mt-0 flex items-center">
-            <i class="fas fa-eye mr-2 text-theme-medium"></i>
-            表单预览
-          </h2>
-          <div class="w-full code-editor focus:ring-2 focus:ring-theme-medium resize-none lg:flex-1 lg:overflow-y-auto lg:min-h-0">
-            <h4 class="text-sm sm:text-base font-medium text-theme-dark mb-2 mt-0">
-              <span>入参配置：</span>
-            </h4>
-            <BaseFormRender ref="inputFormRendererRef" :formJson="formJson.input" />
-            <h4 class="text-sm sm:text-base font-medium text-theme-dark mb-2 mt-0">
-              <span>出参配置</span>
-            </h4>
-            <BaseFormRender ref="outputFormRendererRef" :formJson="formJson.output" />
-            <h4 class="text-sm sm:text-base font-medium text-theme-dark mb-2 mt-0">备注：</h4>
-            <el-input
-              type="textarea"
-              :rows="5"
-              maxlength="200"
-              show-word-limit
-              v-model="state.funcDesc"
-              placeholder="请输入备注....."
-              class="w-full"
-            />
-          </div>
-        </div>
-      </div>
-
-      <!-- 工具说明 -->
-      <div class="bg-white rounded-xl shadow-md border border-theme-lighter p-3 mt-2">
-        <h2 class="text-sm sm:text-base font-semibold text-theme-dark mb-2 mt-0 flex items-center">
-          <i class="fas fa-tools mr-1.5 text-theme-medium text-sm"></i>
-          工具说明
+  <!-- 主内容区域 -->
+  <div class="container mx-auto px-3 py-3 flex-1 flex flex-col min-h-0 lg:overflow-hidden">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 lg:flex-1 lg:overflow-hidden lg:min-h-0">
+      <!-- 代码输入区域 -->
+      <div
+        class="bg-white rounded-xl shadow-md border border-theme-lighter p-3 flex flex-col lg:overflow-hidden min-h-[400px] lg:min-h-0 mb-2 mt-0"
+      >
+        <h2 class="text-base sm:text-lg font-semibold text-theme-dark mb-2 mt-0 flex items-center">
+          <i class="fas fa-edit mr-2 text-theme-medium"></i>
+          代码编辑器
         </h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-          <div class="bg-theme-lightest border border-theme-lighter p-2 rounded-lg hover:shadow-md transition-shadow">
-            <h3 class="font-semibold text-theme-dark mb-1 mt-0 text-xs sm:text-sm">JSDoc语法</h3>
-            <p class="text-xs text-gray-700 leading-snug mt-0 mb-0">
-              语法支持
-              <a
-                class="text-theme-medium hover:text-theme-dark font-semibold underline decoration-theme-light hover:decoration-theme-medium transition-colors"
-                href="https://jsdoc.nodejs.cn/"
-                target="_blank"
-              >
-                JSDoc
-              </a>
+        <div
+          class="w-full code-editor focus:ring-2 focus:ring-theme-medium resize-none h-[400px] max-h-[400px] sm:h-[500px] sm:max-h-[500px] overflow-y-auto overflow-x-hidden scrollbar-zero lg:flex-1 lg:h-auto lg:min-h-0 lg:max-h-none lg:overflow-hidden"
+        >
+          <BaseEditor ref="JsEditorRef" v-model="state.jsCode" />
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 mt-2 border-t border-theme-lighter">
+          <el-button
+            :icon="Bottom"
+            @click="loadTemplate"
+            class="bg-theme-light hover:bg-theme-medium text-white border-theme-light"
+          >
+            模版
+          </el-button>
+          <el-button
+            :icon="Right"
+            @click="Js2FormJson"
+            class="bg-theme-medium hover:bg-theme-dark text-white border-theme-medium"
+          >
+            解析
+          </el-button>
+          <el-button
+            @click="clearCode"
+            class="bg-theme-lighter hover:bg-theme-light text-theme-dark border-theme-lighter"
+          >
+            <i class="fas fa-trash mr-2"></i>
+            清空
+          </el-button>
+          <el-button
+            type="primary"
+            @click="saveFuncData"
+            class="bg-theme-dark hover:bg-theme-medium text-white border-theme-dark"
+          >
+            <i class="fas fa-save mr-2"></i>
+            保存
+          </el-button>
+        </div>
+      </div>
+
+      <!-- 注解解析输出区域 -->
+      <div
+        class="bg-white rounded-xl shadow-md border border-theme-lighter p-3 flex flex-col lg:overflow-hidden min-h-[300px] sm:min-h-[400px] lg:min-h-0 mb-2 mt-0"
+      >
+        <h2 class="text-base sm:text-lg font-semibold text-theme-dark mb-2 mt-0 flex items-center">
+          <i class="fas fa-file-code mr-2 text-theme-medium"></i>
+          注解解析
+        </h2>
+        <div
+          class="bg-gray-900 text-theme-light rounded-lg p-2 overflow-y-auto code-editor h-[300px] max-h-[300px] sm:h-[400px] sm:max-h-[400px] scrollbar-overlay lg:flex-1 lg:h-auto lg:min-h-0 lg:max-h-none"
+        >
+          <pre class="annotation-code whitespace-pre-wrap break-words">{{ state.js2JsonCode }}</pre>
+        </div>
+      </div>
+
+      <!-- 表单预览区域 -->
+      <div
+        class="bg-white rounded-xl shadow-md border border-theme-lighter p-3 flex flex-col lg:overflow-hidden min-h-[300px] sm:min-h-[400px] lg:min-h-0 mb-2 mt-0"
+      >
+        <h2 class="text-base sm:text-lg font-semibold text-theme-dark mb-2 mt-0 flex items-center">
+          <i class="fas fa-eye mr-2 text-theme-medium"></i>
+          表单预览
+        </h2>
+        <div
+          class="w-full code-editor focus:ring-2 focus:ring-theme-medium resize-none lg:flex-1 lg:overflow-y-auto lg:min-h-0"
+        >
+          <h4 class="text-sm sm:text-base font-medium text-theme-dark mb-2 mt-0">
+            <span>入参配置：</span>
+          </h4>
+          <BaseFormRender ref="inputFormRendererRef" :formJson="formJson.input" />
+          <h4 class="text-sm sm:text-base font-medium text-theme-dark mb-2 mt-0">
+            <span>出参配置</span>
+          </h4>
+          <BaseFormRender ref="outputFormRendererRef" :formJson="formJson.output" />
+          <h4 class="text-sm sm:text-base font-medium text-theme-dark mb-2 mt-0">备注：</h4>
+          <el-input
+            type="textarea"
+            :rows="5"
+            maxlength="200"
+            show-word-limit
+            v-model="state.funcDesc"
+            placeholder="请输入备注....."
+            class="w-full"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- 工具说明 -->
+    <div class="bg-white rounded-xl shadow-md border border-theme-lighter p-3 mt-2">
+      <h2 class="text-sm sm:text-base font-semibold text-theme-dark mb-2 mt-0 flex items-center">
+        <i class="fas fa-tools mr-1.5 text-theme-medium text-sm"></i>
+        工具说明
+      </h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+        <div
+          class="bg-theme-lightest border border-theme-lighter p-2 rounded-lg hover:shadow-md transition-shadow"
+        >
+          <h3 class="font-semibold text-theme-dark mb-1 mt-0 text-xs sm:text-sm">JSDoc语法</h3>
+          <p class="text-xs text-gray-700 leading-snug mt-0 mb-0">
+            语法支持
+            <a
+              class="text-theme-medium hover:text-theme-dark font-semibold underline decoration-theme-light hover:decoration-theme-medium transition-colors"
+              href="https://jsdoc.nodejs.cn/"
+              target="_blank"
+            >
+              JSDoc
+            </a>
+          </p>
+        </div>
+        <div
+          class="bg-theme-lightest border border-theme-lighter p-2 rounded-lg hover:shadow-md transition-shadow"
+        >
+          <h3 class="font-semibold text-theme-dark mb-1 mt-0 text-xs sm:text-sm">自主解析JSDoc</h3>
+          <div class="text-xs text-gray-700 leading-snug space-y-1">
+            <p class="mt-0 mb-0">
+              已接入
+              <strong class="text-theme-dark">@param</strong>
+              、
+              <strong class="text-theme-dark">@return</strong>
+              、
+              <strong class="text-theme-dark">@example</strong>
+              等...
             </p>
+            <p class="mt-0 mb-0">轻量级解析器，专注于注释解析，注解陆续接入解析中...</p>
           </div>
-          <div class="bg-theme-lightest border border-theme-lighter p-2 rounded-lg hover:shadow-md transition-shadow">
-            <h3 class="font-semibold text-theme-dark mb-1 mt-0 text-xs sm:text-sm">自主解析JSDoc</h3>
-            <div class="text-xs text-gray-700 leading-snug space-y-1">
-              <p class="mt-0 mb-0">已接入<strong class="text-theme-dark">@param</strong>、<strong class="text-theme-dark">@return</strong>、<strong class="text-theme-dark">@example</strong>等...</p>
-              <p class="mt-0 mb-0">轻量级解析器，专注于注释解析，注解陆续接入解析中...</p>
-            </div>
-          </div>
-          <div class="bg-theme-lightest border border-theme-lighter p-2 rounded-lg hover:shadow-md transition-shadow sm:col-span-2 lg:col-span-1">
-            <h3 class="font-semibold text-theme-dark mb-1 mt-0 text-xs sm:text-sm">自主解析表单</h3>
-            <p class="text-xs text-gray-700 leading-snug mt-0 mb-0">轻量级表单生成器</p>
-          </div>
+        </div>
+        <div
+          class="bg-theme-lightest border border-theme-lighter p-2 rounded-lg hover:shadow-md transition-shadow sm:col-span-2 lg:col-span-1"
+        >
+          <h3 class="font-semibold text-theme-dark mb-1 mt-0 text-xs sm:text-sm">自主解析表单</h3>
+          <p class="text-xs text-gray-700 leading-snug mt-0 mb-0">轻量级表单生成器</p>
         </div>
       </div>
     </div>
@@ -161,16 +173,17 @@ const getTemplate = () => {
   return `
 /**
 * 函数demo
-* @param {string} name 名字
-* @param {number} price 工资 # value: 1
-* @param {object} employee 员工 # value: 1; options: [{ id: 1, name: '默认员工名称', price: 100 }]; props: { label: 'name', value: 'id', desc: 'price' }; compType: select
-* @param {number} employee.id 员工ID
-* @param {string} employee.name 员工名字
-* @param {number} employee.price 员工工资
-* @param {object[]} employees[] 多员工 # value: 1; options: [{ id: 1, name: '默认员工名称', price: 100 }]; props: { label: 'name', value: 'id', desc: 'price' };
-* @param {number} employees[].id 员工Id
-* @param {string} employees[].name 员工名字
-* @param {number} employees[].price 员工工资
+* @param {string} name 名字 # placeholder: 请输入名字; desc: 这是很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长很长的描述
+
+* @param {number} price 工资 # placeholder: 请输入工资; value: 1
+
+* @param {number} employee 员工ID # value: 1; options: [{ id: 1, name: '默认员工名称', price: 100 }]; props: { label: 'name', value: 'id', desc: 'price' }; compType: select
+
+* @param {object[]} employees 多员工 # value: [{ id: 1, name: '默认员工名称', price: 100 }];
+* @param {number} employees.id 员工Id
+* @param {string} employees.name 员工名字
+* @param {number} employees.price 员工工资
+
 * @returns {object} employee 员工
 * @returns {string} employee.name 员工名字
 * @returns {number} employee.price 员工工资
@@ -201,7 +214,7 @@ const formJson = reactive<{ [key: string]: FromConfig }>({
   output: {
     formConfig: null,
     compList: []
-  },
+  }
 })
 
 const state = reactive({
@@ -408,8 +421,6 @@ const Js2FormJson = () => {
     })
   }
 }
-
-
 
 const setInputFormData = (comments: any) => {
   const formData = {}

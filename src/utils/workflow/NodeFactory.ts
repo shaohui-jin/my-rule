@@ -9,13 +9,11 @@ import { useParamStore } from '@/store/modules/params'
 
 const paramStore = useParamStore()
 // 创建逻辑节点
-export function createLogicNode(type: keyof typeof LOGIC_NODE_TEMPLATES, funcId?:  string): WorkflowNode {
+export function createLogicNode(
+  type: keyof typeof LOGIC_NODE_TEMPLATES,
+  funcId?: string
+): WorkflowNode {
   const base = LOGIC_NODE_TEMPLATES[type]
-
-  // 特殊处理 funcId = 9 的
-  if (funcId === '9') {
-    base.version = '2.0.0'
-  }
 
   return {
     ...JSON.parse(JSON.stringify(base)),
@@ -62,8 +60,7 @@ export function createFuncNode(funcMeta: any): WorkflowNode {
   } as WorkflowNode
 }
 
-function setExteranlData(nodeData: WorkflowNode){
-
+function setExteranlData(nodeData: WorkflowNode) {
   const tableList = paramStore.tableList
   console.log('nodeData====', tableList)
   const sourceData = nodeData.inputData?.find((item: any) => item.paramName === 'source')
@@ -74,7 +71,10 @@ function setExteranlData(nodeData: WorkflowNode){
   tableList.forEach((item: any) => {
     const onlyKey = item.databaseId + item.tableName
     sourceData.options.push({ label: item.name, value: onlyKey })
-    outputContent.dynamicOptions[onlyKey] = item.children.map((child: any) => ({ label: child.name, value: child.code }))
+    outputContent.dynamicOptions[onlyKey] = item.children.map((child: any) => ({
+      label: child.name,
+      value: child.code
+    }))
   })
 }
 

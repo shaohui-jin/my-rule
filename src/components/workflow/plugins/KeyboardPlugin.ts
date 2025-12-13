@@ -1,4 +1,4 @@
-import { Keyboard } from '@antv/x6-plugin-keyboard'
+import { Keyboard } from '@antv/x6'
 import type { Graph } from '@antv/x6'
 import { ElMessage } from 'element-plus'
 import { nodeIdFactory } from '@/utils/workflow/NodeIdFactory'
@@ -179,12 +179,10 @@ export function initKeyboard(
       ) as any[]
       groupManager.createGroup(selectedNodes)
     })
-    graph.bindKey('ctrl+g', (e) => {
+    graph.bindKey('ctrl+g', e => {
       e.preventDefault()
       const selectedCells = graph.getSelectedCells()
-      const selectedNodes = selectedCells.find(
-        (cell: any) => cell.isNode && cell.isNode()
-      ) as any
+      const selectedNodes = selectedCells.find((cell: any) => cell.isNode && cell.isNode()) as any
       const _workflowData = unref(workflowData)
       const has = _workflowData.groupList.find(e => e.id === selectedNodes.id)
       if (has) {
