@@ -10,7 +10,7 @@ import { green, bold } from 'picocolors'
 import { getPackageSize } from '@pureadmin/utils'
 import svgLoader from 'vite-svg-loader'
 dayjs.extend(duration)
-import monacoEditorPlugin from 'vite-plugin-monaco-editor';
+import monacoEditorPlugin from 'vite-plugin-monaco-editor'
 import path, { resolve } from 'path'
 
 /** 当前执行node命令时文件夹的地址（工作目录） */
@@ -92,7 +92,7 @@ export default ({ command, mode }: ConfigEnv): UserConfigExport => {
       // ElementPlus({}),
       monacoEditorPlugin({
         // languages: ['javascript', 'typescript'],
-        languageWorkers: [ 'editorWorkerService', 'json', 'typescript', 'html', 'css'],
+        languageWorkers: ['editorWorkerService', 'json', 'typescript', 'html', 'css']
         // publicPath: 'http://localhost:4173/my-rule/',
         // publicPath: 'https://cdn.jsdelivr.net/npm/monaco-editor@latest/min/vs/loader.min.js'
       })
@@ -137,13 +137,13 @@ export default ({ command, mode }: ConfigEnv): UserConfigExport => {
         // external: ['monaco-editor'],
         external: [],
         input: {
-          index: path.resolve(__dirname, 'index.html'),
+          index: path.resolve(__dirname, 'index.html')
         },
         // 静态资源分类打包
         output: {
-          chunkFileNames: 'static/js/[name]-[hash].js',
-          entryFileNames: 'static/js/[name]-[hash].js',
-          assetFileNames: 'static/[ext]/[name]-[hash].[ext]'
+          chunkFileNames: 'my-rule/static/js/[name]-[hash].js',
+          entryFileNames: 'my-rule/static/js/[name]-[hash].js',
+          assetFileNames: 'my-rule/static/[ext]/[name]-[hash].[ext]'
         }
       }
     }
