@@ -202,7 +202,7 @@ function handleNodeBaseDataUpdate(nodeId: string) {
 }
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 /* 自定义抽屉样式 */
 .attr-panel-drawer {
   position: absolute;
@@ -272,7 +272,7 @@ function handleNodeBaseDataUpdate(nodeId: string) {
   align-items: center;
   font-size: 18px;
   font-weight: 500;
-  color: #303133;
+  @apply text-theme-dark;
   width: 100%;
 }
 
@@ -289,8 +289,8 @@ function handleNodeBaseDataUpdate(nodeId: string) {
   width: 25px;
   height: 25px;
   border-radius: 50%;
-  border: 2px solid #409eff;
-  color: #409eff;
+  border: 2px solid;
+  @apply border-theme-medium text-theme-medium;
   font-weight: 600;
   font-size: 14px;
   margin-right: 6px;
@@ -310,7 +310,7 @@ function handleNodeBaseDataUpdate(nodeId: string) {
 }
 
 .node-title-container:hover {
-  background-color: rgba(64, 158, 255, 0.05);
+  @apply bg-theme-lightest;
 }
 
 .node-title {
@@ -318,7 +318,7 @@ function handleNodeBaseDataUpdate(nodeId: string) {
   line-height: 30px;
   height: 30px;
   font-weight: 500;
-  color: #303133;
+  @apply text-theme-dark;
   width: 100%;
   white-space: nowrap;
   overflow: hidden;
@@ -330,7 +330,7 @@ function handleNodeBaseDataUpdate(nodeId: string) {
   width: 100%;
   font-size: 18px;
   font-weight: 500;
-  color: #303133;
+  @apply text-theme-dark;
 }
 
 .node-type-icon {
@@ -341,10 +341,77 @@ function handleNodeBaseDataUpdate(nodeId: string) {
 }
 
 .close-btn {
-  color: #909399;
+  @apply text-theme-medium;
+  transition: color 0.2s ease;
 }
 
 .close-btn:hover {
-  color: #409eff;
+  @apply text-theme-dark;
+}
+
+:deep(.el-form-item) {
+  margin-bottom: 18px;
+  display: flex;
+  align-items: flex-start;
+}
+
+/* 调整表单项布局 */
+:deep(.el-form-item__label) {
+  padding: 0;
+  height: auto;
+  line-height: 1.2;
+  text-align: right;
+  flex-shrink: 0;
+  position: relative; /* 添加相对定位 */
+}
+
+/* 移除 element-plus 的默认 margin */
+:deep(.el-form-item__content) {
+  margin-left: 0 !important;
+  padding-left: 12px; /* 固定的左边距 */
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  justify-content: flex-start;
+  position: relative; /* 添加相对定位 */
+}
+
+/* 保持 ElementPlus 原有的 hover 交互，不覆盖默认行为 */
+
+/* 确保所有输入控件宽度一致 */
+:deep(.el-input),
+:deep(.el-select),
+:deep(.el-input-number) {
+  width: 100%;
+}
+
+/* 修复 element-plus 的一些默认样式 */
+:deep(.el-form-item__label-wrap) {
+  width: 100%;
+}
+
+:deep(.el-form-item__label::before),
+:deep(.el-form-item__label::after) {
+  display: none !important;
+}
+
+:deep(.el-select) {
+  width: 100% !important;
+  min-width: 100px;
+  max-width: 100%;
+  flex-shrink: 0;
+}
+
+:deep(.el-select__tags) {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  flex-wrap: wrap;
+  overflow: hidden;
+}
+
+:deep(.el-select__input) {
+  width: 100% !important;
+  min-width: 0 !important;
 }
 </style>
