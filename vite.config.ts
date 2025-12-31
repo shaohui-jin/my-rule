@@ -12,6 +12,7 @@ import svgLoader from 'vite-svg-loader'
 dayjs.extend(duration)
 import monacoEditorPlugin from 'vite-plugin-monaco-editor'
 import path, { resolve } from 'path'
+import { writeFileSync } from 'fs'
 
 /** 当前执行node命令时文件夹的地址（工作目录） */
 const root: string = process.cwd()
@@ -63,6 +64,9 @@ export default ({ command, mode }: ConfigEnv): UserConfigExport => {
         closeBundle() {
           if (config.command === 'build') {
             endTime = dayjs(new Date())
+            // 为 GitHub Pages 创建 .nojekyll 文件，避免 Jekyll 忽略以 _ 开头的文件
+            const nojekyllPath = path.resolve(outDir, '.nojekyll')
+            writeFileSync(nojekyllPath, '', 'utf-8')
             getPackageSize({
               folder: outDir,
               callback: (size: string) => {
@@ -138,13 +142,13 @@ export default ({ command, mode }: ConfigEnv): UserConfigExport => {
         external: [],
         input: {
           index: path.resolve(__dirname, 'index.html')
-        }
+        },
         // 静态资源分类打包
-        // output: {
-        //   chunkFileNames: 'my-rule/static/js/[name]-[hash].js',
-        //   entryFileNames: 'my-rule/static/js/[name]-[hash].js',
-        //   assetFileNames: 'my-rule/static/[ext]/[name]-[hash].[ext]'
-        // }
+        output: {
+          chunkFileNames: 'static/js/[name]-[hash].js',
+          entryFileNames: 'static/js/[name]-[hash].js',
+          assetFileNames: 'static/[ext]/[name]-[hash].[ext]'
+        }
       }
     }
   }
