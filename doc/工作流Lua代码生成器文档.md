@@ -29,10 +29,7 @@
   - `sub_property_extractor`: 子属性提取器节点
   - `global_variable`: 全局变量节点
   - `type_converter`: 类型转换器节点
-  - `custom_function`: 自定义函数节点
   - `iterator`: 迭代器节点
-  - `decision_tables_function`: 决策表函数节点
-  - `external_data_table`: 外部数据表节点
 
 #### 节点分析信息
 ```typescript
@@ -314,18 +311,6 @@ end
 - `toNumber`: 转换为数字
 - `toBoolean`: 转换为布尔值
 - 默认转换为table类型
-
-### 6. DecisionTable 决策表处理器
-
-#### 功能特性
-- 支持决策表数据生成
-- 支持测试模式日志记录
-- 支持复杂的条件判断逻辑
-
-#### 决策表结构
-- 支持多行条件配置
-- 支持多种输出类型
-- 支持条件优先级设置
 
 ### 7. ExternalDataTable 外部数据表处理器
 

@@ -1,9 +1,9 @@
 import { Graph, Node, Transform } from '@antv/x6'
-import { createIteratorNodeInstance } from './NodeFactory'
+import { createIteratorNodeInstance } from '../factory/NodeFactory'
 import { type WorkflowData, LogicType, WorkflowNode } from '@/type/workflow'
 import type { Ref } from 'vue'
 import { IteratorNode } from './IteratorNode'
-import { nodeIdFactory } from './NodeIdFactory'
+import nodeIdFactory from '../factory/NodeIdFactory'
 
 export class IteratorManager {
   private graph: Graph

@@ -1,25 +1,10 @@
-import { nodeIdFactory } from './NodeIdFactory'
+import nodeIdFactory from './NodeIdFactory'
 import { type WorkflowNode, LogicType, GroupNodeData } from '@/type/workflow'
 import { CustomNode, getCustomNodeConfig } from '@/utils/workflow/CustomNode'
-import { GroupNode } from './GroupNode'
-import { IteratorNode } from './IteratorNode'
-import { LOGIC_NODE_TEMPLATES } from './BaseLogicConfig'
-import { getIteratorData } from './IteratorManager'
-import { useParamStore } from '@/store/modules/params'
-
-const paramStore = useParamStore()
-// 创建逻辑节点
-export function createLogicNode(
-  type: keyof typeof LOGIC_NODE_TEMPLATES,
-  funcId?: string
-): WorkflowNode {
-  const base = LOGIC_NODE_TEMPLATES[type]
-
-  return {
-    ...JSON.parse(JSON.stringify(base)),
-    id: nodeIdFactory.next()
-  } as WorkflowNode
-}
+import { GroupNode } from '../workflow/GroupNode'
+import { IteratorNode } from '../workflow/IteratorNode'
+import { getIteratorData } from '../workflow/IteratorManager'
+import { BaseFunctionNodeType } from '@/store/modules/baseFunction'
 
 // 创建函数节点
 export function createFuncNode(funcMeta: any): WorkflowNode {
@@ -60,24 +45,6 @@ export function createFuncNode(funcMeta: any): WorkflowNode {
   } as WorkflowNode
 }
 
-function setExteranlData(nodeData: WorkflowNode) {
-  const tableList = paramStore.tableList
-  console.log('nodeData====', tableList)
-  const sourceData = nodeData.inputData?.find((item: any) => item.paramName === 'source')
-  const outputContent = nodeData.inputData?.find((item: any) => item.paramName === 'outputContent')
-
-  sourceData.options = []
-  outputContent.dynamicOptions = {}
-  tableList.forEach((item: any) => {
-    const onlyKey = item.databaseId + item.tableName
-    sourceData.options.push({ label: item.name, value: onlyKey })
-    outputContent.dynamicOptions[onlyKey] = item.children.map((child: any) => ({
-      label: child.name,
-      value: child.code
-    }))
-  })
-}
-
 /**
  * 创建X6节点
  * @param nodeData 节点数据
@@ -93,12 +60,9 @@ export function createX6Node(nodeData: WorkflowNode, isPreview = false) {
       y: isPreview ? 0 : nodeData.pos?.y || 0
     })
   }
-
-  if (nodeData.logicData?.logicType === LogicType.EXTERNAL_DATA_TABLE) {
-    setExteranlData(nodeData)
-  }
-
   const config = getCustomNodeConfig(nodeData)
+  console.log('createX6Node', nodeData)
+  console.log('config', config)
   const rectNode = new CustomNode({
     id: config.id,
     x: isPreview ? 0 : nodeData.pos?.x || 0,

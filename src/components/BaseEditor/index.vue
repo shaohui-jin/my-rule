@@ -1,9 +1,9 @@
 <template>
   <!-- 全屏编辑器覆盖层 -->
   <Teleport to="body">
-    <div v-if="isFullscreen" class="fullscreen-editor-overlay">
-      <div class="fullscreen-editor-container">
-        <div class="editor-toolbar">
+    <div v-if="isFullscreen" class="base-fullscreen-editor-overlay">
+      <div class="base-fullscreen-editor-container">
+        <div class="base-editor-toolbar">
           <el-button type="primary" size="small" circle @click.stop="copyContent">
             <el-icon><DocumentCopy /></el-icon>
           </el-button>
@@ -17,8 +17,8 @@
   </Teleport>
 
   <!-- 主编辑器容器 -->
-  <div class="editor-wrapper">
-    <div class="editor-toolbar">
+  <div class="base-editor-wrapper">
+    <div class="base-editor-toolbar">
       <el-button type="primary" size="small" circle @click.stop="copyContent">
         <el-icon><DocumentCopy /></el-icon>
       </el-button>
@@ -26,7 +26,7 @@
         <el-icon><FullScreen /></el-icon>
       </el-button>
     </div>
-    <div ref="editorContainer" class="editorContainer"/>
+    <div ref="editorContainer" class="editorContainer" />
   </div>
 </template>
 
@@ -72,7 +72,7 @@ onMounted(() => {
   // console.log('monaco.editor', monaco.editor)
   codeEditor = monaco.editor.create(editorContainer.value, {
     ...getDefaultMonacoEditorConfig(),
-    value: props.modelValue,
+    value: props.modelValue
   })
 
   // 设置监听事件
@@ -96,7 +96,8 @@ watch(
 const copyContent = () => {
   if (codeEditor) {
     const content = codeEditor.getValue()
-    navigator.clipboard.writeText(content)
+    navigator.clipboard
+      .writeText(content)
       .then(() => {
         ElMessage.success('代码内容已复制到剪贴板')
       })
@@ -136,7 +137,7 @@ const createFullscreenEditor = () => {
 
   fullscreenEditor = monaco.editor.create(fullscreenContainer.value, {
     ...getDefaultMonacoEditorConfig(true),
-    value: codeEditor?.getValue() || '',
+    value: codeEditor?.getValue() || ''
   })
 
   // 监听编辑器内容变更
@@ -164,7 +165,6 @@ const getValue = (): string => {
   return codeEditor?.getValue() || ''
 }
 
-
 defineExpose({
   setValue,
   getValue,
@@ -174,7 +174,7 @@ defineExpose({
 </script>
 
 <style lang="scss" scoped>
-.editor-wrapper {
+.base-editor-wrapper {
   position: relative;
   height: 100%;
   width: 100%;
@@ -191,7 +191,7 @@ defineExpose({
   flex: 1;
 }
 
-.editor-toolbar {
+.base-editor-toolbar {
   position: absolute;
   top: 5px;
   right: 5px;
@@ -203,7 +203,7 @@ defineExpose({
 }
 
 /* 全屏编辑器样式 */
-.fullscreen-editor-overlay {
+.base-fullscreen-editor-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -215,14 +215,14 @@ defineExpose({
   flex-direction: column;
 }
 
-.fullscreen-editor-container {
+.base-fullscreen-editor-container {
   width: 100%;
   height: 100%;
   position: relative;
   display: flex;
   flex-direction: column;
 
-  .editor-toolbar {
+  .base-editor-toolbar {
     position: absolute;
     top: 20px;
     right: 20px;

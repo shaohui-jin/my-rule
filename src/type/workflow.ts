@@ -20,7 +20,7 @@ export interface InputData {
   portId?: string // 唯一端口ID
   widgetType?: string // 控件类型
   attributes?: any // 控件属性
-  options?: Array<{ label: string; value: string, desc?: string }> // 下拉选择选项
+  options?: Array<{ label: string; value: string; desc?: string }> // 下拉选择选项
   dynamicOptions?: Record<string, Array<{ label: string; value: string }>> // 动态选项配置
   linkedParams?: string[] // 联动参数列表，当此参数变化时会影响哪些其他参数
   linkedSource?: string // 联动源参数，标识此参数的选项来源
@@ -39,18 +39,15 @@ export interface OutputData {
 }
 
 export enum LogicType {
-  IFELSE = 'ifelse',
+  IFELSE = 'if_else',
   AGGREGATE = 'aggregate',
   GLOBAL_PARAM = 'global_param',
   SUB_PROPERTY_EXTRACTOR = 'sub_property_extractor',
   GLOBAL_VARIABLE = 'global_variable',
   TYPE_CONVERTER = 'type_converter',
   DIMENSION_CONVERTER = 'dimension_converter',
-  CUSTOM_FUNCTION = 'custom_function',
   ITERATOR = 'iterator',
   ITERATOR_START = 'iterator_start',
-  DECISION_TABLES_FUNCTION = 'decision_tables_function',
-  EXTERNAL_DATA_TABLE = 'external_data_table',
   CALCULATOR = 'calculator'
 }
 
@@ -86,118 +83,7 @@ export interface WorkflowNode {
   children?: string[]
   isCollapsed?: boolean
   version?: string
-  decisionTableData?: DecisionTableData//决策表数据
-
 }
-
-/**
- * 决策表数据
- */
-export interface DecisionTableData {
-  /**
-   * 行列表
-   */
-  rowList: DecisionTableRowData[],
-  expressionConfig: DecisionTableExpressionConfig
-
-}
-
-export interface DecisionTableExpressionConfig {
-  /**
-   * 名称
-   */
-  name: string
-  /**
-   * 代码
-   */
-  code: string
-  /**
-   * 唯一ID
-   */
-  id: string
-  /**
-   * 层级
-   */
-  level: number
-  /**
-   * 子节点
-   */
-  children: DecisionTableExpressionConfigItem[]
-
-}
-
-export interface DecisionTableExpressionConfigItem {
-  /**
-   * 代码
-   */
-  code: string,
-  /**
-   * 层级
-   */
-  level: number
-}
-
-/**
- * 决策表行数据
- */
-export interface DecisionTableRowData {
-  /**
-   * 行ID
-   */
-  id: string
-  /**
-   * 行索引
-   */
-  index: number
-  /**
-   * 输入参数列表
-   */
-  inputList: DecisionTableParamData[]
-  /**
-   * 输出参数列表
-   */
-  outputList: DecisionTableParamData[]
-  /**
-   * 备注参数列表
-   */
-  annotationList: DecisionTableParamData[]
-}
-
-/**
- * 决策表参数数据
- */
-export interface DecisionTableParamData {
-  /**
-   * 参数名称
-   */
-  paramName: string
-  /**
-   * 参数值
-   */
-  paramValue: string
-  /**
-   * 参数类型
-   */
-  paramType: string
-  /**
-   * 参数代码
-   */
-  paramCode: string
-  /**
-   * 是否自定义
-   */
-  isCustom: number
-  /**
-   * lua表达式
-   */
-  luaExpression?: string
-  /**
-   * lua表达式结果类型
-   */
-  luaExpressionResultType?: string
-}
-
-
 
 export interface GroupNodeData {
   id: string

@@ -63,7 +63,6 @@ export class WorkflowValidator {
       this.validateIsolatedNodes(node, edgesByTarget, edgesBySource)
       this.validateGlobalVariableReferences(node, allNodeIds)
       this.validateIteratorStartNodeConnection(node, edgesBySource, edgesByTarget)
-      this.validateExternalDecisionTable(node, allNodeIds)
     })
 
     return {
@@ -80,11 +79,14 @@ export class WorkflowValidator {
    */
   private validateNodeInputCount(node: WorkflowNode, allNodeIds: string[]): void {
     if (!node.inputData) return
-    if (node.funcType === 'logic' && (node.logicData?.logicType === LogicType.IFELSE
-      || node.logicData?.logicType === LogicType.ITERATOR
-      || node.logicData?.logicType === LogicType.GLOBAL_VARIABLE
-      || node.logicData?.logicType === LogicType.GLOBAL_PARAM
-    )) return
+    if (
+      node.funcType === 'logic' &&
+      (node.logicData?.logicType === LogicType.IFELSE ||
+        node.logicData?.logicType === LogicType.ITERATOR ||
+        node.logicData?.logicType === LogicType.GLOBAL_VARIABLE ||
+        node.logicData?.logicType === LogicType.GLOBAL_PARAM)
+    )
+      return
 
     const nodeErrors: string[] = []
 
@@ -216,13 +218,8 @@ export class WorkflowValidator {
   ): void {
     const hasIncomingConnections = (edgesByTarget.get(node.id) || []).length > 0
     const hasOutgoingConnections = (edgesBySource.get(node.id) || []).length > 0
-    const isCustomNode = node.funcType === 'logic' && node.logicData?.logicType === LogicType.CUSTOM_FUNCTION
 
-    if (
-      !hasIncomingConnections &&
-      !hasOutgoingConnections &&
-      !isCustomNode
-    ) {
+    if (!hasIncomingConnections && !hasOutgoingConnections) {
       this.errors.push({
         nodeId: node.id,
         nodeTitle: node.title || node.id,
@@ -273,14 +270,14 @@ export class WorkflowValidator {
     if (node.funcType === 'logic' && node.logicData?.logicType === LogicType.ITERATOR) {
       const nodeErrors: string[] = []
 
-      if(node.inputData.length > 0) {
+      if (node.inputData.length > 0) {
         node.inputData.forEach(param => {
-          if(!param.source) {
+          if (!param.source) {
             nodeErrors.push(`入参${this.getParamName(param)}未设置数据源`)
           }
         })
       }
-      
+
       // 获取迭代器的起始节点ID
       const startNodeId = getStartNodeId(node.id)
 
@@ -295,7 +292,7 @@ export class WorkflowValidator {
       node.children.forEach(child => {
         const childNode = this.workflowData.nodeList.find(n => n.id === child)
         if (!childNode) return
-        
+
         const childBySourceEdges = edgesBySource.get(childNode.id) || []
         const childByTargetEdges = edgesByTarget.get(childNode.id) || []
         // 如果子节点没有出边连接到外部节点 则报错
@@ -319,32 +316,6 @@ export class WorkflowValidator {
           type: 'workflow'
         })
       }
-    }
-  }
-
-  /**
-   * 校验外部决策表的所有入参source字段
-   * 规则：外部决策表的所有入参source字段必须有值
-   */
-  private validateExternalDecisionTable(node: WorkflowNode, allNodeIds: string[]): void {
-    if (node.funcType != 'logic' || node.logicData?.logicType != LogicType.EXTERNAL_DATA_TABLE) return
-    const nodeErrors: string[] = []
-
-    node.inputData?.forEach(param => {
-      if (!param.source || param.source === '') {
-        nodeErrors.push(`入参${this.getParamName(param)}未设置数据源`)
-      } else if (param.sourceType === 'node' && !allNodeIds.includes(param.source)) {
-        nodeErrors.push(`入参${this.getParamName(param)}数据源节点不存在`)
-      }
-    })
-
-    if (nodeErrors.length > 0) {
-      this.errors.push({
-        nodeId: node.id,
-        nodeTitle: node.title || node.id,
-        errors: nodeErrors,
-        type: 'workflow'
-      })
     }
   }
 
@@ -508,4 +479,3 @@ export class WorkflowValidator {
     return false
   }
 }
-

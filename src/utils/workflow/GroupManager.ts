@@ -1,7 +1,7 @@
 import { Graph, Node } from '@antv/x6'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { nodeIdFactory } from './NodeIdFactory'
-import { createGroupNode } from './NodeFactory'
+import nodeIdFactory from '../factory/NodeIdFactory'
+import { createGroupNode } from '../factory/NodeFactory'
 import type { WorkflowData } from '@/type/workflow'
 import type { Ref } from 'vue'
 

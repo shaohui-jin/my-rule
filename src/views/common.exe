@@ -1,0 +1,142 @@
+import { ElMessageBox } from 'element-plus'
+
+export type PublishSteps = 'test' | 'package' | 'edit'
+
+export type PublishStatusLabels = '待测试' | '已测试' | '待打包' | '已打包' | '已发布'
+export type PublishStatusValues = 0 | 1 | 2 | 3 | 4
+export type PublishStatusColors =
+  | 'rgba(0, 85, 255, 1)'
+  | 'rgba(103, 194, 58, 1)'
+  | 'rgba(0, 85, 255, 1)'
+  | 'rgba(103, 194, 58, 1)'
+  | 'rgba(103, 194, 58, 1)'
+
+export type UpdatePublishDetail = {
+  // 业务编码
+  bizCode: string
+  // 发布状态 (0-待测试, 1-已测试, 2-待打包, 3-已打包, 4-已发布)
+  publishStatus: PublishStatusValues
+  // 发布版本
+  publishVersion?: string
+  // 数据ID列表
+  dataIds: string[]
+  // 关联父级类型,可用值:0,1,2
+  relParentType: number
+  // 关联子级类型,可用值:0,1,2
+  relChildType: number
+}
+
+type PublishStatus = { label: PublishStatusLabels; value: PublishStatusValues }
+
+// 发布状态颜色map 0-待测试, 1-已测试, 2-待打包, 3-已打包
+
+export const PublishStatusColorMap: Record<PublishStatusValues, PublishStatusColors> = {
+  0: 'rgba(0, 85, 255, 1)',
+  1: 'rgba(103, 194, 58, 1)',
+  2: 'rgba(0, 85, 255, 1)',
+  3: 'rgba(103, 194, 58, 1)',
+  4: 'rgba(103, 194, 58, 1)'
+}
+
+export const colorMap = {
+  0: PublishStatusColorMap[0],
+  1: PublishStatusColorMap[1],
+  2: PublishStatusColorMap[2],
+  3: PublishStatusColorMap[3],
+  4: PublishStatusColorMap[4]
+}
+
+// 发布状态字段
+export const PublishStatusOptions: PublishStatus[] = [
+  { label: '待测试', value: 0 },
+  { label: '已测试', value: 1 },
+  { label: '待打包', value: 2 },
+  { label: '已打包', value: 3 },
+  { label: '已发布', value: 4 }
+]
+
+// edit状态下发布状态字段
+export const EditPublishStatusOptions: PublishStatus[] = [
+  { label: '待测试', value: 0 },
+  { label: '已测试', value: 1 }
+]
+
+export const PublishStepsMap: Record<PublishSteps, string> = {
+  test: '通过测试',
+  package: '提交打包',
+  edit: '修改发布信息'
+}
+
+// 校验发布前置状态的map
+export const checkPublishStatusPrevOptions: Record<PublishSteps, PublishStatusValues> = {
+  test: 0,
+  package: 1,
+  edit: 2
+}
+
+// 校验发布当前状态的map
+export const checkPublishStatusOptions: Record<PublishSteps, PublishStatusValues> = {
+  test: 1,
+  package: 2,
+  edit: undefined
+}
+
+export const checkPublishStatusSuccessMessage: Record<PublishSteps, string> = {
+  test: '数据通过测试成功',
+  package: '数据提交打包成功',
+  edit: '数据修改发布信息成功'
+}
+
+export const checkPublishStatusErrorMessage: Record<PublishSteps, string> = {
+  test: '数据通过测试存在异常，请刷新再试',
+  package: '数据提交打包存在异常，请刷新再试',
+  edit: '数据修改发布信息存在异常，请刷新再试'
+}
+
+export const findPublishStatus = (value: PublishStatusValues) => {
+  return PublishStatusOptions.find(item => item.value === value)?.label || ''
+}
+
+export const canUsePublish = () => {
+  const host = window.location.host
+  return (
+    host.startsWith('admin-mvp') || host.startsWith('admin-dev') || host.startsWith('localhost')
+  )
+}
+
+export type PublishData = {
+  [key: string]: any // 其他非必要数据
+  publishStatus: PublishStatusValues
+}
+
+export const checkPublish = async (
+  data: PublishData | PublishData[],
+  resolve: () => void,
+  reject?: () => void
+) => {
+  let result
+  const checkStatus = 3
+  const hasCheck = Array.isArray(data)
+    ? data.some(item => item.publishStatus === checkStatus)
+    : data.publishStatus === checkStatus
+  // 如果为已打包，就提示  { label: '已打包', value: 3 }
+  if (canUsePublish() && hasCheck) {
+    const res = await ElMessageBox.confirm(
+      '该业务数据已在打包或发布途中，当前的修改不会影响已打包/发布的数据中，是否继续保存?',
+      '确定继续保存?',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    if (res === 'confirm') {
+      result = await resolve()
+    } else if (res === 'cancel') {
+      reject()
+    }
+  } else {
+    result = await resolve()
+  }
+  return result
+}

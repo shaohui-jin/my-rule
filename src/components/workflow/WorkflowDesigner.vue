@@ -15,17 +15,6 @@
       <!-- 画布容器 -->
       <div ref="container" class="graph-container" tabindex="0" />
 
-      <!-- 决策表编辑面板 -->
-      <DecisionTableEditPanelNode
-        v-if="showDecisionTablePanel"
-        :node-data="currentDecisionTableNode"
-        :decision-table-data="currentDecisionTableData"
-        :workflow-data="workflowData"
-        @close="closeDecisionTableEditPanel"
-        @confirm="handleDecisionTableConfirm"
-        class="decision-table-panel-overlay"
-      />
-
       <!-- 工作流验证错误面板 -->
       <WorkflowValidationModal
         :visible="showValidationModal"
@@ -93,7 +82,6 @@
           <Export />
           导出
         </el-button>
-        <!--        <el-button link disabled><Setting />版本管理</el-button>-->
         <el-button link @click="handleTest" :disabled="!props.data.id">
           <Test />
           测试
@@ -113,8 +101,8 @@
 <script setup lang="ts">
 import {
   ref,
-  onActivated,
   onDeactivated,
+  onMounted,
   onUnmounted,
   watch,
   defineExpose,
@@ -127,8 +115,8 @@ import { Dnd } from '@antv/x6'
 import { InputData, LogicType, type WorkflowData, WorkflowNode } from '@/type/workflow'
 import { CustomNode, getCustomNodeConfig } from '@/utils/workflow/CustomNode'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { nodeIdFactory } from '@/utils/workflow/NodeIdFactory'
-import { createLogicNode, createFuncNode, createX6Node } from '@/utils/workflow/NodeFactory'
+import nodeIdFactory from '@/utils/factory/NodeIdFactory'
+import { createX6Node } from '@/utils/factory/NodeFactory'
 import { IteratorNode } from '@/utils/workflow/IteratorNode'
 import { createInfoPanelNode } from '@/utils/workflow/InfoPanelNode'
 import { initKeyboard } from '@/components/workflow/plugins/KeyboardPlugin'
@@ -145,9 +133,6 @@ import { EdgeCorrectionManager } from '@/utils/workflow/EdgeCorrectionManager'
 import { GroupManager } from '@/utils/workflow/GroupManager'
 import { IteratorManager } from '@/utils/workflow/IteratorManager'
 import { getLuaCodeMapByExpression } from '@/utils/expression'
-import { useParamStore } from '@/store/modules/params'
-// const DecisionTableEditPanelNode = defineAsyncComponent(() => import('./panels/DecisionTableEditPanelNode.vue'))
-import DecisionTableEditPanelNode from './panels/DecisionTableEditPanelNode.vue'
 import { useRouter } from 'vue-router'
 // 引入工具栏图片
 import Reset from '@/assets/ruleEditToolSvg/reset.svg'
@@ -168,8 +153,8 @@ import Expand from '@/assets/ruleEditToolSvg/expand.svg'
 import Increase from '@/assets/ruleEditToolSvg/increase.svg'
 import Layout from '@/assets/ruleEditToolSvg/layout.svg'
 import { useRuleStore } from '@/store/modules/ruleCache'
+import { BaseFunctionNodeType } from '@/store/modules/baseFunction'
 
-const paramStore = useParamStore()
 /**
  * 组件属性定义
  * @property {WorkflowData} data - 工作流数据
@@ -734,16 +719,6 @@ function registerGraphBaseEvents() {
       // }
     }
   )
-
-  // 决策表编辑按钮点击事件
-  graph.on('node:edit_decisionTables', ({ node, e }: { node: any; e: any }) => {
-    // 阻止事件冒泡，避免触发容器的点击事件
-    if (e) {
-      e.stopPropagation()
-      e.preventDefault()
-    }
-    showDecisionTablesEditPanel(node)
-  })
 }
 
 function registerGraphFullEvents() {
@@ -1215,10 +1190,7 @@ const initGraph = () => {
       }
     },
     // 桩点渲染的回调
-    onPortRendered(args) {
-      const { port, labelContainer, node } = args
-      registerPortTooltip(labelContainer, port)
-    }
+    onPortRendered(args) {}
   })
   // 注册插件
   registerPlugins(graph, container.value, minimapContainer.value)
@@ -1244,6 +1216,7 @@ const initGraph = () => {
   // 初始化布局插件
   initLayout(graph)
 
+  console.log('初始化完毕')
   setTimeout(() => {
     handleFit()
     handleRegister()
@@ -1257,38 +1230,6 @@ const containerX = ref(0)
 const containerY = ref(0)
 
 const content = ref('')
-const registerPortTooltip = (container: Element, port: any) => {
-  if (!port || !container) return
-  if (port.attrs.desc || port.group === 'out') {
-    container.addEventListener('mouseenter', (e: MouseEvent) => {
-      visible.value = true
-      const tooltip = document.querySelector('.x6-tooltip') as HTMLElement
-      if (!port.attrs.desc) {
-        content.value = ''
-        if (port.attrs.portTitle.length > 14) {
-          content.value = port.attrs.portTitle
-        }
-      } else {
-        if (port.attrs.portTitle.length > 14) {
-          content.value = port.attrs.portTitle + ':' + port.attrs.desc
-        } else {
-          content.value = port.attrs.desc
-        }
-      }
-      nextTick(() => {
-        if (content.value) {
-          tooltip.style.top = `${e.clientY - containerY.value - tooltip.offsetHeight - 20}px`
-          tooltip.style.left = `${e.clientX - containerX.value - 30}px`
-        } else {
-          visible.value = false
-        }
-      })
-    })
-    container.addEventListener('mouseleave', () => {
-      visible.value = false
-    })
-  }
-}
 
 /**
  * 减少缩放倍率
@@ -1670,14 +1611,21 @@ const executeImport = (importData: any) => {
  * @param item 节点数据
  * @param e 鼠标事件
  */
-const startDragPreview = (type: 'logic' | 'func', item: any, e: MouseEvent) => {
+const startDragPreview = (item: BaseFunctionNodeType, e: MouseEvent) => {
+  console.log('startDragPreview', item)
+  console.log('startDragPreview', e)
+  console.log('startDragPreview', graph)
+  console.log('startDragPreview', dnd)
   if (!graph || !dnd) return
-  let nodeData
-  if (type === 'logic') {
-    nodeData = createLogicNode(item.type, item.funcId)
-  } else {
-    nodeData = createFuncNode(item)
-  }
+  let nodeData = {
+    ...JSON.parse(JSON.stringify(item.template)),
+    id: nodeIdFactory.next()
+  } as WorkflowNode
+  // if (type === 'logic') {
+  //   nodeData = createLogicNode(item.type, item.funcId)
+  // } else {
+  //   nodeData = createFuncNode(item)
+  // }
   const rectNode = createX6Node(nodeData, true)
   dnd.start(rectNode, e)
 }
@@ -1686,9 +1634,10 @@ let resizeHandler: (() => void) | null = null
 /**
  * 组件挂载时初始化
  */
-onActivated(() => {
+onMounted(() => {
   initGraph()
   resizeHandler = () => {
+    console.log('resizeHandler')
     if (container.value && graph) {
       const width = container.value.offsetWidth
       const height = container.value.offsetHeight
@@ -1707,15 +1656,13 @@ onActivated(() => {
   }
   window.addEventListener('resize', resizeHandler)
   resizeHandler()
-  paramStore.getTableList()
-  paramStore.getParamList()
   // console.log('workFlowData====', workflowData.value)
 })
 
 /**
  * 组件卸载时清理
  */
-onDeactivated(() => {
+onUnmounted(() => {
   iteratorManager?.destroy()
   graph?.dispose()
   dnd?.dispose()
@@ -1922,19 +1869,22 @@ function onNodeBaseDataUpdate(nodeId: string) {
   }
 }
 
-function directContectNode(node: any, data: any) {
+function directContectNode(node: BaseFunctionNodeType, data: any) {
   if (!graph) return
   graph.startBatch('directContectNode')
 
   const sourceNodeId = data.nodeId
   const sourcePortId = data.portId
   const fromEdgeAdd = data.fromEdgeAdd
-  let nodeData
-  if (node.funcType === 'logic') {
-    nodeData = createLogicNode(node.type, node.funcId)
-  } else {
-    nodeData = createFuncNode(node)
-  }
+  let nodeData = {
+    ...JSON.parse(JSON.stringify(node.template)),
+    id: nodeIdFactory.next()
+  } as WorkflowNode
+  // if (node.funcType === 'logic') {
+  //   nodeData = createLogicNode(node.type, node.funcId)
+  // } else {
+  //   nodeData = createFuncNode(node)
+  // }
   const x6Node = createX6Node(nodeData, true)
 
   if (x6Node) {
@@ -2287,113 +2237,6 @@ function showInfoPanel(
   }
 }
 
-/**
- * 决策表编辑面板相关状态
- */
-const showDecisionTablePanel = ref(false) // 控制决策表编辑面板的显示/隐藏
-const currentDecisionTableNode = ref<WorkflowNode>(null) // 当前编辑的决策表节点数据
-const currentDecisionTableData = ref<any[]>([]) // 当前决策表的数据
-/**
- * 关闭决策表编辑面板
- */
-function closeDecisionTableEditPanel() {
-  showDecisionTablePanel.value = false
-  currentDecisionTableNode.value = null
-  currentDecisionTableData.value = []
-  console.log('决策表编辑面板已关闭，showDecisionTablePanel:', showDecisionTablePanel.value)
-}
-
-/**
- * 显示决策表函数编辑面板
- */
-function showDecisionTablesEditPanel(node: any) {
-  // 获取节点数据
-  const nodeData = workflowData.value.nodeList.find(n => n.id === node.id)
-  if (!nodeData) {
-    return
-  }
-
-  // 如果已有决策表编辑面板，先关闭
-  closeDecisionTableEditPanel()
-
-  // 设置当前编辑的节点数据
-  currentDecisionTableNode.value = nodeData
-
-  // 从节点数据中获取决策表数据
-  let decisionTableData: any[] = []
-
-  if (
-    nodeData.decisionTableData &&
-    nodeData.decisionTableData.rowList?.length > 0 &&
-    Array.isArray(nodeData.decisionTableData.rowList)
-  ) {
-    // 转换数据结构：将 inputList/outputList/annotationList 转换为 Input/Output/Annotations
-    decisionTableData = nodeData.decisionTableData.rowList.map(row => ({
-      id: row.id,
-      index: row.index,
-      Input: row.inputList ? [...row.inputList] : [],
-      Output: row.outputList ? [...row.outputList] : [],
-      Annotations: row.annotationList ? [...row.annotationList] : []
-    }))
-  }
-
-  // 设置决策表数据（如果没有数据，DecisionTableEditPanelNode 会使用默认数据）
-  currentDecisionTableData.value = JSON.parse(JSON.stringify(decisionTableData))
-
-  // 显示决策表编辑面板
-  showDecisionTablePanel.value = true
-}
-
-/**
- * 处理决策表确认事件
- */
-function handleDecisionTableConfirm(data: any) {
-  console.log('决策表数据已确认:', data)
-
-  // 检查是否有当前编辑的决策表节点
-  if (!currentDecisionTableNode.value) {
-    ElMessage.error('未找到当前编辑的决策表节点')
-    return
-  }
-
-  // 将表格数据转换为 WorkflowNode 期望的格式
-  // 从 Input/Output/Annotations 转换为 inputList/outputList/annotationList
-  const convertedData = data.map((row: any) => ({
-    id: row.id,
-    index: row.index,
-    inputList: row.inputList || [],
-    outputList: row.outputList || [],
-    annotationList: row.annotationList || []
-  }))
-
-  // 更新节点的 decisionTableData
-  const nodeId = currentDecisionTableNode.value.id
-  const nodeIndex = workflowData.value.nodeList.findIndex(n => n.id === nodeId)
-
-  if (nodeIndex !== -1) {
-    // 确保节点有 decisionTableData 字段
-    if (!workflowData.value.nodeList[nodeIndex].decisionTableData) {
-      workflowData.value.nodeList[nodeIndex].decisionTableData = { rowList: [] }
-    }
-
-    // 更新 rowList
-    workflowData.value.nodeList[nodeIndex].decisionTableData.rowList = convertedData
-
-    console.log(`已更新节点 ${nodeId} 的决策表数据:`, convertedData)
-
-    // 通知父组件工作流数据已更新
-    emit('update:workflow', workflowData.value)
-
-    // 显示成功消息
-    ElMessage.success('决策表保存成功')
-  } else {
-    ElMessage.error('未找到对应的节点数据')
-  }
-
-  // 关闭决策表编辑面板
-  closeDecisionTableEditPanel()
-}
-
 const showValidationModal = ref(false)
 const validationErrors = ref([])
 /**
@@ -2505,7 +2348,6 @@ function findUpstreamNonConditionNodes(nodeId: string, workflowData: any): strin
   height: 100%;
   position: relative;
   background: #fff;
-  border-radius: 18px;
   overflow: hidden;
 }
 
@@ -2705,16 +2547,6 @@ function findUpstreamNonConditionNodes(nodeId: string, workflowData: any): strin
 }
 .table-container::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
-}
-/* 决策表编辑面板样式 */
-.decision-table-panel-overlay {
-  position: absolute;
-  top: 50%;
-  right: 100px;
-  transform: translateY(-50%);
-  z-index: 1000;
-  width: 1200px;
-  height: 700px;
 }
 
 /* 确认框样式 */

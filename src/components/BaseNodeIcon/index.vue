@@ -6,8 +6,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import BaseFunctionNode from '@/constant/BaseFunctionNode'
+import { ref, watchEffect } from 'vue'
+import { useFunctionStore } from '@/store/modules/baseFunction'
 
 interface Props {
   type?: string
@@ -19,14 +19,17 @@ const props = withDefaults(defineProps<Props>(), {
   size: 24
 })
 
-// 根据类型和逻辑类型计算图标颜色和文本
-const iconColor = computed(() => {
-  return BaseFunctionNode.find(e => e.type === props.type)?.iconColor || '#faad14'
-  // BaseFunctionNode.find(e => e.type === props.type)?.iconColor || '#faad14'
-})
-
-const iconText = computed(() => {
-  return BaseFunctionNode.find(e => e.type === props.type)?.icon || 'Fn'
+const iconColor = ref()
+const iconText = ref()
+watchEffect(() => {
+  iconColor.value =
+    useFunctionStore()
+      .getFuncNode()
+      .find(e => e.type === props.type)?.iconColor || '#faad14'
+  iconText.value =
+    useFunctionStore()
+      .getFuncNode()
+      .find(e => e.type === props.type)?.icon || 'Fn'
 })
 </script>
 

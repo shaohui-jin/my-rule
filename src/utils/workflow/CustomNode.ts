@@ -19,17 +19,28 @@ const NODE_BASE_CONFIG = {
  * @param position 端口位置
  * @returns 端口配置对象
  */
-function createPortConfig(id: string, group: 'in' | 'out', position: any, portTitle = '', desc = '', typeText = '') {
+function createPortConfig(
+  id: string,
+  group: 'in' | 'out',
+  position: any,
+  portTitle = '',
+  desc = '',
+  typeText = ''
+) {
   let portTitleType = portTitle
   // if(group === 'in') {
   //   portTitleType = portTitle === undefined ? '' : portTitle+'\n' + typeText
   // } else {
   //   portTitleType = portTitle === undefined ? '' : typeText + '\n' + portTitle
   // }
-  if(portTitleType.length > 13) {
-    portTitleType = portTitleType.substring(0,13) + '...\n' + (typeText.length > 13 ? typeText.substring(0,13)+'...' : typeText)
+  if (portTitleType.length > 13) {
+    portTitleType =
+      portTitleType.substring(0, 13) +
+      '...\n' +
+      (typeText.length > 13 ? typeText.substring(0, 13) + '...' : typeText)
   } else {
-    portTitleType = portTitleType + '\n'+ (typeText.length > 13 ? typeText.substring(0,13)+'...' : typeText)
+    portTitleType =
+      portTitleType + '\n' + (typeText.length > 13 ? typeText.substring(0, 13) + '...' : typeText)
   }
   return {
     id,
@@ -39,7 +50,7 @@ function createPortConfig(id: string, group: 'in' | 'out', position: any, portTi
     attrs: {
       ...PORT_ATTRS,
       text: {
-        text:  portTitleType,
+        text: portTitleType,
         fontSize: 13,
         textWrap: {
           width: 95,
@@ -91,17 +102,31 @@ function generatePorts(node: any, nodeHeight: number) {
   if (node.funcType === 'logic' && node.logicData?.logicType === LogicType.IFELSE) {
     // 条件节点：左侧1个port，右侧多个port
     const inPos = getPortPosition('left', 1, 0, nodeHeight, titleHeight)
-    inputPorts = [createPortConfig('in_1', 'in', inPos, "条件判断对象")]
+    inputPorts = [createPortConfig('in_1', 'in', inPos, '条件判断对象')]
     outputPorts = (node.outputData || []).map((item: any, idx: number, arr: any[]) => {
       const pos = getPortPosition('right', arr.length, idx, nodeHeight, titleHeight)
-      let portTitle = idx === 0 ? 'if' :  idx === (arr.length - 1) ? 'else' : 'elseif'
+      let portTitle = idx === 0 ? 'if' : idx === arr.length - 1 ? 'else' : 'elseif'
       return createPortConfig(item.portId, 'out', pos, portTitle)
     })
   } else if (node.funcType === 'logic' && node.logicData?.logicType === LogicType.CALCULATOR) {
-    inputPorts = [createPortConfig('in_1', 'in', getPortPosition('left', 1, 0, nodeHeight, titleHeight), "计算器对象")]
-    outputPorts = [createPortConfig('out_1', 'out', getPortPosition('right', 1, 0, nodeHeight, titleHeight), "any")]
+    inputPorts = [
+      createPortConfig(
+        'in_1',
+        'in',
+        getPortPosition('left', 1, 0, nodeHeight, titleHeight),
+        '计算器对象'
+      )
+    ]
+    outputPorts = [
+      createPortConfig(
+        'out_1',
+        'out',
+        getPortPosition('right', 1, 0, nodeHeight, titleHeight),
+        'any'
+      )
+    ]
   } else {
-     // 函数节点：根据 paramGroup 数量生成入参端口
+    // 函数节点：根据 paramGroup 数量生成入参端口
     let inputPortCount = 1
 
     let tempinputPortCount = 0
@@ -133,7 +158,7 @@ function generatePorts(node: any, nodeHeight: number) {
     const inputTypeTextList = [...Array.from(paramTypeGroups)]
     // console.log('inputPortIdList====', inputTypeTextList, paramTypeGroups)
     // console.log('inputPortIdList====', inputTitleList, node.inputData)
-    if(inputPortIdList.length == 0) {
+    if (inputPortIdList.length == 0) {
       // 没有入参桩点 则默认生成一个 否则边的连接会找不到绑定的桩点
       inputPortIdList.push('in_1')
     }
@@ -142,12 +167,30 @@ function generatePorts(node: any, nodeHeight: number) {
       const inPos = getPortPosition('left', inputPortCount, i, nodeHeight, titleHeight)
       // 这个in_1是按顺序生成的，所以生成的数据是按顺序塞入进去的需要修改成原数据的portId,如果没有原数据则使用默认的循环
       // inputPorts.push(createPortConfig(`in_${i + 1}`, 'in', inPos, inputTitleList[i], inputDescList[i]))
-      inputPorts.push(createPortConfig(inputPortIdList[i], 'in', inPos, inputTitleList[i], inputDescList[i], inputTypeTextList[i]))
+      inputPorts.push(
+        createPortConfig(
+          inputPortIdList[i],
+          'in',
+          inPos,
+          inputTitleList[i],
+          inputDescList[i],
+          inputTypeTextList[i]
+        )
+      )
     }
     // console.log('node.outputData===', node.outputData)
     // 出参端口：默认1个
     const outPos = getPortPosition('right', 1, 0, nodeHeight, titleHeight)
-    outputPorts = [createPortConfig('out_1', 'out', outPos, node.outputData?.[0]?.attributes?.label || '', node.outputData?.[0]?.attributes?.desc || '', node.outputData?.[0]?.subType || node.outputData?.[0]?.type || '')]
+    outputPorts = [
+      createPortConfig(
+        'out_1',
+        'out',
+        outPos,
+        node.outputData?.[0]?.attributes?.label || '',
+        node.outputData?.[0]?.attributes?.desc || '',
+        node.outputData?.[0]?.subType || node.outputData?.[0]?.type || ''
+      )
+    ]
   }
 
   return { inputPorts, outputPorts }
@@ -164,26 +207,16 @@ export function getCustomNodeConfig(node: any) {
   // 1. 分析入参端口组名
   let inputPortCount = 1
 
-  if (node.funcType === 'func') {
-    // 函数节点：根据 paramGroup 分析入参端口组名
-    if (node.inputData && Array.isArray(node.inputData)) {
-      const paramGroups = new Set<string>()
-      // node.inputData.forEach((input: any) => {
-      //   if (input.attributes?.paramGroup) {
-      //     paramGroups.add(input.attributes.paramGroup)
-      //   }
-      // })
-
-      // if (paramGroups.size > 0) {
-      //   inputPortCount = paramGroups.size + 1
-      // }
-      node.inputData.forEach((input: any) => {
-        if (input.sourceType === 'node') {
-          inputPortCount++
-        }
-      })
-    }
-  }
+  // if (node.funcType === 'func') {
+  //   // 函数节点：根据 paramGroup 分析入参端口组名
+  //   if (node.inputData && Array.isArray(node.inputData)) {
+  //     node.inputData.forEach((input: any) => {
+  //       if (input.sourceType === 'node') {
+  //         inputPortCount++
+  //       }
+  //     })
+  //   }
+  // }
 
   // 2. 计算端口需求高度
   let nodeHeight = baseHeight
@@ -196,230 +229,17 @@ export function getCustomNodeConfig(node: any) {
   const finalHeight = titleHeight + (nodeHeight - titleHeight)
 
   const { inputPorts, outputPorts } = generatePorts(node, finalHeight)
-  let isDecisionTables = node.logicData?.logicType === LogicType.DECISION_TABLES_FUNCTION;
-  let result = isDecisionTables ? getDecisionTablesConfig(node,width,finalHeight,inputPorts,outputPorts) : getNormalConfig(node,width,finalHeight,inputPorts,outputPorts);
-  return result;
+  return getNormalConfig(node, width, finalHeight, inputPorts, outputPorts)
 }
 
-function getDecisionTablesConfig(node:any,width:number,finalHeight:number,inputPorts:any[],outputPorts:any[]) {
+function getNormalConfig(
+  node: any,
+  width: number,
+  finalHeight: number,
+  inputPorts: any[],
+  outputPorts: any[]
+) {
   return {
-    id: node.id,
-    x: node.pos?.x || 100,
-    y: node.pos?.y || 100,
-    width,
-    height: finalHeight,
-    data: node,
-    attrs: {
-      body: {
-        refWidth: '100%',
-        refHeight: '100%',
-        fill: '#fff',
-        stroke: COLORS.border,
-        strokeWidth: 1.5,
-        rx: 10,
-        ry: 10,
-        filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.06))'
-      },
-      titleAreaBg: {
-        refWidth: '100%',
-        height: 20,
-        refX: 0,
-        refY: 16,
-        fill: COLORS.background.lighter,
-        stroke: 'none'
-      },
-      titleArea: {
-        refWidth: '100%',
-        height: 36,
-        fill: COLORS.background.lighter,
-        stroke: 'none',
-        rx: 10,
-        ry: 10,
-        cursor: 'pointer'
-      },
-      border: {
-        refWidth: '100%',
-        refHeight: '100%',
-        rx: 10,
-        ry: 10,
-        fill: 'none',
-        stroke: COLORS.primary,
-        strokeWidth: 2,
-        strokeOpacity: 0,
-        pointerEvents: 'none'
-      },
-      title: {
-        text: node.title,
-        fill: COLORS.text.primary,
-        fontSize: 13,
-        fontWeight: 'bold',
-        refX: 16,
-        refY: 18,
-        textAnchor: 'start',
-        pointerEvents: 'none',
-        yAlign: 'middle',
-        // event: 'node:iterator_titletip',
-        textWrap: {
-          width: -80,
-          height: 40,
-          ellipsis: true
-        }
-      },
-      nodeId: {
-        text: node.id || '',
-        fill: COLORS.text.secondary,
-        fontSize: 13,
-        refX: '100%',
-        refX2: -280,
-        refY: -20,
-        textAnchor: 'end',
-        pointerEvents: 'none'
-      },
-      editButton: {
-        width: 20,
-        height: 20,
-        refX: '100%',
-        refX2: -84,
-        refY: 10,
-        cursor: 'pointer',
-        'xlink:href': VITE_PUBLIC_PATH + '/rsvg/DecisionTableEdit.svg',
-        event: 'node:edit_decisionTables'
-      },
-      foldButton: {
-        width: 20,
-        height: 20,
-        refX: '100%',
-        refX2: -60,
-        refY: 10,
-        cursor: 'pointer',
-        'xlink:href': VITE_PUBLIC_PATH + '/rsvg/Fold.svg',
-        event: 'node:customer_collapse'
-      },
-      infoButton: {
-        width: 20,
-        height: 20,
-        refX: '100%',
-        refX2: -36,
-        refY: 10,
-        cursor: 'pointer',
-        'xlink:href': VITE_PUBLIC_PATH + '/rsvg/InfoCircleOutlined.svg',
-        zIndex: 10
-      },
-      addButton: {
-        width: 1,
-        height: 28,
-        refX: '100%',
-        refX2: -80,
-        refY: -28,
-        cursor: 'pointer',
-        'xlink:href': VITE_PUBLIC_PATH + '/rsvg/Add.svg',
-        zIndex: 10,
-        strokeOpacity: 0,
-        event: 'node:add_mouseenter'
-      },
-      copyButton: {
-        width: 28,
-        height: 28,
-        refX: '100%',
-        refX2: -60,
-        refY: -28,
-        cursor: 'pointer',
-        'xlink:href': VITE_PUBLIC_PATH + '/rsvg/copy.svg',
-        zIndex: 10,
-        strokeOpacity: 0,
-        event: 'node:copy_mouseenter'
-      },
-      delButton: {
-        width: 28,
-        height: 28,
-        refX: '100%',
-        refX2: -40,
-        refY: -28,
-        cursor: 'pointer',
-        'xlink:href': VITE_PUBLIC_PATH + '/rsvg/DeleteOutlined.svg',
-        zIndex: 10,
-        strokeOpacity: 0,
-        event: 'node:del_mouseenter'
-      },
-    },
-    ports: {
-      groups: {
-        in: {
-          position: 'absolute',
-          attrs: PORT_ATTRS,
-          label: {
-            position: 'inside'
-          }
-        },
-        out: {
-          position: 'absolute',
-          attrs: PORT_ATTRS,
-          label: {
-            position: 'inside'
-          }
-        }
-      },
-      items: [...inputPorts, ...outputPorts]
-    },
-    markup: [
-      {
-        tagName: 'rect',
-        selector: 'body'
-      },
-      {
-        tagName: 'rect',
-        selector: 'titleAreaBg'
-      },
-      {
-        tagName: 'rect',
-        selector: 'titleArea',
-        attrs: {
-          'pointer-events': 'visiblePainted'
-        }
-      },
-      {
-        tagName: 'rect',
-        selector: 'border'
-      },
-      {
-        tagName: 'text',
-        selector: 'title'
-      },
-      {
-        tagName: 'text',
-        selector: 'nodeId'
-      },
-      {
-        tagName: 'image',
-        selector: 'editButton'
-      },
-      {
-        tagName: 'image',
-        selector: 'foldButton'
-      },
-      {
-        tagName: 'image',
-        selector: 'infoButton'
-      },
-      {
-        tagName: 'image',
-        selector: 'copyButton'
-      },
-      {
-        tagName: 'image',
-        selector: 'delButton'
-      },
-      {
-        tagName: 'image',
-        selector: 'addButton'
-      }
-    ]
-  }
-}
-
-function getNormalConfig(node:any,width:number,finalHeight:number,inputPorts:any[],outputPorts:any[]) {
-  return {
-
     id: node.id,
     x: node.pos?.x || 100,
     y: node.pos?.y || 100,
@@ -641,7 +461,7 @@ function getNormalConfig(node:any,width:number,finalHeight:number,inputPorts:any
 }
 
 import { Graph, Node } from '@antv/x6'
-import { type WorkflowData, } from '@/type/workflow'
+import { type WorkflowData } from '@/type/workflow'
 import type { Ref } from 'vue'
 
 export class CustomNode extends Node {
@@ -678,9 +498,15 @@ export class CustomNode extends Node {
     const port = this.getPort(portId)
     if (port && port.group === 'out') {
       // 使用 X6 的 prop 方法设置属性
-      this.setPortProp(portId, 'attrs/plus/display', isShow ? 'block' : 'none', { ignoreHistory: true })
-      this.setPortProp(portId, 'attrs/plusText/display', isShow ? 'block' : 'none', { ignoreHistory: true })
-      this.setPortProp(portId, 'attrs/circle/display', isShow ? 'none' : 'block', { ignoreHistory: true })
+      this.setPortProp(portId, 'attrs/plus/display', isShow ? 'block' : 'none', {
+        ignoreHistory: true
+      })
+      this.setPortProp(portId, 'attrs/plusText/display', isShow ? 'block' : 'none', {
+        ignoreHistory: true
+      })
+      this.setPortProp(portId, 'attrs/circle/display', isShow ? 'none' : 'block', {
+        ignoreHistory: true
+      })
     }
   }
   //判断当前桩点是否有显示plus
@@ -739,13 +565,21 @@ export class CustomNode extends Node {
           args.y = this.size().height / 2
           args.x = this.size().width
         }
-        this.portProp(id, { group, args, attrs: { text: { visibility: 'hidden' } } }, { ignoreHistory: true })
+        this.portProp(
+          id,
+          { group, args, attrs: { text: { visibility: 'hidden' } } },
+          { ignoreHistory: true }
+        )
       })
       this.oldPortXY = _tempXY
     } else {
       this.oldPortXY.forEach((item: any) => {
         const { id, group, args } = item
-        this.portProp(id, { group, args, attrs: { text: { visibility: 'visible' } } }, { ignoreHistory: true })
+        this.portProp(
+          id,
+          { group, args, attrs: { text: { visibility: 'visible' } } },
+          { ignoreHistory: true }
+        )
       })
     }
   }
@@ -755,13 +589,17 @@ export class CustomNode extends Node {
   private updateCollapseState() {
     if (this._isCollapsed) {
       // 收缩
-      this.attr('foldButton/xlink:href', VITE_PUBLIC_PATH + '/rsvg/UnFold.svg', { ignoreHistory: true })
+      this.attr('foldButton/xlink:href', VITE_PUBLIC_PATH + '/rsvg/UnFold.svg', {
+        ignoreHistory: true
+      })
       //  node.attr('border/strokeOpacity', 1, { ignoreHistory: true })
       this.expandSize = this.getSize()
       this.resize(this.expandSize.width, 40, { ignoreHistory: true })
     } else {
       // 展开
-      this.attr('foldButton/xlink:href', VITE_PUBLIC_PATH + '/rsvg/Fold.svg', { ignoreHistory: true })
+      this.attr('foldButton/xlink:href', VITE_PUBLIC_PATH + '/rsvg/Fold.svg', {
+        ignoreHistory: true
+      })
       if (this.expandSize) {
         this.resize(this.expandSize.width, this.expandSize.height, { ignoreHistory: true })
       }

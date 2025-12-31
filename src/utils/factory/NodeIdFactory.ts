@@ -18,6 +18,6 @@ class NodeIdFactory {
   }
 }
 
-export const nodeIdFactory = new NodeIdFactory()
+const nodeIdFactory = new NodeIdFactory()
 
-export {}
+export default nodeIdFactory

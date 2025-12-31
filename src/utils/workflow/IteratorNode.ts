@@ -1,5 +1,5 @@
 import { Node, Shape } from '@antv/x6'
-import { nodeIdFactory } from './NodeIdFactory'
+import nodeIdFactory from '../factory/NodeIdFactory'
 import { COLORS, PORT_ATTRS } from './constants/StyleConstants'
 const { VITE_PUBLIC_PATH } = import.meta.env
 
@@ -151,7 +151,7 @@ export class IteratorNode extends Node {
   /**
    * 处理尺寸变化完成后的逻辑
    */
-  public onResizeComplete(): void {    
+  public onResizeComplete(): void {
     // 重新设置起始节点位置
     this.resetStartNodePos()
   }

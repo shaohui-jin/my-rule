@@ -1,0 +1,397 @@
+<template>
+  <el-dialog
+    width="500"
+    v-model="visible"
+    :close-on-click-modal="false"
+    :title="PublishStepsMap[operaType]"
+    :before-close="handleClose"
+    :destroy-on-close="true"
+    append-to-body
+  >
+    <el-form ref="formRef" label-position="top" :model="form" :rules="rules">
+      <el-form-item v-if="hasChild">
+        <template #label>
+          <span style="display: flex; align-items: center">
+            父子表关联
+            <el-tooltip placement="right-start">
+              <template #content>
+                不关联：仅执行用户所选的数据
+                <br />
+                强关联：关联的数据强制执行
+                <br />
+                弱关联：关联的数据强制执行，但忽略已绑定其他版本号的
+              </template>
+              <el-icon style="margin-left: 4px"><Warning /></el-icon>
+            </el-tooltip>
+          </span>
+        </template>
+        <el-radio-group v-model="form.relChildType" :disabled="isDisabledChangeChild">
+          <el-radio :label="0">不关联</el-radio>
+          <el-radio :label="1">强关联</el-radio>
+          <el-radio :label="2">弱关联</el-radio>
+        </el-radio-group>
+      </el-form-item>
+      <el-form-item v-if="hasParent">
+        <template #label>
+          <span style="display: flex; align-items: center">
+            子父表关联
+            <el-tooltip placement="right-start">
+              <template #content>
+                不关联：仅执行用户所选的数据
+                <br />
+                强关联：关联的数据强制执行
+                <br />
+                弱关联：关联的数据强制执行，但忽略已绑定其他版本号的
+              </template>
+              <el-icon style="margin-left: 4px"><Warning /></el-icon>
+            </el-tooltip>
+          </span>
+        </template>
+        <el-radio-group v-model="form.relParentType">
+          <el-radio :label="0">不关联</el-radio>
+          <el-radio :label="1">强关联</el-radio>
+          <el-radio :label="2">弱关联</el-radio>
+        </el-radio-group>
+      </el-form-item>
+      <el-form-item label="版本号">
+        <el-select
+          style="width: 100%"
+          v-model="form.publishVersion"
+          fit-input-width
+          filterable
+          remote
+          reserve-keyword
+          :remote-method="remoteMethod"
+          placeholder="请选择版本号"
+          @change="checkPublishVersion"
+          clearable
+        >
+          <el-option
+            v-for="item in publishVersionList"
+            :key="item.publishVersion"
+            :label="item.publishVersion"
+            :value="item.publishVersion"
+          >
+            <div
+              style="display: flex; justify-content: space-between; overflow: hidden; width: 100%"
+            >
+              <span style="flex: 0 0 auto; margin-right: 10px; white-space: nowrap">
+                {{ item.publishVersion }}
+              </span>
+              <div style="flex: 1; display: flex; min-width: 0">
+                <span
+                  style="
+                    flex: 1;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    min-width: 0;
+                    text-align: right;
+                    color: var(--el-text-color-secondary);
+                  "
+                >
+                  {{ item.publishName }}
+                </span>
+                <span
+                  style="flex: 0 0 auto; white-space: nowrap; color: var(--el-text-color-secondary)"
+                >
+                  {{ item.publishName ? '-' : '' }}{{ item.statusName }}
+                </span>
+              </div>
+            </div>
+          </el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item label="发布状态" prop="publishStatus" required>
+        <el-select
+          style="width: 100%"
+          v-model="form.publishStatus"
+          :disabled="operaType !== 'edit' ? true : false"
+          placeholder="请选择发布状态"
+        >
+          <el-option
+            v-for="item in operaType === 'edit' ? EditPublishStatusOptions : PublishStatusOptions"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
+          />
+        </el-select>
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="handleClose">取消</el-button>
+        <el-button type="primary" @click="handleSubmit" :loading="loading">确定</el-button>
+      </div>
+    </template>
+  </el-dialog>
+</template>
+
+<script setup lang="ts">
+import { ref, nextTick } from 'vue'
+import { ElRadioGroup, ElRadio, ElMessage } from 'element-plus'
+import { Warning } from '@element-plus/icons-vue'
+import { http } from '@/utils/http'
+import {
+  checkPublishStatusOptions,
+  checkPublishStatusPrevOptions,
+  checkPublishStatusSuccessMessage,
+  checkPublishStatusErrorMessage,
+  EditPublishStatusOptions,
+  PublishStatusOptions,
+  PublishStatusValues,
+  PublishSteps,
+  PublishStepsMap,
+  UpdatePublishDetail
+} from '@/components/BasePublishDialog/common'
+
+import { useDialogDrag } from '@/hooks/useDialogDrag'
+
+const { initDialog } = useDialogDrag()
+
+const props = defineProps({
+  code: {
+    type: String,
+    required: false,
+    remark: '业务编码， 批量操作时不必填'
+  },
+  hasChild: {
+    type: Boolean,
+    default: false,
+    remark: '是否存在子级'
+  },
+  hasParent: {
+    type: Boolean,
+    required: true,
+    remark: '是否存在父级'
+  },
+  customPublishRequestUrl: {
+    type: String,
+    default: '',
+    remark: '自定义发布接口请求方法'
+  },
+  urlModule: {
+    type: String,
+    default: 'quotation',
+    remark: '模块，默认为报价： quotation'
+  },
+  publishRequestParams: {
+    type: Object,
+    default: () => ({}),
+    remark: '发布接口请求时需要额外传递的参数'
+  },
+  isDisabledChangeChild: {
+    type: Boolean,
+    default: false,
+    remark: '当发布表中父子表打钩，同时没有自标的code是禁止修改，默认hasChild为强关联'
+  },
+  isBatch: {
+    type: Boolean,
+    default: false,
+    remark: '是否批量操作，默认不是批量操作'
+  }
+})
+const emit = defineEmits(['close'])
+const loading = ref(false)
+const visible = ref(false)
+const operaType = ref<PublishSteps>('test')
+
+const formRef = ref(null)
+const form = ref<UpdatePublishDetail>({
+  bizCode: '', // 业务编码
+  publishStatus: 0, // 发布状态 (0-未发布, 1-已发布, 2-待打包, 3-已打包)
+  publishVersion: '', // 发布版本
+  dataIds: [], // 数据ID列表
+  relParentType: 0, // 关联父级类型,可用值:0,1,2
+  relChildType: 0 // 关联子级类型,可用值:0,1,2
+})
+
+const rules = {
+  publishStatus: [
+    {
+      required: true,
+      message: '请选择发布状态',
+      trigger: 'change'
+    }
+  ]
+}
+
+const isMorePublish = ref(false)
+// 校验分组，是否存在多个版本号
+const groupByPublishVersion = rows => {
+  const result = rows.reduce((acc, cur) => {
+    const key = cur.publishVersion
+    if (!acc[key]) {
+      acc[key] = []
+    }
+    acc[key].push(cur)
+    return acc
+  }, {})
+  isMorePublish.value = Object.keys(result).length > 1
+  if (isMorePublish.value) {
+    form.value.publishVersion = '...' // 发布版本
+  } else {
+    form.value.publishVersion = Object.keys(result)[0]
+  }
+  console.log('groupByPublishVersion', result, isMorePublish.value)
+  return result
+}
+
+// 打开弹窗
+const open = async (type: PublishSteps, rows) => {
+  if (rows.length === 0) {
+    return ElMessage.warning('请选择数据')
+  }
+  const checkPublishStatus = checkPublishStatusPrevOptions[type]
+  const checkPublishStatusLabel = PublishStatusOptions.find(
+    item => item.value === checkPublishStatus
+  )?.label
+  const data = rows.filter(item => item.publishStatus === checkPublishStatus).map(item => item.id)
+  if (data.length !== rows.length) {
+    ElMessage.warning(`已选数据存在非“${checkPublishStatusLabel}”发布状态，不可操作`)
+    return
+  }
+
+  // 如果不是通过测试，就要把传过来的rows分组，看看是否存在多个版本号
+  // if (type !== 'test') {
+  //   groupByPublishVersion(rows)
+  // }
+
+  await remoteMethod('')
+
+  form.value.bizCode = props.code // 业务编码
+  form.value.publishStatus = checkPublishStatusOptions[type] // 发布状态
+  form.value.publishVersion = '' // 发布版本
+  form.value.dataIds = rows.map(item => item.id) // 数据ID列表
+  form.value.relChildType = props.hasChild ? 1 : 0 // 关联子级类型,可用值:0,1,2
+  form.value.relParentType = props.hasParent ? 1 : 0 // 关联父级类型,可用值:0,1,2
+
+  visible.value = true
+  operaType.value = type
+  formRef.value?.resetFields()
+  nextTick(() => {
+    initDialog()
+  })
+}
+
+// 关闭弹窗
+const handleClose = () => {
+  form.value = {
+    bizCode: '',
+    publishStatus: 0,
+    publishVersion: '',
+    dataIds: [],
+    relParentType: 0,
+    relChildType: 0
+  }
+  formRef.value?.resetFields()
+  visible.value = false
+  loading.value = false
+}
+
+// 保存发布数据
+const handleSubmit = () => {
+  // if (!checkPublishVersion()) {
+  //   return
+  // }
+  if (form.value.publishVersion === '') {
+    delete form.value.publishVersion
+  }
+
+  formRef.value.validate(valid => {
+    if (valid) {
+      loading.value = true
+      const url =
+        props.customPublishRequestUrl ||
+        (props.isBatch
+          ? `/${props.urlModule}/data-publish/batch-update-publish-detail`
+          : `/${props.urlModule}/data-publish/update-publish-detail`)
+      let data: any = {
+        ...form.value,
+        ...props.publishRequestParams
+      }
+      if (props.isBatch) {
+        data = {
+          publishStatus: form.value.publishStatus,
+          publishVersion: form.value.publishVersion,
+          items: [
+            props.publishRequestParams.parent && {
+              ...props.publishRequestParams.parent,
+              relParentType: 0,
+              relChildType: form.value.relChildType
+            },
+            props.publishRequestParams.child && {
+              ...props.publishRequestParams.child,
+              relParentType: form.value.relParentType,
+              relChildType: 0
+            }
+          ].filter(Boolean)
+        }
+      }
+      http
+        .post(url, { data })
+        .then((res: any) => {
+          if (res.success) {
+            ElMessage.success(checkPublishStatusSuccessMessage[operaType.value])
+          } else {
+            ElMessage.error(checkPublishStatusErrorMessage[operaType.value])
+          }
+        })
+        .catch(() => {
+          ElMessage.error(checkPublishStatusErrorMessage[operaType.value])
+        })
+        .finally(() => {
+          handleClose()
+          emit('close')
+        })
+    }
+  })
+}
+
+// 获取 版本号 数据
+const publishVersionList = ref([])
+
+const remoteMethod = async version => {
+  const res: any = await http.post('/data-publish/publish-plan/page', {
+    data: {
+      version,
+      pageNo: 1,
+      pageSize: 20
+    }
+  })
+  if (res.success) {
+    // const list = res.data.rows || []
+    // if (isMorePublish.value) {
+    //   list.unshift({
+    //     publishVersion: '...',
+    //     publishStatus: 1
+    //   })
+    // }
+    publishVersionList.value = res.data.rows || []
+  }
+}
+
+// 版本号切换
+const checkPublishVersion = () => {
+  const status = publishVersionList.value.find(
+    item => item.publishVersion === form.value.publishVersion
+  )?.status
+  if (operaType.value === 'test') {
+    // 如果没选版本 那就是已测试，要不然就是待打包
+    form.value.publishStatus = form.value.publishVersion ? 2 : 1
+  }
+
+  if (status === 0) {
+    ElMessage.warning('已选版本号的计划为“停用状态”，请检查确认')
+    return false
+  } else {
+    return true
+  }
+}
+
+defineExpose({
+  open
+})
+</script>
+
+<style lang="scss" scoped></style>
