@@ -138,13 +138,13 @@ export default ({ command, mode }: ConfigEnv): UserConfigExport => {
         external: [],
         input: {
           index: path.resolve(__dirname, 'index.html')
-        },
-        // 静态资源分类打包
-        output: {
-          chunkFileNames: 'my-rule/static/js/[name]-[hash].js',
-          entryFileNames: 'my-rule/static/js/[name]-[hash].js',
-          assetFileNames: 'my-rule/static/[ext]/[name]-[hash].[ext]'
         }
+        // 静态资源分类打包
+        // output: {
+        //   chunkFileNames: 'my-rule/static/js/[name]-[hash].js',
+        //   entryFileNames: 'my-rule/static/js/[name]-[hash].js',
+        //   assetFileNames: 'my-rule/static/[ext]/[name]-[hash].[ext]'
+        // }
       }
     }
   }
