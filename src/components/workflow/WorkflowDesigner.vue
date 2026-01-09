@@ -28,26 +28,30 @@
 
       <!-- 工具栏 -->
       <div class="canvas-actions">
-        <Decrease @click="handleDecrease" />
-        <el-select v-model="devicePixelRatio" @change="handleDpr" style="width: 100px">
+        <Decrease @click="actionManager?.handleDecrease" />
+        <el-select
+          v-model="devicePixelRatio"
+          @change="actionManager?.handleDpr"
+          style="width: 100px"
+        >
           <el-option value="200%"></el-option>
           <el-option value="150%"></el-option>
           <el-option value="100%"></el-option>
           <el-option value="50%"></el-option>
           <el-option value="25%"></el-option>
         </el-select>
-        <Increase @click="handleIncrease" />
+        <Increase @click="actionManager?.handleIncrease" />
         <el-tooltip content="一键折叠" placement="top">
-          <Collapse @click="handleCollpase(true)" />
+          <Collapse @click="actionManager?.handleCollapse(true)" />
         </el-tooltip>
         <el-tooltip content="一键展开" placement="top">
-          <expand @click="handleCollpase(false)" />
+          <expand @click="actionManager?.handleCollapse(false)" />
         </el-tooltip>
         <el-tooltip content="适应视图" placement="top">
-          <AdaptView @click="handleFit" />
+          <AdaptView @click="actionManager?.handleFit" />
         </el-tooltip>
         <el-tooltip content="一键排列" placement="top">
-          <Layout @click="handleLayout" />
+          <Layout @click="actionManager?.handleLayout" />
         </el-tooltip>
         <el-tooltip content="视图浏览" placement="top">
           <Browsing @click="() => (showMiniMap = !showMiniMap)" />
@@ -154,6 +158,8 @@ import Increase from '@/assets/ruleEditToolSvg/increase.svg'
 import Layout from '@/assets/ruleEditToolSvg/layout.svg'
 import { useRuleStore } from '@/store/modules/ruleCache'
 import { BaseFunctionNodeType } from '@/store/modules/baseFunction'
+import { useWorkflowFunctions, WorkflowFunction } from '@/hooks/useWorkflowFuns'
+import { MAX_DEVICE_PIXEL_RATIO, MIN_DEVICE_PIXEL_RATIO } from '@/config/workflow'
 
 /**
  * 组件属性定义
@@ -191,42 +197,209 @@ const workflowData = ref(props.data)
 const router = useRouter()
 const isDecode = ref(false)
 
-const devicePixelRatio = ref('100%')
-const devicePixelRatioStep = 20
-const maxDevicePixelRatio = 3
-const minDevicePixelRatio = 0.2
-const ruleStore = useRuleStore()
-
 const showMiniMap = ref(false)
 
-// 移除重复的搜索相关状态，由父组件统一管理
-// const showSearchModal = ref(false)
-// const searchModalPosition = ref({ x: 0, y: 0 })
-
-/**
- * 信息展示面板相关状态
- */
+// 信息展示面板相关状态
 const infoPanelNode = ref<any>(null) // 信息面板节点引用
-
-/**
- * 拖拽相关状态
- */
+// 拖拽相关状态
 let dnd: any = null
-
-/**
- * 错误边管理器
- */
+// 错误边管理器
 let edgeCorrectionManager: EdgeCorrectionManager
-
-/**
- * 分组管理器
- */
+// 分组管理器
 let groupManager: GroupManager
+// 迭代器管理器
+let iteratorManager: IteratorManager
+
+const devicePixelRatio = ref('100%')
+// 工作流方法管理器
+let actionManager: WorkflowFunction
+
+let resizeHandler: (() => void) | null = null
 
 /**
- * 迭代器管理器
+ * 组件挂载时初始化
  */
-let iteratorManager: IteratorManager
+onMounted(() => {
+  initGraph()
+  resizeHandler = () => {
+    console.log('resizeHandler')
+    if (container.value && graph) {
+      const width = container.value.offsetWidth
+      const height = container.value.offsetHeight
+      graph.resize(width, height)
+    }
+  }
+  window.addEventListener('resize', resizeHandler)
+  resizeHandler()
+})
+
+/**
+ * 组件卸载时清理
+ */
+onUnmounted(() => {
+  iteratorManager?.destroy()
+  graph?.dispose()
+  dnd?.dispose()
+  if (resizeHandler) window.removeEventListener('resize', resizeHandler)
+})
+
+// 初始化X6画布
+const initGraph = () => {
+  if (!(window as any).__custom_node_registered) {
+    // 注册迭代器节点
+    Graph.registerNode('iteratorNode', IteratorNode, true)
+    Graph.registerNode('customNode', CustomNode, true)
+    ;(window as any).__custom_node_registered = true
+  }
+  if (!container.value) return
+
+  graph = new Graph({
+    container: container.value,
+    panning: true,
+    grid: false,
+    autoResize: true,
+    scaling: { min: MIN_DEVICE_PIXEL_RATIO, max: MAX_DEVICE_PIXEL_RATIO },
+    connecting: {
+      snap: true,
+      allowBlank: false,
+      allowLoop: false,
+      highlight: true,
+      router: {
+        name: 'manhattan',
+        args: {
+          padding: 30
+        }
+      },
+      connector: {
+        name: 'rounded',
+        args: { radius: 30 }
+      },
+      // attrs: {
+      //   line: {
+      //     stroke: '#faad14',
+      //     targetMarker: 'classic'
+      //   }
+      // },
+      connectionPoint: 'boundary',
+      createEdge: () => new Shape.Edge(),
+      allowMulti: true,
+      validateConnection(args) {
+        if (edgeCorrectionManager) {
+          edgeCorrectionManager.edgePreviewColor(args)
+        }
+        const sourceMagnet = args.sourceMagnet as Element | null | undefined
+        const targetMagnet = args.targetMagnet as Element | null | undefined
+        if (sourceMagnet && sourceMagnet.getAttribute('port-group') === 'in') {
+          return false
+        }
+        if (targetMagnet && targetMagnet.getAttribute('port-group') === 'out') {
+          return false
+        }
+        const sourcePortId = sourceMagnet?.getAttribute('port')
+        const targetPortId = targetMagnet?.getAttribute('port')
+        const sourceNodeId = args.sourceCell?.id
+        const targetNodeId = args.targetCell?.id
+        if (!sourcePortId || !targetPortId || !sourceNodeId || !targetNodeId) {
+          return false
+        }
+        // 组合节点 不允许连接
+        const sourceNode = graph.getCellById(sourceNodeId)
+        const targetNode = graph.getCellById(targetNodeId)
+        if (sourceNode.shape === 'groupNode' || targetNode.shape === 'groupNode') {
+          return false
+        }
+        // 迭代器的子节点 不允许连接到外面
+        const sourceParent = sourceNode.getParent()
+        const targetParent = targetNode.getParent()
+        if (
+          sourceParent &&
+          sourceParent.shape === 'iteratorNode' &&
+          (!targetParent || sourceParent.id !== targetParent.id)
+        ) {
+          return false
+        }
+        if (
+          targetParent &&
+          targetParent.shape === 'iteratorNode' &&
+          (!sourceParent || targetParent.id !== sourceParent.id)
+        ) {
+          return false
+        }
+        return true
+      }
+    },
+    interacting: {
+      nodeMovable: true,
+      edgeMovable: true,
+      vertexMovable: true,
+      vertexAddable: true,
+      vertexDeletable: true,
+      arrowheadMovable: true
+    },
+    embedding: {
+      enabled: true,
+      findParent({ node }) {
+        const bbox = node.getBBox()
+        return this.getNodes().filter(n => {
+          // 如果当前节点是迭代器节点，则不允许嵌套到其他迭代器中
+          if (node.shape === 'iteratorNode' && n.shape === 'iteratorNode') {
+            return false
+          }
+
+          // 只有分组节点和迭代器节点可以作为父节点
+          if ((n.shape !== 'groupNode' && n.shape !== 'iteratorNode') || n === node) {
+            return false
+          }
+
+          const targetBBox = n.getBBox()
+          return targetBBox.containsRect(bbox)
+        })
+      }
+    },
+    highlighting: {
+      embedding: {
+        name: 'stroke',
+        args: {
+          padding: -1,
+          attrs: {
+            stroke: '#73d13d'
+          }
+        }
+      }
+    },
+    // 桩点渲染的回调
+    onPortRendered(args) {}
+  })
+  // 注册插件
+  registerPlugins(graph, container.value, minimapContainer.value)
+
+  // 注册画布事件(预览模式下的基础功能)
+  registerGraphBaseEvents()
+
+  // 初始化左侧拖拽插件
+  dnd = new Dnd({
+    target: graph,
+    getDragNode: node => node.clone({ keepId: true }),
+    getDropNode: node => node.clone({ keepId: true })
+  })
+  // 初始化错误边管理器
+  edgeCorrectionManager = new EdgeCorrectionManager(graph, workflowData, directContectNode)
+  initNodesAndEdges(graph, workflowData.value)
+  // 初始化分组管理器
+  groupManager = new GroupManager(graph, workflowData)
+  // 初始化迭代器管理器
+  iteratorManager = new IteratorManager(graph, workflowData)
+  // new CustomNode(graph, workflowData)
+  actionManager = useWorkflowFunctions({ graph, workflowData, devicePixelRatio })
+  // 初始化布局插件
+  initLayout(graph)
+
+  console.log('初始化完毕')
+  setTimeout(() => {
+    actionManager.handleFit()
+    handleRegister()
+  }, 100)
+}
 
 /**
  * 监听工作流数据变化
@@ -408,17 +581,6 @@ function registerGraphBaseEvents() {
 
   // 普通节点鼠标悬停事件
   graph.on('node:mouseenter', ({ node, view }) => {
-    nextTick(() => {
-      window.setTimeout(() => {
-        containerX.value = document
-          .getElementById('workflowEditorOuter')
-          .getBoundingClientRect().left
-        containerY.value = document
-          .getElementById('workflowEditorOuter')
-          .getBoundingClientRect().top
-      }, 300)
-    })
-
     // 查询节点的连线情况以及输出桩点情况, 如果出桩多个，或者连线多个都不显示新增
     const outPortCount = node.getPorts().filter(e => e.id.includes('out')).length
     const outPortEdgeCount = graph.getEdges().filter(e => e.source.cell === node.id).length
@@ -1064,252 +1226,11 @@ function initNodesAndEdges(graph: any, data: WorkflowData) {
 }
 
 /**
- * 初始化X6画布
- */
-const initGraph = () => {
-  if (!(window as any).__custom_node_registered) {
-    // 注册迭代器节点
-    Graph.registerNode('iteratorNode', IteratorNode, true)
-    Graph.registerNode('customNode', CustomNode, true)
-    ;(window as any).__custom_node_registered = true
-  }
-  if (!container.value) return
-
-  graph = new Graph({
-    container: container.value,
-    panning: true,
-    grid: false,
-    autoResize: true,
-    scaling: { min: minDevicePixelRatio, max: maxDevicePixelRatio },
-    connecting: {
-      snap: true,
-      allowBlank: false,
-      allowLoop: false,
-      highlight: true,
-      router: {
-        name: 'manhattan',
-        args: {
-          padding: 30
-        }
-      },
-      connector: {
-        name: 'rounded',
-        args: { radius: 30 }
-      },
-      // attrs: {
-      //   line: {
-      //     stroke: '#faad14',
-      //     targetMarker: 'classic'
-      //   }
-      // },
-      connectionPoint: 'boundary',
-      createEdge: () => new Shape.Edge(),
-      allowMulti: true,
-      validateConnection(args) {
-        if (edgeCorrectionManager) {
-          edgeCorrectionManager.edgePreviewColor(args)
-        }
-        const sourceMagnet = args.sourceMagnet as Element | null | undefined
-        const targetMagnet = args.targetMagnet as Element | null | undefined
-        if (sourceMagnet && sourceMagnet.getAttribute('port-group') === 'in') {
-          return false
-        }
-        if (targetMagnet && targetMagnet.getAttribute('port-group') === 'out') {
-          return false
-        }
-        const sourcePortId = sourceMagnet?.getAttribute('port')
-        const targetPortId = targetMagnet?.getAttribute('port')
-        const sourceNodeId = args.sourceCell?.id
-        const targetNodeId = args.targetCell?.id
-        if (!sourcePortId || !targetPortId || !sourceNodeId || !targetNodeId) {
-          return false
-        }
-        // 组合节点 不允许连接
-        const sourceNode = graph.getCellById(sourceNodeId)
-        const targetNode = graph.getCellById(targetNodeId)
-        if (sourceNode.shape === 'groupNode' || targetNode.shape === 'groupNode') {
-          return false
-        }
-        // 迭代器的子节点 不允许连接到外面
-        const sourceParent = sourceNode.getParent()
-        const targetParent = targetNode.getParent()
-        if (
-          sourceParent &&
-          sourceParent.shape === 'iteratorNode' &&
-          (!targetParent || sourceParent.id !== targetParent.id)
-        ) {
-          return false
-        }
-        if (
-          targetParent &&
-          targetParent.shape === 'iteratorNode' &&
-          (!sourceParent || targetParent.id !== sourceParent.id)
-        ) {
-          return false
-        }
-        return true
-      }
-    },
-    interacting: {
-      nodeMovable: true,
-      edgeMovable: true,
-      vertexMovable: true,
-      vertexAddable: true,
-      vertexDeletable: true,
-      arrowheadMovable: true
-    },
-    embedding: {
-      enabled: true,
-      findParent({ node }) {
-        const bbox = node.getBBox()
-        return this.getNodes().filter(n => {
-          // 如果当前节点是迭代器节点，则不允许嵌套到其他迭代器中
-          if (node.shape === 'iteratorNode' && n.shape === 'iteratorNode') {
-            return false
-          }
-
-          // 只有分组节点和迭代器节点可以作为父节点
-          if ((n.shape !== 'groupNode' && n.shape !== 'iteratorNode') || n === node) {
-            return false
-          }
-
-          const targetBBox = n.getBBox()
-          return targetBBox.containsRect(bbox)
-        })
-      }
-    },
-    highlighting: {
-      embedding: {
-        name: 'stroke',
-        args: {
-          padding: -1,
-          attrs: {
-            stroke: '#73d13d'
-          }
-        }
-      }
-    },
-    // 桩点渲染的回调
-    onPortRendered(args) {}
-  })
-  // 注册插件
-  registerPlugins(graph, container.value, minimapContainer.value)
-
-  // 注册画布事件(预览模式下的基础功能)
-  registerGraphBaseEvents()
-
-  // 初始化左侧拖拽插件
-  dnd = new Dnd({
-    target: graph,
-    getDragNode: node => node.clone({ keepId: true }),
-    getDropNode: node => node.clone({ keepId: true })
-  })
-  // 初始化错误边管理器
-  edgeCorrectionManager = new EdgeCorrectionManager(graph, workflowData, directContectNode)
-  initNodesAndEdges(graph, workflowData.value)
-  // 初始化分组管理器
-  groupManager = new GroupManager(graph, workflowData)
-  // 初始化迭代器管理器
-  iteratorManager = new IteratorManager(graph, workflowData)
-  // new CustomNode(graph, workflowData)
-
-  // 初始化布局插件
-  initLayout(graph)
-
-  console.log('初始化完毕')
-  setTimeout(() => {
-    handleFit()
-    handleRegister()
-  }, 100)
-}
-/**
  * 添加提示
  */
 const visible = ref(false)
-const containerX = ref(0)
-const containerY = ref(0)
 
 const content = ref('')
-
-/**
- * 减少缩放倍率
- */
-const handleDecrease = () => {
-  let dpr = Number(devicePixelRatio.value.split('%')[0])
-  const _newDpr = (dpr - devicePixelRatioStep) / 100
-  graph.zoomTo(_newDpr <= minDevicePixelRatio ? minDevicePixelRatio : _newDpr)
-}
-
-/**
- * 设置缩放倍率
- * @param val
- */
-const handleDpr = val => {
-  graph.zoomTo(Number(val.split('%')[0]) / 100)
-}
-
-/**
- * 放大缩放倍率
- */
-const handleIncrease = () => {
-  let dpr = Number(devicePixelRatio.value.split('%')[0])
-  const _newDpr = (dpr + devicePixelRatioStep) / 100
-  graph.zoomTo(_newDpr >= maxDevicePixelRatio ? maxDevicePixelRatio : _newDpr)
-}
-
-/**
- * 适应视图
- */
-const handleFit = () => {
-  graph.zoomToFit({ maxScale: 1 })
-}
-
-/**
- * 折叠展开
- * @param bool 折叠状态
- */
-const handleCollpase = bool => {
-  let nodeList = workflowData.value.nodeList
-
-  // 获取迭代列表
-  const iteratorIdArr = nodeList
-    .filter(node => node.funcType === 'logic' && node.logicData.logicType === LogicType.ITERATOR)
-    .map(node => node.id)
-  nodeList = nodeList.filter(node => !iteratorIdArr.includes(node.id))
-
-  // 获取节点的cell信息，同时过滤掉迭代的子项 以及 折叠状态相同的cell
-  const cellList = nodeList
-    .map(node => {
-      return graph.getCellById(node.id)
-    })
-    .filter(cell => !cell.parent || !iteratorIdArr.includes(cell.parent.id))
-    .filter(cell => cell.isCollapsed === !bool)
-
-  cellList.forEach(cell => {
-    cell.toggleCollapse()
-  })
-}
-
-/**
- * 一键布局功能
- * 使用dagre算法自动排列节点位置，并自动居中画布内容
- */
-const handleLayout = () => {
-  iteratorManager.stopSyncChildPos = true
-  graph.layout()
-  iteratorManager.stopSyncChildPos = false
-  // 布局后同步所有节点位置到全局数据
-  setTimeout(() => {
-    graph.getNodes().forEach((node: any) => {
-      const nodeId = node.id
-      const position = node.position()
-      const nodeData = workflowData.value.nodeList.find(n => n.id === nodeId)
-      if (nodeData) {
-        nodeData.pos = { x: position.x, y: position.y }
-      }
-    })
-  }, 100)
-}
 
 /**
  * 撤销操作
@@ -1629,45 +1550,6 @@ const startDragPreview = (item: BaseFunctionNodeType, e: MouseEvent) => {
   const rectNode = createX6Node(nodeData, true)
   dnd.start(rectNode, e)
 }
-
-let resizeHandler: (() => void) | null = null
-/**
- * 组件挂载时初始化
- */
-onMounted(() => {
-  initGraph()
-  resizeHandler = () => {
-    console.log('resizeHandler')
-    if (container.value && graph) {
-      const width = container.value.offsetWidth
-      const height = container.value.offsetHeight
-      graph.resize(width, height)
-    }
-    nextTick(() => {
-      window.setTimeout(() => {
-        containerX.value = document
-          .getElementById('workflowEditorOuter')
-          .getBoundingClientRect().left
-        containerY.value = document
-          .getElementById('workflowEditorOuter')
-          .getBoundingClientRect().top
-      }, 1300)
-    })
-  }
-  window.addEventListener('resize', resizeHandler)
-  resizeHandler()
-  // console.log('workFlowData====', workflowData.value)
-})
-
-/**
- * 组件卸载时清理
- */
-onUnmounted(() => {
-  iteratorManager?.destroy()
-  graph?.dispose()
-  dnd?.dispose()
-  if (resizeHandler) window.removeEventListener('resize', resizeHandler)
-})
 
 /**
  * 同步节点端口和尺寸
@@ -2256,8 +2138,8 @@ function handleValidationNodeSelect(nodeId: string) {
 }
 
 defineExpose({
-  handleFit,
-  handleLayout,
+  handleFit: actionManager?.handleFit,
+  handleLayout: actionManager?.handleLayout,
   resetWorkflowData,
   startDragPreview,
   addPortData,

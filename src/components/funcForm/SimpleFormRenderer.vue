@@ -7,7 +7,12 @@
     ref="formRef"
     @submit.prevent
   >
-    <el-form-item v-for="(field, index) in fields" :key="field.id" :prop="field.id" :rules="field.rules">
+    <el-form-item
+      v-for="(field, index) in fields"
+      :key="field.id"
+      :prop="field.id"
+      :rules="field.rules"
+    >
       <!-- 自定义标签插槽 -->
       <template #label>
         <el-tooltip
@@ -46,14 +51,12 @@
               @change="handleFieldChange(field.id, $event)"
             >
               <el-option
-                v-for="opt in (
-                  field.attributes.defaultOptions
+                v-for="opt in field.attributes.defaultOptions
                   ? [
-                    ...paramList.filter(item => item.type === field.attributes.paramType),
-                    ...field.options
-                  ]
-                  : field.options || []
-                )"
+                      ...paramList.filter(item => item.type === field.attributes.paramType),
+                      ...field.options
+                    ]
+                  : field.options || []"
                 :key="opt.value"
                 :label="opt.label"
                 :value="opt.value"
@@ -65,14 +68,18 @@
                   placement="top"
                   :show-after="500"
                   popper-class="field-desc-tooltip"
-                  :popper-style="{ maxWidth: '300px', wordWrap: 'break-word', wordBreak: 'break-all' }"
+                  :popper-style="{
+                    maxWidth: '300px',
+                    wordWrap: 'break-word',
+                    wordBreak: 'break-all'
+                  }"
                 >
                   <div>
                     <span style="float: left">
                       {{ opt.name }}
                       <span>{{ opt.label }}</span>
                     </span>
-                    <span style="float: right;">
+                    <span style="float: right">
                       {{ opt.type }}
                     </span>
                   </div>
@@ -87,7 +94,11 @@
               v-bind="field.attributes"
               :placeholder="field.placeholder"
               :disabled="field.disabled || disabled"
-              :type="['textarea', 'function'].includes(field.type) ? 'textarea' : field.attributes?.inputType || 'text'"
+              :type="
+                ['textarea', 'function'].includes(field.type)
+                  ? 'textarea'
+                  : field.attributes?.inputType || 'text'
+              "
               :nodeData="nodeData"
               :workflowData="workflowData"
               @change="handleFieldChange(field.id, $event)"
@@ -125,33 +136,36 @@
           </el-tooltip>
         </div>
         <!-- 模式切换按钮 -->
-         <!--showModeToggle为true是入参-->
-           <template v-if="showModeToggle">
-            <div v-if="field.attributes?.paramType === 'table'">
-              <el-button  class="mode-toggle-btn" :disabled="true" @click="$emit('mode-change')">
-                <el-icon><SwitchIcon /></el-icon>
-              </el-button>
-            </div>
-            <div v-else>
-              <el-tooltip
-                content="数据类型切换"
-                placement="top"
-                :show-after="500"
-                popper-class="field-desc-tooltip"
-                :popper-style="{ maxWidth: '300px', wordWrap: 'break-word', wordBreak: 'break-all' }"
-              >
-                <el-button  class="mode-toggle-btn" @click="$emit('mode-change')">
-                  <el-icon><SwitchIcon /></el-icon>
-                </el-button>
-              </el-tooltip>
-            </div>
-           </template>
-           <template v-else>
-            <el-button  class="mode-toggle-btn" :disabled="inputMode === 'node'" @click="$emit('mode-change')">
+        <!--showModeToggle为true是入参-->
+        <template v-if="showModeToggle">
+          <div v-if="field.attributes?.paramType === 'table'">
+            <el-button class="mode-toggle-btn" :disabled="true" @click="$emit('mode-change')">
               <el-icon><SwitchIcon /></el-icon>
             </el-button>
-           </template>
-
+          </div>
+          <div v-else>
+            <el-tooltip
+              content="数据类型切换"
+              placement="top"
+              :show-after="500"
+              popper-class="field-desc-tooltip"
+              :popper-style="{ maxWidth: '300px', wordWrap: 'break-word', wordBreak: 'break-all' }"
+            >
+              <el-button class="mode-toggle-btn" @click="$emit('mode-change')">
+                <el-icon><SwitchIcon /></el-icon>
+              </el-button>
+            </el-tooltip>
+          </div>
+        </template>
+        <template v-else>
+          <el-button
+            class="mode-toggle-btn"
+            :disabled="inputMode === 'node'"
+            @click="$emit('mode-change')"
+          >
+            <el-icon><SwitchIcon /></el-icon>
+          </el-button>
+        </template>
       </div>
     </el-form-item>
     <div v-if="fields.length === 0" class="form-desc">-</div>
@@ -174,9 +188,7 @@ import {
 } from 'element-plus'
 import { Switch as SwitchIcon } from '@element-plus/icons-vue'
 import BaseFunctionExpression from '@/components/BaseFunctionExpression/index.vue'
-import { useParamStore } from '@/store/modules/params'
 
-const paramStore = useParamStore()
 const props = defineProps({
   formJson: {
     type: Object,
@@ -210,7 +222,7 @@ const props = defineProps({
   },
   workflowData: {
     type: Object
-  },
+  }
 })
 
 const emit = defineEmits(['update:modelValue', 'change', 'mode-change'])
@@ -220,7 +232,6 @@ const formRef = ref()
 
 // 表单数据
 const formData = ref({})
-
 
 // 组件映射表
 const componentMap = {
@@ -269,7 +280,7 @@ watch(
   fields,
   newFields => {
     // console.log('field==watch==', newFields, portSelects)
-    newFields.forEach((field,index) => {
+    newFields.forEach((field, index) => {
       // console.log('field====', field)
       if (
         formData.value[field.id] === undefined &&
@@ -304,7 +315,7 @@ watch(
   newData => {
     for (const key in newData) {
       // console.log('newData[key]==',JSON.parse(JSON.stringify(newData[key])), JSON.parse(JSON.stringify(formData.value)))
-      if(!newData[key])return // 20250827修改输入框无法清除值问题bug245362
+      if (!newData[key]) return // 20250827修改输入框无法清除值问题bug245362
       // console.log("=====formDaga====")
       emit('change', { fieldId: key, value: newData[key], formData: formData.value })
     }

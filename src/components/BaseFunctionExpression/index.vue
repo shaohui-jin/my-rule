@@ -207,7 +207,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { CopyDocument, FullScreen, Search } from '@element-plus/icons-vue'
-import { useParamStore } from '@/store/modules/params'
 import { WorkflowData } from '@/type/workflow'
 import { useVModel } from '@vueuse/core'
 import { ElMessage } from 'element-plus'
@@ -219,7 +218,6 @@ import { useRoute } from 'vue-router'
 
 import { useDialogDrag } from '@/hooks/useDialogDrag'
 
-const paramStore = useParamStore()
 const { initDialog } = useDialogDrag()
 
 const route = useRoute()
@@ -473,12 +471,8 @@ const operatorList = computed(() => {
 const treeData = ref<{ name: string; code: string; children: any[] }[][]>([])
 
 const partList = ref<{ name: string; code: string; children: any[] }[]>([])
-const paramList = ref<{ name: string; code: string; children: any[] }[]>([])
-const tableList = ref<{ name: string; code: string; children: any[] }[]>([])
-const canvasList = ref<{ name: string; code: string; children: any[] }[]>([])
 
 const flatTreeData = ref<{ name: string; code: string; children: any[] }[]>([])
-
 
 // 生成随机字符串 ID
 function generateRandomId(length = 8) {
@@ -494,18 +488,11 @@ const uuid = ref('')
 onMounted(async () => {
   uuid.value = generateRandomId()
   partList.value = await getPartList()
-  tableList.value = await paramStore.getTableList()
-  paramList.value = await paramStore.getParamList()
-  canvasList.value = paramStore.getCanvasList(route?.query?.ruleId || 'default')
 
-  treeData.value = [partList.value, paramList.value, tableList.value, canvasList.value]
-  flatTreeData.value = [
-    { name: '上游节点', code: '', children: partList.value },
-    ...paramList.value,
-    ...tableList.value
-  ]
+  treeData.value = [partList.value]
+  flatTreeData.value = [{ name: '上游节点', code: '', children: partList.value }]
   fullScreenShow.value = props.defaultShowFullScreen
-  if( props.defaultShowFullScreen ){
+  if (props.defaultShowFullScreen) {
     nextTick(() => {
       initDialog()
     })

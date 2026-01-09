@@ -79,16 +79,12 @@ import WorkflowDesigner from '@/components/workflow/WorkflowDesigner.vue'
 import BaseDndPanel from '@/components/BaseDndPanel/index.vue'
 import AttrPanelDrawer from '@/components/workflow/panels/AttrPanelDrawer.vue'
 import { LogicType, type WorkflowData } from '@/type/workflow'
-import { useRuleStore, useCanvasStore } from '@/store/modules/ruleCache'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import nodeIdFactory from '@/utils/factory/NodeIdFactory'
 import { compressParamData, expandParamData } from '@/utils/workflow/DataOptimizer'
 import Detail from '@/views/rule/detail.vue'
 import { http } from '@/axios'
 import TestDrawer from '@/components/TestDrawer/index.vue'
-import NodeTypeIcon from '@/components/BaseNodeIcon/index.vue'
-import { emitter } from '@/utils/mitt'
-import { useParamStore } from '@/store/modules/params'
 
 import { useDialogDrag } from '@/hooks/useDialogDrag'
 
@@ -120,38 +116,6 @@ const workflowData = ref<WorkflowData>({
 function hasCanvasContent(): boolean {
   return workflowData.value.nodeList.length > 0 || workflowData.value.edges.length > 0
 }
-
-const ruleStore = useRuleStore()
-const canvasStore = useCanvasStore()
-
-/**
- * 缓存当前画布数据
- */
-function cacheCurrentCanvas() {
-  if (hasCanvasContent()) {
-    const canvasData = {
-      id: workflowData.value.id,
-      ruleName: workflowData.value.ruleName,
-      nodeList: workflowData.value.nodeList,
-      edges: workflowData.value.edges,
-      groupList: workflowData.value.groupList,
-      lua: workflowData.value.lua,
-      funcIds: workflowData.value.nodeList.map(node => node.funcId),
-      timestamp: Date.now()
-    }
-    canvasStore.setCachedCanvas(canvasData)
-  }
-}
-
-/**
- * 路由离开守卫：在页面切换时缓存画布数据
- */
-onBeforeRouteLeave(async (to, from, next) => {
-  if (hasCanvasContent()) {
-    cacheCurrentCanvas()
-  }
-  next()
-})
 
 // 浏览器刷新/关闭事件处理
 async function handleBeforeUnload(event: BeforeUnloadEvent) {
@@ -276,7 +240,6 @@ function getAvailableSourceOptions(param: any) {
 }
 
 function getAllAvailableOptions(param: any) {
-  console.log('workflowData1111', workflowData)
   const node = selectedNodeData.value
   if (!node || !param) return []
   // 上游是条件的话 会继续往前找 直到找到第一个非条件的节点
@@ -365,58 +328,7 @@ const debugLuaScript = async () => {
   }
 }
 
-const route = useRoute()
-const paramStore = useParamStore()
-const functionStore = useFunctionStore()
-
 onMounted(async () => {
-  const ruleId = route.query?.ruleId as string
-  const ruleData = ruleStore.getCurrentRule(ruleId)
-  const cachedCanvas = canvasStore.getCurrentCanvas(ruleId)
-
-  // 如果加载过，切换的时候会设置为false 那一定会有key
-  // let baseData = workflowData.value
-  //
-  // if (ruleData) {
-  //   // 优先级1：使用从其他页面跳转过来的规则数据
-  //   baseData = {
-  //     ...workflowData.value,
-  //     id: ruleData.id,
-  //     ruleName: ruleData.ruleName,
-  //     lua: ruleData.luaScript
-  //   }
-  //   const ids = ruleData.funcIds || []
-  //   if (ids) {
-  //     // 获取画布可能需要的函数节点
-  //     try {
-  //       const wfd = JSON.parse(ruleData.configData)
-  //       // 关键：第一时间做参数展开，兼容历史数据
-  //       const expandedWfd = expandWorkflowData(wfd)
-  //       baseData.nodeList = expandedWfd.nodeList
-  //       baseData.edges = expandedWfd.edges
-  //       baseData.groupList = expandedWfd?.groupList || []
-  //     } catch (error) {
-  //       console.error('解析工作流数据失败:', error)
-  //     }
-  //   }
-  //   // 清空跳转数据
-  //   // ruleStore.clearCurrentRule(ruleId)
-  // } else if (cachedCanvas) {
-  //   // 优先级2：使用缓存的画布数据
-  //   baseData = {
-  //     ...workflowData.value,
-  //     id: cachedCanvas.id,
-  //     ruleName: cachedCanvas.ruleName,
-  //     lua: cachedCanvas.lua,
-  //     nodeList: cachedCanvas.nodeList,
-  //     edges: cachedCanvas.edges,
-  //     groupList: cachedCanvas.groupList
-  //   }
-  // }
-
-  // workflowData.value = baseData
-  // updateWorkflowData(baseData)
-
   // 添加浏览器事件监听
   window.addEventListener('beforeunload', handleBeforeUnload)
 
