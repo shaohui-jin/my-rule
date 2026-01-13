@@ -2,6 +2,54 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Element Plus 主题色系配置 - 与 Tailwind 蓝色主题保持一致 */
+:root {
+  /* 主色调 - 使用 Tailwind theme.medium */
+  --el-color-primary: #3c79b4;
+  --el-color-primary-light-3: #77a2cc;
+  --el-color-primary-light-5: #b1cce4;
+  --el-color-primary-light-7: #d1e0f0;
+  --el-color-primary-light-8: #e6f0f8;
+  --el-color-primary-light-9: #ecf5fc;
+  --el-color-primary-dark-2: #014f9c;
+  
+  /* 成功色保持默认，或可根据需要调整 */
+  --el-color-success: #67c23a;
+  --el-color-success-light-3: #95d475;
+  --el-color-success-light-5: #b3e19d;
+  --el-color-success-light-7: #d1edc4;
+  --el-color-success-light-8: #e1f3d8;
+  --el-color-success-light-9: #f0f9eb;
+  --el-color-success-dark-2: #529b2e;
+  
+  /* 警告色保持默认 */
+  --el-color-warning: #e6a23c;
+  --el-color-warning-light-3: #eebe77;
+  --el-color-warning-light-5: #f3d19e;
+  --el-color-warning-light-7: #f8e3c5;
+  --el-color-warning-light-8: #faecd8;
+  --el-color-warning-light-9: #fdf6ec;
+  --el-color-warning-dark-2: #cf9236;
+  
+  /* 危险色保持默认 */
+  --el-color-danger: #f56c6c;
+  --el-color-danger-light-3: #f89898;
+  --el-color-danger-light-5: #fab6b6;
+  --el-color-danger-light-7: #fcd3d3;
+  --el-color-danger-light-8: #fde2e2;
+  --el-color-danger-light-9: #fef0f0;
+  --el-color-danger-dark-2: #dd6161;
+  
+  /* 信息色保持默认 */
+  --el-color-info: #909399;
+  --el-color-info-light-3: #b1b3b8;
+  --el-color-info-light-5: #c8c9cc;
+  --el-color-info-light-7: #dedfe0;
+  --el-color-info-light-8: #e9e9eb;
+  --el-color-info-light-9: #f4f4f5;
+  --el-color-info-dark-2: #82848a;
+}
+
 /* 全局样式重置 */
 body {
   margin: 0;
