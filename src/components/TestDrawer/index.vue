@@ -2,11 +2,7 @@
   <!-- 全屏编辑器 - 移到 body 层级 -->
   <Teleport to="body">
     <!-- XML编辑器全屏 -->
-    <div
-      v-if="isFullscreen.xml"
-      class="fullscreen-editor-overlay"
-      :class="{ 'fullscreen-editor-overlay-wujie': isWujie }"
-    >
+    <div v-if="isFullscreen.xml" class="fullscreen-editor-overlay">
       <div class="fullscreen-editor-container">
         <div class="editor-toolbar">
           <el-button type="primary" size="small" circle @click.stop="handleDownloadXml">
@@ -24,11 +20,7 @@
     </div>
 
     <!-- 脚本编辑器全屏 -->
-    <div
-      v-if="isFullscreen.script"
-      class="fullscreen-editor-overlay"
-      :class="{ 'fullscreen-editor-overlay-wujie': isWujie }"
-    >
+    <div v-if="isFullscreen.script" class="fullscreen-editor-overlay">
       <div class="fullscreen-editor-container">
         <div class="editor-toolbar">
           <el-button type="primary" size="small" circle @click.stop="handleDownloadScript">
@@ -46,11 +38,7 @@
     </div>
 
     <!-- 节点编辑器全屏 -->
-    <div
-      v-if="nodeFullscreen"
-      class="fullscreen-editor-overlay"
-      :class="{ 'fullscreen-editor-overlay-wujie': isWujie }"
-    >
+    <div v-if="nodeFullscreen" class="fullscreen-editor-overlay">
       <div class="fullscreen-editor-container">
         <div class="editor-toolbar">
           <el-button
@@ -87,7 +75,7 @@
   <div v-if="drawerVisible && showMask" class="drawer-mask" @click="handleMaskClick"></div>
 
   <!-- 自定义测试抽屉 -->
-  <div class="test-drawer" :class="{ 'drawer-open': drawerVisible, 'iframe-mode': isIframe }">
+  <div class="test-drawer" :class="{ 'drawer-open': drawerVisible }">
     <!-- 抽屉头部 -->
     <div class="drawer-header">
       <div class="drawer-title-container">
@@ -501,18 +489,6 @@ import { getFunctionListByIds, transformFunctionData } from '@/api/workflow/Work
 import { formatMilliseconds } from '@/utils'
 import NodeTypeIcon from '@/components/BaseNodeIcon/index.vue'
 import { getLuaCodeMapByExpression } from '@/utils/expression'
-
-const isWujie = window.__POWERED_BY_WUJIE__
-
-// 检测是否在iframe环境中
-const isIframe = computed(() => {
-  try {
-    return window.self !== window.top || window.__POWERED_BY_WUJIE__
-  } catch (e) {
-    // 如果无法访问window.top，说明在iframe中
-    return true
-  }
-})
 
 // 定义主题常量
 const DARK_THEME = 'vs'

@@ -1,6 +1,5 @@
 <template>
   <!-- 自定义属性面板抽屉 -->
-  <!-- <div class="attr-panel-drawer" :class="{ 'drawer-open': visible, 'attr-panel-drawer-wujie': isWujie }"> -->
   <div class="attr-panel-drawer" :class="{ 'drawer-open': visible }">
     <!-- 抽屉头部 -->
     <div class="drawer-header">
@@ -73,8 +72,6 @@ import ConditionNodePanel from './ConditionNodePanel.vue'
 import CalculatorNodePanel from './CalculatorNodePanel.vue'
 import { Close } from '@element-plus/icons-vue'
 import NodeTypeIcon from '@/components/BaseNodeIcon/index.vue'
-
-const isWujie = window.__POWERED_BY_WUJIE__
 
 /**
  * 组件属性定义
@@ -221,11 +218,6 @@ function handleNodeBaseDataUpdate(nodeId: string) {
   will-change: right, transform;
   border-radius: 12px;
 }
-
-/* .attr-panel-drawer-wujie {
-  top: 100px;
-  height: calc(100% - 100px);
-} */
 
 .attr-panel-drawer.drawer-open {
   right: 10px; /* 打开时滑入屏幕 */
