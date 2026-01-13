@@ -1,0 +1,341 @@
+import { Graph, registerEdge, registerNode } from '@antv/g6'
+import type { Ref } from 'vue'
+import { ClassManagerCallback, NodeType, WorkflowData } from '../../types/workflow'
+import { ModelConfig } from '@antv/g6-core/lib/types'
+import { measureTextWidth, truncateText } from '../common'
+
+interface NodeConfig extends ModelConfig {
+  attrs?: NodeType['attrs']
+  label: string
+  href: string
+  startIndex: number
+}
+
+const titleHeight = 60
+const lineHeight = 28
+const width = 320
+
+// 第二行文字 name
+export const CLASS_BOX_TITLE_TEXT = 'class-box-title-text'
+// 字段列表文字 name
+export const CLASS_BOX_LINE = 'class-box-line'
+// 字段列表文字背景 name
+export const CLASS_BOX_LINE_BG = 'class-box-line-bg'
+
+export class ClassManager {
+  private graph: Graph
+  private workflowData: Ref<WorkflowData>
+  private callbackMap: ClassManagerCallback
+
+  constructor(graph: Graph, workflowData: Ref<WorkflowData>, callbackMap: ClassManagerCallback) {
+    this.graph = graph
+    this.workflowData = workflowData
+    this.callbackMap = callbackMap
+    this.initRegister()
+  }
+
+  /**
+   * 初始化 注册边 注册节点
+   * @private
+   */
+  private initRegister(): void {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    const that = this
+    registerEdge('class-edge', {
+      draw(cfg, group) {
+        const edge = group.cfg.item
+        const sourceNode = edge.getSource().getModel()
+        const targetNode = edge.getTarget().getModel()
+
+        // 1. 读取目标节点的 hoverIndex
+        const sourceHoverIndex = sourceNode.hoverIndex
+        const targetHoverIndex = targetNode.hoverIndex
+
+        const sourceIndex = sourceNode.attrs.findIndex(e => e.key === cfg.sourceKey)
+
+        const sourceY = titleHeight + lineHeight * (sourceIndex + 1) - 4 - 3 - 7
+
+        const targetIndex = targetNode.attrs.findIndex(e => e.key === cfg.targetKey)
+
+        const targetY = titleHeight + lineHeight * (targetIndex + 1) - 4 - 3 - 7
+
+        // 边的目标行 等于 节点的 hoverIndex → 高亮颜色，否则默认颜色
+        const isHovered = sourceHoverIndex === sourceIndex || targetHoverIndex === targetIndex
+        const edgeColor = isHovered ? '#5B8FF9' : '#AEB4BF'
+
+        // 起点只连右边
+        const startPoint = {
+          // ...cfg.startPoint
+          x: sourceNode.x + width,
+          y: sourceNode.y
+        }
+
+        // 终点只连左边
+        const endPoint = {
+          // ...cfg.endPoint
+          x: targetNode.x,
+          y: targetNode.y
+        }
+
+        startPoint.y = startPoint.y + sourceY
+        endPoint.y = endPoint.y + targetY
+
+        const shape = group.addShape('path', {
+          attrs: {
+            stroke: edgeColor,
+            path: [
+              ['M', startPoint.x, startPoint.y],
+              [
+                'C',
+                endPoint.x / 3 + (2 / 3) * startPoint.x,
+                startPoint.y,
+                endPoint.x / 3 + (2 / 3) * startPoint.x,
+                endPoint.y,
+                endPoint.x,
+                endPoint.y
+              ]
+            ],
+            type: 'quadratic',
+            lineWidth: 2,
+            endArrow: {
+              // 实心三角形箭头
+              path: 'M 0,0 L 8,4 L 8,-4 Z', // 路径定义
+              fill: edgeColor, // 填充颜色
+              stroke: edgeColor, // 边框颜色
+              d: 0 // 偏移量
+            }
+          },
+          // must be assigned in G6 3.3 and later versions. it can be any string you want, but should be unique in a custom item type
+          name: 'path-shape'
+        })
+
+        return shape
+      },
+      afterDraw(cfg, group) {
+        const edge = group.cfg.item
+        edge.toFront()
+        // const labelCfg = cfg.labelCfg || {};
+        // const edge = group.cfg.item;
+        // const sourceNode = edge.getSource().getModel();
+        // const targetNode = edge.getTarget().getModel();
+        // if (sourceNode.collapsed && targetNode.collapsed) {
+        //   return;
+        // }
+        // const path = group.find(
+        //   (element) => element.get("name") === "path-shape"
+        // );
+        //
+        // const labelStyle = Util.getLabelPosition(path, 0.5, 0, 0, true);
+        // const label = group.addShape("text", {
+        //   attrs: {
+        //     ...labelStyle,
+        //     text: cfg.label || '',
+        //     fill: "#000",
+        //     textAlign: "center",
+        //     stroke: "#fff",
+        //     lineWidth: 1,
+        //   },
+        // });
+        // label.rotateAtStart(labelStyle.rotate);
+      }
+    })
+
+    registerNode('class-box', {
+      draw(cfg: NodeConfig, group) {
+        const { attrs = [], label, href, hoverIndex } = cfg
+
+        const height = titleHeight + attrs.length * lineHeight
+
+        // 顶部文字区域
+        group.addShape('rect', {
+          attrs: {
+            fill: 'rgba(229,238,255,0.8)',
+            height: titleHeight,
+            width,
+            radius: [8, 8, 0, 0]
+          },
+          draggable: true
+        })
+
+        // 6 5 '14' 5 5 '14' 6
+        // 这是第一行文字
+        group.addShape('text', {
+          attrs: {
+            x: 8,
+            y: 6 + 5 + 14, // 0代表的是文字底部在最顶上
+            fill: 'rgba(28, 26, 39, 1)',
+            text: cfg.id,
+            fontSize: 14,
+            fontWeight: 400,
+            cursor: 'pointer'
+          },
+          draggable: true
+        })
+
+        // 这是第二行文字
+        const truncatedLabel = truncateText(label, width - 8, 14, 400)
+
+        const labelShape = group.addShape('text', {
+          attrs: {
+            x: 8,
+            y: 6 + 5 + 14 + 5 + 5 + 14, // 0代表的是文字底部在最顶上
+            fill: 'rgba(28, 26, 39, 1)',
+            text: truncatedLabel,
+            fontSize: 14,
+            fontWeight: 400,
+            lineHeight: 14,
+            cursor: 'pointer'
+          },
+          draggable: true,
+          name: CLASS_BOX_TITLE_TEXT
+        })
+        // 增加 hover 事件
+        labelShape.on('mouseenter', e => {
+          e.preventDefault()
+          e.stopPropagation()
+          const { x, y } = e
+          if (truncatedLabel !== label && label) {
+            that.callbackMap.showTooltip(x, y, label)
+          }
+        })
+        labelShape.on('mouseleave', e => {
+          e.preventDefault()
+          e.stopPropagation()
+          that.callbackMap.hideTooltip()
+        })
+
+        // 这是底部行
+        const listContainer = group.addGroup({})
+        listContainer.setClip({
+          type: 'rect',
+          attrs: {
+            x: -8,
+            y: titleHeight,
+            width: width + 16,
+            height: height - titleHeight
+          }
+        })
+        listContainer.addShape({
+          type: 'rect',
+          attrs: {
+            x: 0,
+            y: titleHeight,
+            width: width - 2,
+            height: height - titleHeight
+          },
+          draggable: true
+        })
+        attrs.forEach((e, i) => {
+          // 4 3 '14' 3 4
+          const offsetY = titleHeight + lineHeight * (i + 1) - 4 - 3
+          let { key } = e
+          const { desc } = e
+          if (desc) {
+            key += ' (' + desc + ')'
+          }
+          const label = truncateText(key, width - 8, 14, 400)
+          // 左右两侧的圆圈
+          // if (!cfg.hideDot) {
+          //   // 4 3 '2 1 4 4 1 2' 3 4
+          //   // 4半径 1边框 2是剩余空间
+          //   let y = offsetY - 4 - 1 - 2
+          //   listContainer.addShape("circle", {
+          //     attrs: {
+          //       x: 0,
+          //       y: y,
+          //       r: 4,
+          //       stroke: 'rgba(229,238,255,0.8)',
+          //       fill: "white",
+          //       radius: 2,
+          //       lineWidth: 1,
+          //       cursor: "pointer",
+          //     },
+          //   });
+          //   listContainer.addShape("circle", {
+          //     attrs: {
+          //       x: width,
+          //       y: y,
+          //       r: 4,
+          //       stroke: 'rgba(229,238,255,0.8)',
+          //       fill: "white",
+          //       radius: 2,
+          //       lineWidth: 1,
+          //       cursor: "pointer",
+          //     },
+          //   });
+          // }
+
+          // 添加背景矩形
+          const itemY = titleHeight + lineHeight * i
+          const isHovered = Number.isInteger(hoverIndex) && hoverIndex === i
+          listContainer.addShape('rect', {
+            attrs: {
+              x: 0,
+              y: itemY,
+              width: width,
+              height: lineHeight,
+              fill: isHovered ? 'rgba(229, 238, 255, 0.5)' : 'transparent',
+              cursor: 'pointer'
+            },
+            name: `${CLASS_BOX_LINE_BG}-${i}`
+          })
+
+          // 添加文字
+          const attrItem = listContainer.addShape('text', {
+            attrs: {
+              x: 8,
+              y: offsetY,
+              text: label,
+              fontSize: 14,
+              fill: isHovered ? 'rgba(0, 85, 255, 1)' : 'rgba(91, 91, 94, 1)',
+              full: e,
+              fontWeight: 400,
+              cursor: 'pointer'
+            },
+            name: `${CLASS_BOX_LINE}-${i}`
+          })
+          attrItem.on('mouseenter', e => {
+            e.preventDefault()
+            e.stopPropagation()
+            const { x, y } = e
+            if (key !== label && label) {
+              that.callbackMap.showTooltip(x, y, key)
+            }
+          })
+          attrItem.on('mouseleave', e => {
+            e.preventDefault()
+            e.stopPropagation()
+            that.callbackMap.hideTooltip()
+          })
+        })
+
+        // 最外层的border
+        return group.addShape('rect', {
+          attrs: {
+            x: 0,
+            y: 0,
+            width,
+            height,
+            stroke: 'rgba(220, 223, 230, 1)',
+            radius: 8,
+            shadowColor: 'rgba(0, 0, 0, 0.25)',
+            shadowOffsetY: -2,
+            shadowOffsetX: 0,
+            shadowBlur: 8
+          },
+          draggable: true
+        })
+      },
+      afterDraw(cfg, group) {
+        const node = group.cfg.item
+        node.toBack()
+      },
+      getAnchorPoints() {
+        return [
+          [0, 0],
+          [1, 0]
+        ]
+      }
+    })
+  }
+}

@@ -1,16 +1,12 @@
 import { LogicType } from '@/type/workflow'
 import { COLORS, PORT_ATTRS } from './constants/StyleConstants'
 const { VITE_PUBLIC_PATH } = import.meta.env
+import { Graph, Node } from '@antv/x6'
+import { type WorkflowData } from '@/type/workflow'
+import type { Ref } from 'vue'
+import { NODE_CONFIG_BASE_HEIGHT, NODE_CONFIG_TITLE_HEIGHT, NODE_CONFIG_WIDTH } from '@/config/node'
 
 // 端口属性配置 - 使用导入的常量
-
-// 节点基础配置
-const NODE_BASE_CONFIG = {
-  width: 300,
-  titleHeight: 36,
-  baseHeight: 164, // 原来是125
-  margin: 18
-}
 
 /**
  * 创建端口配置
@@ -28,11 +24,6 @@ function createPortConfig(
   typeText = ''
 ) {
   let portTitleType = portTitle
-  // if(group === 'in') {
-  //   portTitleType = portTitle === undefined ? '' : portTitle+'\n' + typeText
-  // } else {
-  //   portTitleType = portTitle === undefined ? '' : typeText + '\n' + portTitle
-  // }
   if (portTitleType.length > 13) {
     portTitleType =
       portTitleType.substring(0, 13) +
@@ -86,7 +77,7 @@ function getPortPosition(
     y = titleHeight + step * (idx + 1)
   }
   return {
-    x: side === 'left' ? 0 : NODE_BASE_CONFIG.width,
+    x: side === 'left' ? 0 : NODE_CONFIG_WIDTH,
     y
   }
 }
@@ -95,16 +86,15 @@ function getPortPosition(
  * 生成端口配置
  */
 function generatePorts(node: any, nodeHeight: number) {
-  const { titleHeight } = NODE_BASE_CONFIG
   let inputPorts = []
   let outputPorts = []
 
   if (node.funcType === 'logic' && node.logicData?.logicType === LogicType.IFELSE) {
     // 条件节点：左侧1个port，右侧多个port
-    const inPos = getPortPosition('left', 1, 0, nodeHeight, titleHeight)
+    const inPos = getPortPosition('left', 1, 0, nodeHeight, NODE_CONFIG_TITLE_HEIGHT)
     inputPorts = [createPortConfig('in_1', 'in', inPos, '条件判断对象')]
     outputPorts = (node.outputData || []).map((item: any, idx: number, arr: any[]) => {
-      const pos = getPortPosition('right', arr.length, idx, nodeHeight, titleHeight)
+      const pos = getPortPosition('right', arr.length, idx, nodeHeight, NODE_CONFIG_TITLE_HEIGHT)
       let portTitle = idx === 0 ? 'if' : idx === arr.length - 1 ? 'else' : 'elseif'
       return createPortConfig(item.portId, 'out', pos, portTitle)
     })
@@ -113,7 +103,7 @@ function generatePorts(node: any, nodeHeight: number) {
       createPortConfig(
         'in_1',
         'in',
-        getPortPosition('left', 1, 0, nodeHeight, titleHeight),
+        getPortPosition('left', 1, 0, nodeHeight, NODE_CONFIG_TITLE_HEIGHT),
         '计算器对象'
       )
     ]
@@ -121,7 +111,7 @@ function generatePorts(node: any, nodeHeight: number) {
       createPortConfig(
         'out_1',
         'out',
-        getPortPosition('right', 1, 0, nodeHeight, titleHeight),
+        getPortPosition('right', 1, 0, nodeHeight, NODE_CONFIG_TITLE_HEIGHT),
         'any'
       )
     ]
@@ -164,7 +154,7 @@ function generatePorts(node: any, nodeHeight: number) {
     }
     // 生成入参端口
     for (let i = 0; i < inputPortCount; i++) {
-      const inPos = getPortPosition('left', inputPortCount, i, nodeHeight, titleHeight)
+      const inPos = getPortPosition('left', inputPortCount, i, nodeHeight, NODE_CONFIG_TITLE_HEIGHT)
       // 这个in_1是按顺序生成的，所以生成的数据是按顺序塞入进去的需要修改成原数据的portId,如果没有原数据则使用默认的循环
       // inputPorts.push(createPortConfig(`in_${i + 1}`, 'in', inPos, inputTitleList[i], inputDescList[i]))
       inputPorts.push(
@@ -180,7 +170,7 @@ function generatePorts(node: any, nodeHeight: number) {
     }
     // console.log('node.outputData===', node.outputData)
     // 出参端口：默认1个
-    const outPos = getPortPosition('right', 1, 0, nodeHeight, titleHeight)
+    const outPos = getPortPosition('right', 1, 0, nodeHeight, NODE_CONFIG_TITLE_HEIGHT)
     outputPorts = [
       createPortConfig(
         'out_1',
@@ -202,8 +192,6 @@ function generatePorts(node: any, nodeHeight: number) {
  * @returns X6节点配置
  */
 export function getCustomNodeConfig(node: any) {
-  const { baseHeight, width, titleHeight } = NODE_BASE_CONFIG
-
   // 1. 分析入参端口组名
   let inputPortCount = 1
 
@@ -219,31 +207,22 @@ export function getCustomNodeConfig(node: any) {
   // }
 
   // 2. 计算端口需求高度
-  let nodeHeight = baseHeight
+  let nodeHeight = NODE_CONFIG_BASE_HEIGHT
   const outputPortCount = node.outputData?.length || 1
   const maxPort = Math.max(inputPortCount, outputPortCount)
   // 计算最终高度 (常用函数大多是一个node节点或者没有，保持一致的高度)
-  nodeHeight = maxPort > 2 ? (maxPort - 2) * 24 + baseHeight : baseHeight
+  nodeHeight = maxPort > 2 ? (maxPort - 2) * 24 + NODE_CONFIG_BASE_HEIGHT : NODE_CONFIG_BASE_HEIGHT
 
   // 3. 计算最终高度
-  const finalHeight = titleHeight + (nodeHeight - titleHeight)
+  const finalHeight = NODE_CONFIG_TITLE_HEIGHT + (nodeHeight - NODE_CONFIG_TITLE_HEIGHT)
 
   const { inputPorts, outputPorts } = generatePorts(node, finalHeight)
-  return getNormalConfig(node, width, finalHeight, inputPorts, outputPorts)
-}
 
-function getNormalConfig(
-  node: any,
-  width: number,
-  finalHeight: number,
-  inputPorts: any[],
-  outputPorts: any[]
-) {
   return {
     id: node.id,
     x: node.pos?.x || 100,
     y: node.pos?.y || 100,
-    width,
+    width: NODE_CONFIG_WIDTH,
     height: finalHeight,
     data: node,
     attrs: {
@@ -459,10 +438,6 @@ function getNormalConfig(
     ]
   }
 }
-
-import { Graph, Node } from '@antv/x6'
-import { type WorkflowData } from '@/type/workflow'
-import type { Ref } from 'vue'
 
 export class CustomNode extends Node {
   public startNode: Node = null

@@ -28,75 +28,24 @@
 
       <!-- 工具栏 -->
       <div class="canvas-actions">
-        <Decrease @click="actionManager?.handleDecrease" />
-        <el-select
-          v-model="devicePixelRatio"
-          @change="actionManager?.handleDpr"
-          style="width: 100px"
+        <el-tooltip
+          v-for="action in canvasAction"
+          :content="action.content"
+          :key="action.content"
+          placement="top"
         >
-          <el-option value="200%"></el-option>
-          <el-option value="150%"></el-option>
-          <el-option value="100%"></el-option>
-          <el-option value="50%"></el-option>
-          <el-option value="25%"></el-option>
-        </el-select>
-        <Increase @click="actionManager?.handleIncrease" />
-        <el-tooltip content="一键折叠" placement="top">
-          <Collapse @click="actionManager?.handleCollapse(true)" />
-        </el-tooltip>
-        <el-tooltip content="一键展开" placement="top">
-          <expand @click="actionManager?.handleCollapse(false)" />
-        </el-tooltip>
-        <el-tooltip content="适应视图" placement="top">
-          <AdaptView @click="actionManager?.handleFit" />
-        </el-tooltip>
-        <el-tooltip content="一键排列" placement="top">
-          <Layout @click="actionManager?.handleLayout" />
-        </el-tooltip>
-        <el-tooltip content="视图浏览" placement="top">
-          <Browsing @click="() => (showMiniMap = !showMiniMap)" />
+          <template v-if="action?.group">
+            <component :is="action.group().comp" @click="action.group().fn" />
+          </template>
+          <component v-else :is="action.comp" @click="action.fn" />
         </el-tooltip>
       </div>
       <div class="workflow-actions">
-        <el-button link @click="handleUndo" :disabled="!canUndo || props.isTesting">
-          <Reset />
-          撤销
-        </el-button>
-        <el-button link @click="handleRedo" :disabled="!canRedo || props.isTesting">
-          <Recover />
-          恢复
-        </el-button>
-        <el-button link @click="handleNew" :disabled="props.isTesting">
-          <Clear />
-          清空
-        </el-button>
-        <el-button link @click="handleNewTab" :disabled="props.isTesting">
-          <Add />
-          新建
-        </el-button>
-        <el-button link @click="handleSaveAs" :disabled="props.isTesting">
-          <SaveAs />
-          另存为
-        </el-button>
-        <el-button link @click="handleImport" :disabled="props.isTesting">
-          <Import />
-          导入
-        </el-button>
-        <el-button link @click="handleExport" :disabled="props.isTesting">
-          <Export />
-          导出
-        </el-button>
-        <el-button link @click="handleTest" :disabled="!props.data.id">
-          <Test />
-          测试
-        </el-button>
-        <!--        <el-button link disabled><Check />检查</el-button>-->
-        <template v-if="props.data.id">
-          <el-button type="primary" @click="handleSave">保存</el-button>
-        </template>
-        <template v-else>
-          <el-button type="primary" disabled>保存</el-button>
-        </template>
+        <div v-for="w in workflowAction" :key="w.txt" @click="w.fn">
+          <component :is="w.comp" :disabled="w?.disabled ? w.disabled() : false" />
+          {{ w.txt }}
+        </div>
+        <el-button type="primary" :disabled="!props.data.id">保存</el-button>
       </div>
     </div>
   </div>
@@ -105,31 +54,28 @@
 <script setup lang="ts">
 import {
   ref,
-  onDeactivated,
+  reactive,
   onMounted,
   onUnmounted,
   watch,
   defineExpose,
   h,
   nextTick,
-  computed
+  computed,
+  Ref
 } from 'vue'
 import { Graph, Shape } from '@antv/x6'
 import { Dnd } from '@antv/x6'
 import { InputData, LogicType, type WorkflowData, WorkflowNode } from '@/type/workflow'
 import { CustomNode, getCustomNodeConfig } from '@/utils/workflow/CustomNode'
+import { IteratorNode } from '@/utils/workflow/IteratorNode'
+import { createInfoPanelNode } from '@/utils/workflow/InfoPanelNode'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import nodeIdFactory from '@/utils/factory/NodeIdFactory'
 import { createX6Node } from '@/utils/factory/NodeFactory'
-import { IteratorNode } from '@/utils/workflow/IteratorNode'
-import { createInfoPanelNode } from '@/utils/workflow/InfoPanelNode'
-import { initKeyboard } from '@/components/workflow/plugins/KeyboardPlugin'
+import { initKeyboard } from '@/utils/plugins/KeyboardPlugin'
 import WorkflowValidationModal from './panels/WorkflowValidationModal.vue'
-import {
-  initLayout,
-  registerPlugins,
-  clearSelectionPlugin
-} from '@/components/workflow/plugins/X6Plugin'
+import { initLayout, registerPlugins, clearSelectionPlugin } from '@/utils/plugins/X6Plugin'
 import { WorkflowValidator, type ValidationError } from '@/utils/workflow/WorkflowValidator'
 import { LuaGenerator } from '@/utils/json2lua/LuaGenerator'
 import { FunctionNode } from '@/api/workflow/WorkFlowApi'
@@ -158,8 +104,13 @@ import Increase from '@/assets/ruleEditToolSvg/increase.svg'
 import Layout from '@/assets/ruleEditToolSvg/layout.svg'
 import { useRuleStore } from '@/store/modules/ruleCache'
 import { BaseFunctionNodeType } from '@/store/modules/baseFunction'
-import { useWorkflowFunctions, WorkflowFunction } from '@/hooks/useWorkflowFuns'
+import {
+  defaultWorkflowFunction,
+  WorkflowActionPlugin,
+  WorkflowFunction
+} from '@/utils/plugins/WorkflowPlugin'
 import { MAX_DEVICE_PIXEL_RATIO, MIN_DEVICE_PIXEL_RATIO } from '@/config/workflow'
+import { Reactive } from '@vue/reactivity'
 
 /**
  * 组件属性定义
@@ -170,7 +121,6 @@ const props = defineProps<{
   data: WorkflowData
   functionNodes: Map<string, FunctionNode>
   nodeId: number
-  isTesting: boolean
 }>()
 const emit = defineEmits([
   'update:data',
@@ -209,10 +159,39 @@ let edgeCorrectionManager: EdgeCorrectionManager
 let groupManager: GroupManager
 // 迭代器管理器
 let iteratorManager: IteratorManager
+// 折叠状态
+const collapse = ref(false)
 
-const devicePixelRatio = ref('100%')
+// 工具栏
+const canvasAction = ref([
+  {
+    content: '折叠/展开',
+    group: () => {
+      return {
+        content: collapse.value ? '一键展开' : '一键折叠',
+        fn: () => actionPlugin.handleCollapse(!collapse.value),
+        comp: collapse.value ? Expand : Collapse
+      }
+    }
+  },
+  { content: '适应视图', comp: AdaptView, fn: () => actionPlugin.handleFit() },
+  { content: '一键排列', comp: Layout, fn: () => actionPlugin.handleLayout() },
+  { content: '视图浏览', comp: Browsing, fn: () => actionPlugin.handleShowMiniMap() }
+])
+
+// 流程工具栏
+const workflowAction = ref([
+  { txt: '撤销', comp: Reset, fn: () => actionPlugin.handleUndo() },
+  { txt: '恢复', comp: Recover, fn: () => actionPlugin.handleRedo() },
+  { txt: '清空', comp: Clear, fn: () => actionPlugin.handleNew(resetWorkflowData) },
+  { txt: '另存为', comp: SaveAs, fn: () => handleSaveAs() },
+  { txt: '导入', comp: Import, fn: () => actionPlugin.handleImport(executeImport) },
+  { txt: '导出', comp: Export, fn: () => actionPlugin.handleExport(syncData) },
+  { txt: '测试', comp: Test, fn: () => handleTest(), disabled: () => !props.data.id }
+])
+
 // 工作流方法管理器
-let actionManager: WorkflowFunction
+let actionPlugin: Reactive<WorkflowFunction> = reactive(defaultWorkflowFunction)
 
 let resizeHandler: (() => void) | null = null
 
@@ -390,13 +369,16 @@ const initGraph = () => {
   // 初始化迭代器管理器
   iteratorManager = new IteratorManager(graph, workflowData)
   // new CustomNode(graph, workflowData)
-  actionManager = useWorkflowFunctions({ graph, workflowData, devicePixelRatio })
+  actionPlugin = new WorkflowActionPlugin(graph, workflowData, {
+    collapse,
+    showMiniMap
+  })
   // 初始化布局插件
   initLayout(graph)
 
   console.log('初始化完毕')
   setTimeout(() => {
-    actionManager.handleFit()
+    actionPlugin.handleFit()
     handleRegister()
   }, 100)
 }
@@ -498,12 +480,6 @@ let removeNodeListener = null
  * @param graph X6画布实例
  */
 function registerGraphBaseEvents() {
-  // 监听放大倍率
-  graph.on('scale', ({ sx, sy }) => {
-    // 在这里执行你需要的同步逻辑
-    devicePixelRatio.value = (Number(sx.toFixed(2)) * 100).toFixed() + '%'
-  })
-
   // 监听历史记录变化
   graph.on('history:change', () => {
     canUndo.value = graph.canUndo()
@@ -568,8 +544,6 @@ function registerGraphBaseEvents() {
 
   // 监听节点选中事件
   graph.on('node:click', ({ node }) => {
-    // console.log('20250817节点选中', testDrawerRef.value.)
-    if (props.isTesting) return
     const nodeId = node.id
     const found = workflowData.value.nodeList.find(n => n.id === nodeId)
     // console.log('20250817节点选中', nodeId, found)
@@ -1232,24 +1206,6 @@ const visible = ref(false)
 
 const content = ref('')
 
-/**
- * 撤销操作
- */
-const handleUndo = () => {
-  if (graph.canUndo()) {
-    graph.undo()
-  }
-}
-
-/**
- * 重做操作
- */
-const handleRedo = () => {
-  if (graph.canRedo()) {
-    graph.redo()
-  }
-}
-
 const resetWorkflowData = (showMessage = true) => {
   workflowData.value = {
     id: workflowData.value.id,
@@ -1270,26 +1226,6 @@ const resetWorkflowData = (showMessage = true) => {
 
   // 通知父组件数据已更新
   emit('update:workflow', workflowData.value)
-}
-
-/**
- * 新建工作流
- */
-const handleNew = () => {
-  ElMessageBox.confirm('新建将清空画布，是否继续？', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    resetWorkflowData()
-  })
-}
-
-/**
- * 新建tab
- */
-const handleNewTab = () => {
-  router.push({ name: 'ruleEdit' })
 }
 
 /**
@@ -1406,99 +1342,6 @@ const handleSaveAs = async () => {
 }
 
 /**
- * 导出工作流数据
- */
-const handleExport = () => {
-  try {
-    // 准备导出的数据
-    syncData()
-    const exportData = {
-      ...workflowData.value,
-      // 确保不包含敏感信息
-      id: undefined,
-      lua: undefined
-    }
-
-    // 创建Blob对象
-    const dataStr = JSON.stringify(exportData, null, 2)
-    const blob = new Blob([dataStr], { type: 'application/json' })
-
-    // 创建下载链接
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `workflow_${workflowData.value.ruleName || 'unnamed'}_${new Date()
-      .toISOString()
-      .slice(0, 10)}.json`
-
-    // 触发下载
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-
-    // 清理URL对象
-    URL.revokeObjectURL(url)
-
-    ElMessage.success('工作流数据导出成功')
-  } catch (error) {
-    console.error('导出失败:', error)
-    ElMessage.error('导出失败，请重试')
-  }
-}
-
-/**
- * 导入工作流数据
- */
-const handleImport = () => {
-  // 创建文件输入元素
-  const input = document.createElement('input')
-  input.type = 'file'
-  input.accept = '.json'
-  input.style.display = 'none'
-
-  input.onchange = async event => {
-    const file = (event.target as HTMLInputElement).files?.[0]
-    if (!file) return
-
-    try {
-      const text = await file.text()
-      const importData = JSON.parse(text)
-
-      // 验证导入数据的格式
-      if (!importData.nodeList || !importData.edges) {
-        ElMessage.error('导入的文件格式不正确，请选择正确的工作流文件')
-        return
-      }
-
-      // 显示确认对话框
-      ElMessageBox.confirm('导入将清空当前画布数据，是否继续？', '导入确认', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      })
-        .then(() => {
-          // 执行导入
-          executeImport(importData)
-        })
-        .catch(() => {
-          // 用户取消
-          ElMessage.info('已取消导入')
-        })
-    } catch (error) {
-      console.error('解析文件失败:', error)
-      ElMessage.error('文件解析失败，请检查文件格式')
-    }
-
-    // 清理文件输入元素
-    document.body.removeChild(input)
-  }
-
-  // 触发文件选择
-  document.body.appendChild(input)
-  input.click()
-}
-
-/**
  * 执行导入操作
  * @param importData 导入的数据
  */
@@ -1533,10 +1376,6 @@ const executeImport = (importData: any) => {
  * @param e 鼠标事件
  */
 const startDragPreview = (item: BaseFunctionNodeType, e: MouseEvent) => {
-  console.log('startDragPreview', item)
-  console.log('startDragPreview', e)
-  console.log('startDragPreview', graph)
-  console.log('startDragPreview', dnd)
   if (!graph || !dnd) return
   let nodeData = {
     ...JSON.parse(JSON.stringify(item.template)),
@@ -2138,8 +1977,8 @@ function handleValidationNodeSelect(nodeId: string) {
 }
 
 defineExpose({
-  handleFit: actionManager?.handleFit,
-  handleLayout: actionManager?.handleLayout,
+  handleFit: actionPlugin.handleFit,
+  handleLayout: actionPlugin.handleLayout,
   resetWorkflowData,
   startDragPreview,
   addPortData,
@@ -2300,24 +2139,18 @@ function findUpstreamNonConditionNodes(nodeId: string, workflowData: any): strin
   position: absolute;
   right: 10px;
   top: 10px;
+  display: flex;
+  gap: 10px;
   z-index: 100;
   //height: 64px;
   //line-height: 64px;
   padding: 4px;
   border-radius: 4px;
   background: #fff;
-  :deep(.el-button) {
-    &:hover {
-      span svg path {
-        fill: #909399;
-      }
-    }
-    &.is-disabled {
-      color: #a8abb2;
-      span svg path {
-        fill: #a8abb2;
-      }
-    }
+  div {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
   }
 }
 

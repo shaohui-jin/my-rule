@@ -52,7 +52,7 @@ function onNodeMouseLeave(funcId: string) {
   justify-content: space-between;
   min-height: 0;
   padding-right: 10px;
-  z-index: 9999;
+  z-index: 2000;
   .dnd-panel-item {
     width: 80px;
     height: 80px;
