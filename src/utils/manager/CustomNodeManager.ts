@@ -1,4 +1,4 @@
-import { LogicType } from '@/type/workflow'
+import { LogicType, type WorkflowNode } from '@/type/workflow'
 import { COLORS, PORT_ATTRS } from '../workflow/constants/StyleConstants'
 const { VITE_PUBLIC_PATH } = import.meta.env
 import { Graph, Node } from '@antv/x6'
@@ -82,9 +82,7 @@ function getPortPosition(
   }
 }
 
-/**
- * 生成端口配置
- */
+// 生成端口配置
 function generatePorts(node: any, nodeHeight: number) {
   let inputPorts = []
   let outputPorts = []
@@ -191,7 +189,7 @@ function generatePorts(node: any, nodeHeight: number) {
  * @param node 节点数据
  * @returns X6节点配置
  */
-export function getCustomNodeConfig(node: any) {
+export function getCustomNodeConfig(node: WorkflowNode) {
   // 1. 分析入参端口组名
   let inputPortCount = 1
 
@@ -220,6 +218,7 @@ export function getCustomNodeConfig(node: any) {
 
   return {
     id: node.id,
+    label: node.title,
     x: node.pos?.x || 100,
     y: node.pos?.y || 100,
     width: NODE_CONFIG_WIDTH,
@@ -594,7 +593,6 @@ export class CustomNode extends Node {
 }
 
 export class CustomNodeManager extends Node {
-  // constructor() {}
   public initRegister(): void {
     Graph.registerNode('customNode', CustomNode, true)
   }

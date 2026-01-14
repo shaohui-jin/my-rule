@@ -81,8 +81,8 @@ import { GroupManager } from '@/utils/workflow/GroupManager'
 import { createNewNode, createX6Node } from '@/utils/factory/NodeFactory'
 import nodeIdFactory from '@/utils/factory/NodeIdFactory'
 
-import { initKeyboard } from '@/utils/plugins/KeyboardPlugin'
-import { registerPlugins } from '@/utils/plugins/X6Plugin'
+import { registerKeyboardPlugins } from '@/utils/plugins/KeyboardPlugin'
+import { registerX6Plugins } from '@/utils/plugins/X6Plugin'
 import {
   handleCollapse,
   handleExport,
@@ -351,92 +351,63 @@ const initGraph = () => {
   edgeCorrectionManager = new EdgeCorrectionManager(graph, workflowData, directContectNode)
 
   initNodesAndEdges(graph, workflowData.value)
+
   // 初始化分组管理器
   groupManager = new GroupManager(graph, workflowData)
 
   // 注册插件
-  registerPlugins(graph, container.value, minimapContainer.value)
+  registerX6Plugins(graph, container.value, minimapContainer.value)
+
+  // 注册键盘插件
+  registerKeyboardPlugins(graph, groupManager, workflowData)
+
   // 注册画布事件(预览模式下的基础功能)
   registerGraphBaseEvents()
 
   // 注册完整功能
   registerGraphFullEvents()
-  // 初始化键盘插件
-  initKeyboard(graph, groupManager)
 
-  console.log('初始化完毕')
   setTimeout(() => {
     handleFit(graph)
   }, 100)
 }
 
-/**
- * 刷新属性面板
- */
-function refreshPanel(nodeIds: string[] = []) {
-  let nodeId = ''
-  const selectNodeId = selectedNodeData.value?.id || ''
-  if (nodeIds.length == 0 && selectNodeId) {
-    nodeId = selectNodeId
-  } else if (nodeIds.length == 1) {
-    nodeId = nodeIds[0]
-  } else {
-    return
-  }
+// 初始化节点和边
+function initNodesAndEdges(graph: any, data: WorkflowData) {
+  // 1. 解析生成节点
+  graph.startBatch('init-nodes-and-edges')
+  data.nodeList.forEach((node: any, _idx: number) => {
+    const rectNode = createX6Node(node)
+    graph.addNode(rectNode)
+  })
+  // 2. 需要先生成所有节点  再生成迭代器 确保子集节点可用
 
-  if (nodeId) {
-    const found = workflowData.value.nodeList.find(n => n.id === nodeId)
-    if (found) {
-      clearSelection()
-      graph.select(nodeId)
-      selectedNodeData.value = found
-    }
-  }
-}
+  // 3. 解析生成边
+  data.edges.forEach((edge: any, _idx: number) => {
+    const targetPort = edge.targetPort || 'in_1'
+    const sourcePort = edge.sourcePort || 'out_1'
 
-// 撤销恢复的时候 同步处理 port的数据
-// 这是一个比较蛋疼的处理方式 port的节点数据无法和node的节点数据同步
-// 需要通过 portMap 来同步数据
-// port的变更 影响颇大 需要谨慎处理
-function handlePortChange(nodeId: string, portList: any) {
-  const node = workflowData.value.nodeList.find(n => n.id === nodeId)
-  // console.log('node===', node)
-  if (node) {
-    // 目前只有 if-else 会动态增减 outputData  后续如果要处理inputData 缓存里的数据也是有的
-    const outportList = portList.filter((p: any) => p.group === 'out')
-    const nodeDataOutput = node.outputData
-    const portIdList = outportList.map((p: any) => p.id)
-    const nodeDataIdList = nodeDataOutput.map((p: any) => p.portId)
-    // 删除 portIdList 中 不在 nodeDataOutput 中的 port
-    nodeDataOutput.forEach((p: any) => {
-      if (!portIdList.includes(p.portId)) {
-        node.outputData.splice(node.outputData.indexOf(p), 1)
-      }
-    })
-    // 添加 portIdList 中 不在 nodeDataOutput 中的 port 且按照 portList 的顺序添加
-    for (let i = 0; i < outportList.length; i++) {
-      const port = outportList[i]
-      if (!nodeDataIdList.includes(port.id)) {
-        const portData = portMap.get(port.uniqueId)
-        if (portData) {
-          node.outputData.splice(i, 0, portData)
-        }
-      }
+    if (edge.source.length > 10 || edge.target.length > 10) {
+      return
     }
-    // 这个是撤销入桩点的处理
-    const inportList = portList.filter((p: any) => p.group === 'in')
-    const portInIdList = inportList.map((p: any) => p.id)
-    // console.log('inportList==', portList, node.inputData, portInIdList)
-    node.inputData.forEach(item => {
-      if (portInIdList.includes(item.portId)) {
-        item.sourceType = 'node'
-      } else {
-        item.sourceType = 'input'
-      }
+
+    const x6Edge = graph.addEdge({
+      id: edge.id,
+      source: { cell: edge.source, port: sourcePort },
+      target: { cell: edge.target, port: targetPort }
     })
-    // 重新更新节点高度
-    onNodeDataUpdate(node)
+
+    // 添加这一行来根据距离更新连接线样式
+    updateEdgeConnectorBasedOnDistance(x6Edge)
+
+    // 验证边的类型兼容性并设置颜色
+    validateEdgeTypeAndSetColor(x6Edge, true)
+  })
+  // 4. 解析组合节点
+  if (data.groupList.length > 0 && groupManager) {
+    groupManager.decodeGroupData()
   }
+  graph.stopBatch('init-nodes-and-edges')
 }
 
 let removeNodeListener = null
@@ -958,6 +929,75 @@ function registerGraphFullEvents() {
   })
 }
 
+/**
+ * 刷新属性面板
+ */
+function refreshPanel(nodeIds: string[] = []) {
+  let nodeId = ''
+  const selectNodeId = selectedNodeData.value?.id || ''
+  if (nodeIds.length == 0 && selectNodeId) {
+    nodeId = selectNodeId
+  } else if (nodeIds.length == 1) {
+    nodeId = nodeIds[0]
+  } else {
+    return
+  }
+
+  if (nodeId) {
+    const found = workflowData.value.nodeList.find(n => n.id === nodeId)
+    if (found) {
+      clearSelection()
+      graph.select(nodeId)
+      selectedNodeData.value = found
+    }
+  }
+}
+
+// 撤销恢复的时候 同步处理 port的数据
+// 这是一个比较蛋疼的处理方式 port的节点数据无法和node的节点数据同步
+// 需要通过 portMap 来同步数据
+// port的变更 影响颇大 需要谨慎处理
+function handlePortChange(nodeId: string, portList: any) {
+  const node = workflowData.value.nodeList.find(n => n.id === nodeId)
+  // console.log('node===', node)
+  if (node) {
+    // 目前只有 if-else 会动态增减 outputData  后续如果要处理inputData 缓存里的数据也是有的
+    const outportList = portList.filter((p: any) => p.group === 'out')
+    const nodeDataOutput = node.outputData
+    const portIdList = outportList.map((p: any) => p.id)
+    const nodeDataIdList = nodeDataOutput.map((p: any) => p.portId)
+    // 删除 portIdList 中 不在 nodeDataOutput 中的 port
+    nodeDataOutput.forEach((p: any) => {
+      if (!portIdList.includes(p.portId)) {
+        node.outputData.splice(node.outputData.indexOf(p), 1)
+      }
+    })
+    // 添加 portIdList 中 不在 nodeDataOutput 中的 port 且按照 portList 的顺序添加
+    for (let i = 0; i < outportList.length; i++) {
+      const port = outportList[i]
+      if (!nodeDataIdList.includes(port.id)) {
+        const portData = portMap.get(port.uniqueId)
+        if (portData) {
+          node.outputData.splice(i, 0, portData)
+        }
+      }
+    }
+    // 这个是撤销入桩点的处理
+    const inportList = portList.filter((p: any) => p.group === 'in')
+    const portInIdList = inportList.map((p: any) => p.id)
+    // console.log('inportList==', portList, node.inputData, portInIdList)
+    node.inputData.forEach(item => {
+      if (portInIdList.includes(item.portId)) {
+        item.sourceType = 'node'
+      } else {
+        item.sourceType = 'input'
+      }
+    })
+    // 重新更新节点高度
+    onNodeDataUpdate(node)
+  }
+}
+
 // 在文件中添加以下函数，用于根据节点距离设置连接线样式
 function updateEdgeConnectorBasedOnDistance(edge: any) {
   const sourceCell = edge.getSourceCell()
@@ -1013,44 +1053,6 @@ function validateEdgeTypeAndSetColor(edge: any, isDecode: boolean = false) {
   if (edgeCorrectionManager) {
     edgeCorrectionManager.validateEdgeTypeAndSetColor(edge, isDecode)
   }
-}
-
-// 初始化节点和边
-function initNodesAndEdges(graph: any, data: WorkflowData) {
-  // 1. 解析生成节点
-  graph.startBatch('init-nodes-and-edges')
-  data.nodeList.forEach((node: any, _idx: number) => {
-    const rectNode = createX6Node(node)
-    graph.addNode(rectNode)
-  })
-  // 2. 需要先生成所有节点  再生成迭代器 确保子集节点可用
-
-  // 3. 解析生成边
-  data.edges.forEach((edge: any, _idx: number) => {
-    const targetPort = edge.targetPort || 'in_1'
-    const sourcePort = edge.sourcePort || 'out_1'
-
-    if (edge.source.length > 10 || edge.target.length > 10) {
-      return
-    }
-
-    const x6Edge = graph.addEdge({
-      id: edge.id,
-      source: { cell: edge.source, port: sourcePort },
-      target: { cell: edge.target, port: targetPort }
-    })
-
-    // 添加这一行来根据距离更新连接线样式
-    updateEdgeConnectorBasedOnDistance(x6Edge)
-
-    // 验证边的类型兼容性并设置颜色
-    validateEdgeTypeAndSetColor(x6Edge, true)
-  })
-  // 4. 解析组合节点
-  if (data.groupList.length > 0 && groupManager) {
-    groupManager.decodeGroupData()
-  }
-  graph.stopBatch('init-nodes-and-edges')
 }
 
 /**

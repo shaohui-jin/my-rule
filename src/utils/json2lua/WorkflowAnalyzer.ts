@@ -1,5 +1,6 @@
 import { LogicType, WorkflowData, WorkflowEdge, WorkflowNode } from '@/type/workflow'
 import { AnalysisResult, NodeAnalysis, BranchInfo } from './types'
+import { isIfElseNode } from '@/utils/type/node'
 
 // 执行顺序结果类型定义
 interface ExecutionOrderResult {
@@ -53,15 +54,11 @@ export class WorkflowAnalyzer {
     this.globalVarMapPath.clear()
   }
 
-  public isIfElseNode(node: WorkflowNode): boolean {
-    return node && node.funcType === 'logic' && node.logicData?.logicType === LogicType.IFELSE
-  }
-
   /**
    * 获取节点分析类型
    */
   private getNodeAnalysisType(node: WorkflowNode): 'normal' | 'condition' {
-    if (this.isIfElseNode(node)) {
+    if (isIfElseNode(node)) {
       return 'condition'
     }
     return 'normal'
@@ -366,7 +363,7 @@ export class WorkflowAnalyzer {
   ): { nearestId: string; allIds: string[] } | null {
     const node = this.nodeMap.get(nodeId)
     allIds.push(nodeId)
-    if (this.isIfElseNode(node) && incomingPort) {
+    if (isIfElseNode(node) && incomingPort) {
       return { nearestId: `${nodeId}_${incomingPort}`, allIds }
     }
     const inEdges = this.inEdgeMap.get(nodeId) || []
@@ -381,7 +378,7 @@ export class WorkflowAnalyzer {
   public findRootIfElseBranchIdByNodeId(nodeId: string): string | null {
     let rootIfElseId: string | null = null
     const node = this.nodeMap.get(nodeId)
-    if (this.isIfElseNode(node)) {
+    if (isIfElseNode(node)) {
       rootIfElseId = nodeId
     }
     const inEdges = this.inEdgeMap.get(nodeId) || []

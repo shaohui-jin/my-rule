@@ -170,9 +170,7 @@ export class LuaGenerator {
 
     // 声明主流程节点变量
     this.workflow.nodeList.forEach(node => {
-      const varName = this.analyzer.isIfElseNode(node)
-        ? `tempResult_${node.id}`
-        : `result_${node.id}`
+      const varName = isIfElseNode(node) ? `tempResult_${node.id}` : `result_${node.id}`
 
       if (!declaredVars.has(varName)) {
         code += `\tlocal ${varName}\n`
@@ -224,7 +222,7 @@ export class LuaGenerator {
         // 只生成主流程起点节点
         const node = this.analyzer.getNodeById(nodeId)
         if (node) {
-          if (this.analyzer.isIfElseNode(node)) {
+          if (isIfElseNode(node)) {
             code += this.generateIfElseBlock(node, 1, new Set())
           } else {
             code += this.generateNodeCode(node, 1, new Set())
@@ -400,7 +398,7 @@ export class LuaGenerator {
           const exitId = branch.exitNodes[0]
           const exitNode = this.analyzer.getNodeById(exitId)
           if (exitNode) {
-            const isExitNodeLogic = this.analyzer.isIfElseNode(exitNode)
+            const isExitNodeLogic = isIfElseNode(exitNode)
             if (this.analyzer.getNodeOutEdge(exitId).length > 0) {
               // 如果出口节点有后续边，则赋值
               code += `${Json2LuaUtil.indent(indent + 1)}${this.getNodeVarName(
@@ -761,12 +759,12 @@ export class LuaGenerator {
         const mergeVar = mergeDeclarations[i]
         mergeParts.push(mergeVar)
       }
-      const rstVar = this.getNodeVarName(lastNode.id, this.analyzer.isIfElseNode(lastNode))
+      const rstVar = this.getNodeVarName(lastNode.id, isIfElseNode(lastNode))
       const rstCode = mergeParts.join(' or ')
       return `\n\treturn ${rstCode} or ${rstVar}\n`
     }
 
-    const isIfElse = this.analyzer.isIfElseNode(lastNode)
+    const isIfElse = isIfElseNode(lastNode)
     if (isIfElse) {
       return `\n\treturn tempResult_${lastNode.id}\n`
     }
@@ -805,7 +803,7 @@ export class LuaGenerator {
     for (const descId of descendants) {
       if (localVisited.has(descId)) continue
       const descNode = this.analyzer.getNodeById(descId)
-      if (this.analyzer.isIfElseNode(descNode)) {
+      if (isIfElseNode(descNode)) {
         code += this.generateIfElseBlock(descNode, indent + 1, localVisited)
       } else {
         code += this.generateNodeCode(descNode, indent + 1, localVisited)
@@ -817,7 +815,7 @@ export class LuaGenerator {
     if (mergeVar) {
       // 取最后一个子孙节点的变量名
       const lastId = descendants.length > 0 ? descendants[descendants.length - 1] : nodeId
-      const isIfElse = this.analyzer.isIfElseNode(this.analyzer.getNodeById(lastId))
+      const isIfElse = isIfElseNode(this.analyzer.getNodeById(lastId))
       code += `${Json2LuaUtil.indent(indent + 1)}${mergeVar} = ${this.getNodeVarName(
         lastId,
         isIfElse

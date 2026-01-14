@@ -3,7 +3,7 @@ import { type WorkflowNode, LogicType, GroupNodeData } from '@/type/workflow'
 import { CustomNode, getCustomNodeConfig } from '@/utils/manager/CustomNodeManager'
 import { GroupNode } from '../workflow/GroupNode'
 
-export const createNewNode = (nodeData: WorkflowNode): Node => {
+export const createNewNode = (nodeData: WorkflowNode): CustomNode | WorkflowNode => {
   const newId = nodeIdFactory.next()
   // 创建新的节点数据
   const newNodeData: WorkflowNode = {
@@ -20,8 +20,7 @@ export const createNewNode = (nodeData: WorkflowNode): Node => {
   }
 
   // 使用NodeFactory创建X6节点
-  const x6Node = createX6Node(newNodeData)
-  return x6Node
+  return createX6Node(newNodeData)
 }
 
 // 创建函数节点
@@ -69,25 +68,16 @@ export function createFuncNode(funcMeta: any): WorkflowNode {
  * @param isPreview 是否为预览节点
  * @returns X6节点实例
  */
-export function createX6Node(nodeData: WorkflowNode, isPreview = false) {
+export const createX6Node = (nodeData: WorkflowNode, isPreview = false): CustomNode => {
   const config = getCustomNodeConfig(nodeData)
-  console.log('createX6Node', nodeData)
-  console.log('config', config)
+  console.log('createX6Node', nodeData, '转换后', config)
   const rectNode = new CustomNode({
-    id: config.id,
-    x: isPreview ? 0 : nodeData.pos?.x || 0,
-    y: isPreview ? 0 : nodeData.pos?.y || 0,
-    width: config.width,
-    height: config.height,
-    data: config.data,
-    attrs: config.attrs,
-    label: nodeData.title,
-    markup: config.markup,
-    ports: config.ports
+    ...config,
+    x: isPreview ? 0 : config.x || 0,
+    y: isPreview ? 0 : config.y || 0
   })
   // console.log('rectNode====', config, nodeData)
   if (nodeData.isCollapsed) {
-    // console.log('nodeData====', rectNode)
     rectNode.toggleCollapse()
   }
   return rectNode

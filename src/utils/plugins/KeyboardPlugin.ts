@@ -1,18 +1,18 @@
 import { Keyboard } from '@antv/x6'
 import type { Graph } from '@antv/x6'
 import { ElMessage } from 'element-plus'
-import { createNewNode, createX6Node } from '@/utils/factory/NodeFactory'
-import { LogicType, type WorkflowData, WorkflowNode } from '@/type/workflow'
+import { createNewNode } from '@/utils/factory/NodeFactory'
+import { type WorkflowData } from '@/type/workflow'
 import type { GroupManager } from '@/utils/workflow/GroupManager'
-import { unref } from 'vue'
+import { unref, Ref } from 'vue'
 
 // 全局变量保存复制的原始数据
 let copiedNodeData: any[] = []
 
-export function initKeyboard(
+export function registerKeyboardPlugins(
   graph: Graph,
   groupManager?: GroupManager,
-  workflowData?: WorkflowData
+  workflowData?: Ref<WorkflowData>
 ) {
   const keyboard = new Keyboard({
     enabled: true,

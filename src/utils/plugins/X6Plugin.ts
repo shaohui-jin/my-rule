@@ -8,7 +8,7 @@ import { MiniMap, History, Snapline, Clipboard, Selection } from '@antv/x6'
  * @param container 画布容器元素
  * @param minimapContainer 迷你图容器元素
  */
-export function registerPlugins(
+export function registerX6Plugins(
   graph: Graph,
   container: HTMLElement | undefined,
   minimapContainer: HTMLElement | undefined
