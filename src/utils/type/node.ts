@@ -1,6 +1,6 @@
-import { LogicType, WorkflowNode } from '@/type/workflow'
+import { Node } from '@antv/x6'
 
-// 判断是否迭代器
-export const isIterator = (node: WorkflowNode) => {
-  return node.funcType === 'logic' && node.logicData.logicType === LogicType.ITERATOR
+// 判断是否自定义
+export const isCustom = (node: Node) => {
+  return node.shape === 'customNode'
 }

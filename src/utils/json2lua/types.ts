@@ -65,7 +65,7 @@ export interface BranchInfo {
 
 // 节点分析信息
 export interface NodeAnalysis {
-  type: 'normal' | 'condition' | 'iterator' // 节点类型
+  type: 'normal' | 'condition' // 节点类型
   level: number // 节点层级
   branchInfo?: BranchInfo // 所属分支信息
   isMergePoint?: boolean // 是否是汇合点
@@ -74,11 +74,6 @@ export interface NodeAnalysis {
   localBranches?: string[] // 每条入边最近的ifelse分支ID
   rootBranches?: string[] // 每条入边最上游的ifelse分支ID
   branchSourceMap?: Record<string, string> // 分支ID -> 实际上游节点ID
-  // 新增迭代器相关字段
-  isIterator?: boolean // 是否是迭代器节点
-  parentIterator?: string // 父迭代器ID
-  isIteratorChild?: boolean // 是否是迭代器子节点
-  iteratorChildren?: string[] // 迭代器子节点ID列表
 }
 
 // 分析结果

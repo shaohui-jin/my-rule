@@ -368,21 +368,6 @@ const BaseFunctionNode: BaseFunctionNodeType[] = [
     }
   },
   {
-    funcId: '8',
-    type: LogicType.ITERATOR,
-    title: '迭代',
-    icon: 'I',
-    iconColor: '#faad14',
-    template: {
-      id: '',
-      funcType: 'logic',
-      logicData: { logicType: LogicType.ITERATOR, source: '', condition: '' },
-      title: '迭代',
-      remark: '对数组数据遍历',
-      ...BASE_NODE_CONFIG
-    }
-  },
-  {
     funcId: '9',
     type: LogicType.DIMENSION_CONVERTER,
     title: '数据转换',

@@ -334,7 +334,6 @@ onMounted(async () => {
 
   // 将调试函数挂载到window对象
   ;(window as any).debugLuaScript = debugLuaScript
-  ;(window as any).showDebug = false
 })
 
 onUnmounted(() => {
@@ -342,7 +341,6 @@ onUnmounted(() => {
   window.removeEventListener('beforeunload', handleBeforeUnload)
   // 清理window对象上的调试函数
   delete (window as any).debugLuaScript
-  delete (window as any).showDebug
 })
 
 // 工作流设计器组件引用

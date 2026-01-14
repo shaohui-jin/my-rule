@@ -1,18 +1,5 @@
 import type { Graph } from '@antv/x6'
 import { MiniMap, History, Snapline, Clipboard, Selection } from '@antv/x6'
-import * as dagre from 'dagre'
-
-// 内部管理selectionPlugin实例
-let selectionPluginInstance: any = null
-
-/**
- * 清除选中状态
- */
-export function clearSelectionPlugin() {
-  if (selectionPluginInstance) {
-    selectionPluginInstance.clean()
-  }
-}
 
 /**
  * 注册X6插件
@@ -87,7 +74,7 @@ export function registerPlugins(
   graph.use(new Clipboard({ enabled: true }))
 
   // 注册选中插件
-  selectionPluginInstance = new Selection({
+  const selectionPluginInstance = new Selection({
     enabled: true,
     multiple: true,
     rubberband: true,
@@ -132,77 +119,4 @@ export function registerPlugins(
     })
     graph.use(minimap)
   }
-}
-
-/**
- * 初始化布局功能
- * @param graph X6画布实例
- */
-export function initLayout(graph: Graph) {
-  // 一键布局功能
-  function layout() {
-    const layoutG = new dagre.graphlib.Graph()
-    layoutG.setGraph({
-      rankdir: 'LR', // 从左到右布局
-      nodesep: 120, // 节点间距
-      ranksep: 80 // 层级间距
-    })
-    layoutG.setDefaultEdgeLabel(() => ({}))
-
-    let nodes = graph.getNodes()
-    const edges = graph.getEdges()
-
-    nodes = nodes.filter((node: any) => !node.parent)
-
-    // 添加节点到dagre图
-    nodes.forEach((node: any) => {
-      layoutG.setNode(node.id, {
-        width: node.getSize().width,
-        height: node.getSize().height
-      })
-    })
-
-    // 添加边到dagre图
-    edges.forEach((edge: any) => {
-      layoutG.setEdge(edge.getSourceCellId(), edge.getTargetCellId())
-    })
-
-    // 计算布局
-    dagre.layout(layoutG)
-
-    graph.startBatch('layout')
-
-    // 应用布局结果
-    nodes.forEach((node: any) => {
-      const layoutNode = layoutG.node(node.id)
-      if (node && layoutNode) {
-        const tempPosition = node.getPosition()
-        node.setPosition(layoutNode.x - layoutNode.width / 2, layoutNode.y - layoutNode.height / 2)
-
-        if (node.shape === 'iteratorNode') {
-          // 移动后 迭代器的子项 需要同步修改父级移动的距离
-          const curPosition = node.getPosition()
-          const deltaX = tempPosition.x - curPosition.x
-          const deltaY = tempPosition.y - curPosition.y
-          const children = node.children
-          if (children) {
-            children.forEach((child: any) => {
-              if (child.isNode && child.isNode()) {
-                const childPos = child.getPosition()
-                child.setPosition(childPos.x - deltaX, childPos.y - deltaY)
-              }
-            })
-          }
-        }
-      }
-    })
-    // 布局后自动居中画布内容
-    graph.centerContent()
-    graph.stopBatch('layout')
-  }
-
-  // 将布局方法挂载到graph实例上
-  ;(graph as any).layout = layout
-
-  return { layout }
 }

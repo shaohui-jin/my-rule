@@ -64,32 +64,40 @@ import {
   computed,
   Ref
 } from 'vue'
-import { Graph, Shape } from '@antv/x6'
-import { Dnd } from '@antv/x6'
+import { Graph, Shape, Dnd } from '@antv/x6'
 import { InputData, LogicType, type WorkflowData, WorkflowNode } from '@/type/workflow'
-import { CustomNode, getCustomNodeConfig } from '@/utils/workflow/CustomNode'
-import { IteratorNode } from '@/utils/workflow/IteratorNode'
-import { createInfoPanelNode } from '@/utils/workflow/InfoPanelNode'
+import { CustomNodeManager, getCustomNodeConfig } from '@/utils/manager/CustomNodeManager'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import nodeIdFactory from '@/utils/factory/NodeIdFactory'
-import { createX6Node } from '@/utils/factory/NodeFactory'
-import { initKeyboard } from '@/utils/plugins/KeyboardPlugin'
 import WorkflowValidationModal from './panels/WorkflowValidationModal.vue'
-import { initLayout, registerPlugins, clearSelectionPlugin } from '@/utils/plugins/X6Plugin'
-import { WorkflowValidator, type ValidationError } from '@/utils/workflow/WorkflowValidator'
 import { LuaGenerator } from '@/utils/json2lua/LuaGenerator'
 import { FunctionNode } from '@/api/workflow/WorkFlowApi'
-import { EdgeCorrectionManager } from '@/utils/workflow/EdgeCorrectionManager'
-import { GroupManager } from '@/utils/workflow/GroupManager'
-import { IteratorManager } from '@/utils/workflow/IteratorManager'
 import { getLuaCodeMapByExpression } from '@/utils/expression'
-import { useRouter } from 'vue-router'
+
+import { WorkflowValidator, type ValidationError } from '@/utils/workflow/WorkflowValidator'
+import { EdgeCorrectionManager } from '@/utils/workflow/EdgeCorrectionManager'
+import { createInfoPanelNode } from '@/utils/workflow/InfoPanelNode'
+import { GroupManager } from '@/utils/workflow/GroupManager'
+
+import { createNewNode, createX6Node } from '@/utils/factory/NodeFactory'
+import nodeIdFactory from '@/utils/factory/NodeIdFactory'
+
+import { initKeyboard } from '@/utils/plugins/KeyboardPlugin'
+import { registerPlugins } from '@/utils/plugins/X6Plugin'
+import {
+  handleCollapse,
+  handleExport,
+  handleFit,
+  handleImport,
+  handleLayout,
+  handleNew,
+  handleRedo,
+  handleShowMiniMap,
+  handleUndo
+} from '@/utils/plugins/WorkflowPlugin'
+
 // 引入工具栏图片
 import Reset from '@/assets/ruleEditToolSvg/reset.svg'
-import Add from '@/assets/ruleEditToolSvg/add.svg'
 import Clear from '@/assets/ruleEditToolSvg/clear.svg'
-import Check from '@/assets/ruleEditToolSvg/check.svg'
-import Setting from '@/assets/ruleEditToolSvg/setting.svg'
 import SaveAs from '@/assets/ruleEditToolSvg/saveAs.svg'
 import Test from '@/assets/ruleEditToolSvg/test.svg'
 import Import from '@/assets/ruleEditToolSvg/import.svg'
@@ -98,19 +106,12 @@ import Recover from '@/assets/ruleEditToolSvg/recover.svg'
 import AdaptView from '@/assets/ruleEditToolSvg/adaptView.svg'
 import Browsing from '@/assets/ruleEditToolSvg/browsing.svg'
 import Collapse from '@/assets/ruleEditToolSvg/collapse.svg'
-import Decrease from '@/assets/ruleEditToolSvg/decrease.svg'
 import Expand from '@/assets/ruleEditToolSvg/expand.svg'
-import Increase from '@/assets/ruleEditToolSvg/increase.svg'
 import Layout from '@/assets/ruleEditToolSvg/layout.svg'
-import { useRuleStore } from '@/store/modules/ruleCache'
 import { BaseFunctionNodeType } from '@/store/modules/baseFunction'
-import {
-  defaultWorkflowFunction,
-  WorkflowActionPlugin,
-  WorkflowFunction
-} from '@/utils/plugins/WorkflowPlugin'
+
 import { MAX_DEVICE_PIXEL_RATIO, MIN_DEVICE_PIXEL_RATIO } from '@/config/workflow'
-import { Reactive } from '@vue/reactivity'
+import { isCustom } from '@/utils/type/node'
 
 /**
  * 组件属性定义
@@ -122,6 +123,7 @@ const props = defineProps<{
   functionNodes: Map<string, FunctionNode>
   nodeId: number
 }>()
+
 const emit = defineEmits([
   'update:data',
   'show-attr-panel',
@@ -144,8 +146,6 @@ const canUndo = ref(false)
 const canRedo = ref(false)
 const selectedNodeData = ref<any>(null)
 const workflowData = ref(props.data)
-const router = useRouter()
-const isDecode = ref(false)
 
 const showMiniMap = ref(false)
 
@@ -157,8 +157,7 @@ let dnd: any = null
 let edgeCorrectionManager: EdgeCorrectionManager
 // 分组管理器
 let groupManager: GroupManager
-// 迭代器管理器
-let iteratorManager: IteratorManager
+
 // 折叠状态
 const collapse = ref(false)
 
@@ -169,35 +168,30 @@ const canvasAction = ref([
     group: () => {
       return {
         content: collapse.value ? '一键展开' : '一键折叠',
-        fn: () => actionPlugin.handleCollapse(!collapse.value),
+        fn: () => handleCollapse(graph, workflowData, collapse, !collapse.value),
         comp: collapse.value ? Expand : Collapse
       }
     }
   },
-  { content: '适应视图', comp: AdaptView, fn: () => actionPlugin.handleFit() },
-  { content: '一键排列', comp: Layout, fn: () => actionPlugin.handleLayout() },
-  { content: '视图浏览', comp: Browsing, fn: () => actionPlugin.handleShowMiniMap() }
+  { content: '适应视图', comp: AdaptView, fn: () => handleFit(graph) },
+  { content: '一键排列', comp: Layout, fn: () => handleLayout(graph, workflowData) },
+  { content: '视图浏览', comp: Browsing, fn: () => handleShowMiniMap(showMiniMap) }
 ])
 
 // 流程工具栏
 const workflowAction = ref([
-  { txt: '撤销', comp: Reset, fn: () => actionPlugin.handleUndo() },
-  { txt: '恢复', comp: Recover, fn: () => actionPlugin.handleRedo() },
-  { txt: '清空', comp: Clear, fn: () => actionPlugin.handleNew(resetWorkflowData) },
+  { txt: '撤销', comp: Reset, fn: () => handleUndo(graph) },
+  { txt: '恢复', comp: Recover, fn: () => handleRedo(graph) },
+  { txt: '清空', comp: Clear, fn: () => handleNew(resetWorkflowData) },
   { txt: '另存为', comp: SaveAs, fn: () => handleSaveAs() },
-  { txt: '导入', comp: Import, fn: () => actionPlugin.handleImport(executeImport) },
-  { txt: '导出', comp: Export, fn: () => actionPlugin.handleExport(syncData) },
+  { txt: '导入', comp: Import, fn: () => handleImport(executeImport) },
+  { txt: '导出', comp: Export, fn: () => handleExport(workflowData, syncData) },
   { txt: '测试', comp: Test, fn: () => handleTest(), disabled: () => !props.data.id }
 ])
 
-// 工作流方法管理器
-let actionPlugin: Reactive<WorkflowFunction> = reactive(defaultWorkflowFunction)
-
 let resizeHandler: (() => void) | null = null
 
-/**
- * 组件挂载时初始化
- */
+// 组件挂载时初始化
 onMounted(() => {
   initGraph()
   resizeHandler = () => {
@@ -212,46 +206,63 @@ onMounted(() => {
   resizeHandler()
 })
 
-/**
- * 组件卸载时清理
- */
+// 组件卸载时清理
 onUnmounted(() => {
-  iteratorManager?.destroy()
   graph?.dispose()
   dnd?.dispose()
   if (resizeHandler) window.removeEventListener('resize', resizeHandler)
 })
 
+// /**
+//  * 监听工作流数据变化
+//  * 当props.data更新时同步到本地状态
+//  */
+// watch(
+//   () => props.data,
+//   val => {
+//     workflowData.value = val
+//     initNodesAndEdges(graph, val)
+//     // graph.centerContent()
+//   }
+// )
+// // 监听点击的节点
+// watch(
+//   () => props.nodeId,
+//   val => {
+//     if (val) {
+//       selectNodeOnly(val + '')
+//     }
+//     // graph.centerContent()
+//   }
+// )
+
 // 初始化X6画布
 const initGraph = () => {
-  if (!(window as any).__custom_node_registered) {
-    // 注册迭代器节点
-    Graph.registerNode('iteratorNode', IteratorNode, true)
-    Graph.registerNode('customNode', CustomNode, true)
-    ;(window as any).__custom_node_registered = true
-  }
+  const customNodeManager = new CustomNodeManager()
+  customNodeManager.initRegister()
+
   if (!container.value) return
 
   graph = new Graph({
     container: container.value,
-    panning: true,
-    grid: false,
-    autoResize: true,
-    scaling: { min: MIN_DEVICE_PIXEL_RATIO, max: MAX_DEVICE_PIXEL_RATIO },
+    panning: true, // 允许“拖拽空白区域平移画布”（手抓移动视图）。
+    grid: false, // 是否显示网格背景。false 表示不显示网格（也通常不启用吸附到网格）
+    autoResize: true, // 容器尺寸变化时自动调整画布尺寸（等价于监听容器 resize 并调用 graph.resize，你代码里也额外手动做了 resize，更稳）。
+    scaling: { min: MIN_DEVICE_PIXEL_RATIO, max: MAX_DEVICE_PIXEL_RATIO }, // 缩放限制，限制用户缩放视图的最小/最大倍率（防止缩太小/太大）。
     connecting: {
-      snap: true,
-      allowBlank: false,
-      allowLoop: false,
-      highlight: true,
+      snap: true, // 是否启用连线时吸附（例如吸附到端口/连接点），更容易连上。
+      allowBlank: false, // 是否允许在空白区域创建连接。false 表示不允许（一般不建议禁用，除非有特殊需求）。
+      allowLoop: false, // 是否允许自环（连接起点和终点是同一个节点）。false 表示不允许（一般不建议禁用，除非有特殊需求）。
+      highlight: true, // 是否高亮显示连接线。true 表示高亮显示（通常用于提示用户当前连接线是有效的）。
       router: {
-        name: 'manhattan',
+        name: 'manhattan', // 路由算法，可选值：'manhattan'（曼哈顿路由）、'vertical'（垂直路由）、'horizontal'（水平路由）、'orthogonal'（直角路由）、'radical'（放射路由）、'cubic'（立方路由）、'based'（基于距离的路由）。
         args: {
-          padding: 30
+          padding: 30 // 路由算法的参数，可选值：padding: 30（路由时与节点/连接点的间距）。
         }
       },
       connector: {
-        name: 'rounded',
-        args: { radius: 30 }
+        name: 'rounded', // 连接器类型，可选值：'rounded'（圆角连接器）、'bezier'（贝塞尔连接器）、'straight'（直线连接器）、'arc'（弧形连接器）、'smooth'（平滑连接器）、'orthogonal'（直角连接器）、'based'（基于距离的路由连接器）。
+        args: { radius: 30 } // 连接器类型的参数，可选值：radius: 30（圆角连接器的半径）。
       },
       // attrs: {
       //   line: {
@@ -259,9 +270,9 @@ const initGraph = () => {
       //     targetMarker: 'classic'
       //   }
       // },
-      connectionPoint: 'boundary',
+      connectionPoint: 'boundary', // 连接点类型，可选值：'boundary'（边界连接点）、'vertex'（顶点连接点）、'center'（中心连接点）、'label'（标签连接点）、'source'（源连接点）、'target'（目标连接点）。
       createEdge: () => new Shape.Edge(),
-      allowMulti: true,
+      allowMulti: true, // 是否允许多连接（例如一个节点有多个输出端口，可以连接到多个节点）。true 表示允许多连接（通常用于允许一个节点有多个输出端口）。
       validateConnection(args) {
         if (edgeCorrectionManager) {
           edgeCorrectionManager.edgePreviewColor(args)
@@ -287,46 +298,25 @@ const initGraph = () => {
         if (sourceNode.shape === 'groupNode' || targetNode.shape === 'groupNode') {
           return false
         }
-        // 迭代器的子节点 不允许连接到外面
-        const sourceParent = sourceNode.getParent()
-        const targetParent = targetNode.getParent()
-        if (
-          sourceParent &&
-          sourceParent.shape === 'iteratorNode' &&
-          (!targetParent || sourceParent.id !== targetParent.id)
-        ) {
-          return false
-        }
-        if (
-          targetParent &&
-          targetParent.shape === 'iteratorNode' &&
-          (!sourceParent || targetParent.id !== sourceParent.id)
-        ) {
-          return false
-        }
         return true
       }
     },
     interacting: {
-      nodeMovable: true,
-      edgeMovable: true,
-      vertexMovable: true,
-      vertexAddable: true,
-      vertexDeletable: true,
-      arrowheadMovable: true
+      nodeMovable: true, // 是否允许移动节点。true 表示允许移动节点（通常用于允许用户拖拽节点）。
+      edgeMovable: true, // 是否允许移动边。true 表示允许移动边（通常用于允许用户拖拽边）。
+      vertexMovable: true, // 是否允许移动顶点。true 表示允许移动顶点（通常用于允许用户拖拽顶点）。
+      vertexAddable: true, // 是否允许添加顶点。true 表示允许添加顶点（通常用于允许用户添加顶点）。
+      vertexDeletable: true, // 是否允许删除顶点。true 表示允许删除顶点（通常用于允许用户删除顶点）。
+      arrowheadMovable: true // 是否允许移动箭头。true 表示允许移动箭头（通常用于允许用户拖拽箭头）。
     },
     embedding: {
-      enabled: true,
+      enabled: true, // 是否启用节点嵌入。true 表示启用节点嵌入（通常用于允许用户将节点嵌入到其他节点中）。
       findParent({ node }) {
+        // 查找父节点，用于节点嵌入。
         const bbox = node.getBBox()
         return this.getNodes().filter(n => {
-          // 如果当前节点是迭代器节点，则不允许嵌套到其他迭代器中
-          if (node.shape === 'iteratorNode' && n.shape === 'iteratorNode') {
-            return false
-          }
-
-          // 只有分组节点和迭代器节点可以作为父节点
-          if ((n.shape !== 'groupNode' && n.shape !== 'iteratorNode') || n === node) {
+          // 只有分组节点和可以作为父节点
+          if (n.shape !== 'groupNode' || n === node) {
             return false
           }
 
@@ -337,11 +327,12 @@ const initGraph = () => {
     },
     highlighting: {
       embedding: {
-        name: 'stroke',
+        // 高亮显示节点嵌入。
+        name: 'stroke', // 高亮显示类型，可选值：'stroke'（描边高亮）、'fill'（填充高亮）、'both'（描边和填充高亮）。
         args: {
-          padding: -1,
+          padding: -1, // 高亮显示的间距，可选值：-1（不显示间距）。
           attrs: {
-            stroke: '#73d13d'
+            stroke: '#73d13d' // 高亮显示的颜色，可选值：'#73d13d'（绿色）、'#f56c6c'（红色）、'#409eff'（蓝色）。
           }
         }
       }
@@ -349,11 +340,6 @@ const initGraph = () => {
     // 桩点渲染的回调
     onPortRendered(args) {}
   })
-  // 注册插件
-  registerPlugins(graph, container.value, minimapContainer.value)
-
-  // 注册画布事件(预览模式下的基础功能)
-  registerGraphBaseEvents()
 
   // 初始化左侧拖拽插件
   dnd = new Dnd({
@@ -363,48 +349,27 @@ const initGraph = () => {
   })
   // 初始化错误边管理器
   edgeCorrectionManager = new EdgeCorrectionManager(graph, workflowData, directContectNode)
+
   initNodesAndEdges(graph, workflowData.value)
   // 初始化分组管理器
   groupManager = new GroupManager(graph, workflowData)
-  // 初始化迭代器管理器
-  iteratorManager = new IteratorManager(graph, workflowData)
-  // new CustomNode(graph, workflowData)
-  actionPlugin = new WorkflowActionPlugin(graph, workflowData, {
-    collapse,
-    showMiniMap
-  })
-  // 初始化布局插件
-  initLayout(graph)
+
+  // 注册插件
+  registerPlugins(graph, container.value, minimapContainer.value)
+  // 注册画布事件(预览模式下的基础功能)
+  registerGraphBaseEvents()
+
+  // 注册完整功能
+  registerGraphFullEvents()
+  // 初始化键盘插件
+  initKeyboard(graph, groupManager)
 
   console.log('初始化完毕')
   setTimeout(() => {
-    actionPlugin.handleFit()
-    handleRegister()
+    handleFit(graph)
   }, 100)
 }
 
-/**
- * 监听工作流数据变化
- * 当props.data更新时同步到本地状态
- */
-watch(
-  () => props.data,
-  val => {
-    workflowData.value = val
-    initNodesAndEdges(graph, val)
-    // graph.centerContent()
-  }
-)
-// 监听点击的节点
-watch(
-  () => props.nodeId,
-  val => {
-    if (val) {
-      selectNodeOnly(val + '')
-    }
-    // graph.centerContent()
-  }
-)
 /**
  * 刷新属性面板
  */
@@ -428,6 +393,7 @@ function refreshPanel(nodeIds: string[] = []) {
     }
   }
 }
+
 // 撤销恢复的时候 同步处理 port的数据
 // 这是一个比较蛋疼的处理方式 port的节点数据无法和node的节点数据同步
 // 需要通过 portMap 来同步数据
@@ -475,10 +441,7 @@ function handlePortChange(nodeId: string, portList: any) {
 
 let removeNodeListener = null
 
-/**
- * 注册画布事件
- * @param graph X6画布实例
- */
+// 注册画布事件
 function registerGraphBaseEvents() {
   // 监听历史记录变化
   graph.on('history:change', () => {
@@ -559,7 +522,7 @@ function registerGraphBaseEvents() {
     const outPortCount = node.getPorts().filter(e => e.id.includes('out')).length
     const outPortEdgeCount = graph.getEdges().filter(e => e.source.cell === node.id).length
 
-    if (node.shape === 'customNode' || node.shape === 'iteratorNode') {
+    if (isCustom(node)) {
       if (node.attr('border/strokeOpacity') !== 1) {
         node.attr('border/strokeOpacity', 1, { ignoreHistory: true })
       }
@@ -579,7 +542,7 @@ function registerGraphBaseEvents() {
 
   // 普通节点鼠标离开事件
   graph.on('node:mouseleave', ({ node, view }) => {
-    if (node.shape === 'customNode' || node.shape === 'iteratorNode') {
+    if (isCustom(node)) {
       if (node.attr('border/strokeOpacity') !== 0) {
         node.attr('border/strokeOpacity', 0, { ignoreHistory: true })
       }
@@ -606,31 +569,29 @@ function registerGraphBaseEvents() {
 
   // 监听节点变化
   graph.on('node:change:ports', ({ node }: { node: any }) => {
-    if (node.shape === 'customNode') {
+    if (isCustom(node)) {
       // console.log('我是监听桩点变化')
       // 如果节点是矩形节点 则添加到节点列表中
       if (!workflowData.value.nodeList.find((n: any) => n.id === node.data.id)) {
         node.data.pos = { x: node.getPosition().x, y: node.getPosition().y }
         workflowData.value.nodeList.push(node.data)
       }
-      // printLog(`=====================同步添加node数据 ${node.id}`)
     }
   })
 
   graph.on('node:added', ({ node }: { node: any }) => {
-    if (node.shape === 'customNode') {
+    if (isCustom(node)) {
       // 如果节点是矩形节点 则添加到节点列表中
       if (!workflowData.value.nodeList.find((n: any) => n.id === node.data.id)) {
         node.data.pos = { x: node.getPosition().x, y: node.getPosition().y }
         workflowData.value.nodeList.push(node.data)
       }
-      printLog(`=====================同步添加node数据 ${node.id}`)
     }
   })
 
   graph.on('node:change:position', ({ node }: { node: any }) => {
     // console.log('节点改变', node.id)
-    if (node.shape === 'customNode') {
+    if (isCustom(node)) {
       const nodeId = node.id
       const position = node.position()
       const nodeData = workflowData.value.nodeList.find(n => n.id === nodeId)
@@ -647,13 +608,12 @@ function registerGraphBaseEvents() {
   })
 
   graph.on('node:removed', ({ node }: { node: any }) => {
-    if (node.shape === 'customNode') {
+    if (isCustom(node)) {
       const nodeId = node.id
       const nodeData = workflowData.value.nodeList.find(n => n.id === nodeId)
       if (nodeData) {
         workflowData.value.nodeList.splice(workflowData.value.nodeList.indexOf(nodeData), 1)
       }
-      printLog(`=====================同步删除node数据 ${node.id}`)
     }
     // 不是气泡框的节点被删除时，取消选中
     if (node.shape !== 'infoPanelNode') {
@@ -675,12 +635,11 @@ function registerGraphBaseEvents() {
     }
     if (!workflowData.value.edges.find(e => e.id === newEdge.id)) {
       workflowData.value.edges.push(newEdge)
-      printLog(`=====================同步添加edge数据 ${newEdge.id}`)
     }
 
     // 如果连出边了 则清理源节点的 plus 显示
     const sourceNode = graph.getCellById(edge.getSourceCellId())
-    if (sourceNode && sourceNode.shape === 'customNode') {
+    if (sourceNode && isCustom(sourceNode)) {
       sourceNode.clearPortCount()
     }
 
@@ -701,7 +660,7 @@ function registerGraphBaseEvents() {
     const idx = workflowData.value.edges.findIndex(e => e.id === edge.id)
     if (idx !== -1) {
       workflowData.value.edges.splice(idx, 1)
-      printLog(`=====================同步删除edge数据 ${edge.id}`)
+      console.log(`=====================同步删除edge数据 ${edge.id}`)
     }
     // 同步清理节点的数据
     let node = workflowData.value.nodeList.find(n => n.id === sourceNodeId)
@@ -822,12 +781,7 @@ function registerGraphBaseEvents() {
   })
 
   // 连接桩鼠标悬停事件
-  graph.on('node:port:mouseenter', ({ node, port }: { node: any; port: any }) => {
-    // console.log('连接桩鼠标悬停事件  mouseenter', node, port)
-    // if (node && node.shape === 'customNode' && port && port.indexOf('out') != -1) {
-    //   node.showHidePortPlus(port, true)
-    // }
-  })
+  graph.on('node:port:mouseenter', ({ node, port }: { node: any; port: any }) => {})
 
   // 连接桩鼠标离开事件
   graph.on('node:port:mouseleave', ({ node, port }: { node: any; port: any }) => {
@@ -840,20 +794,7 @@ function registerGraphBaseEvents() {
   // 连接桩点击事件
   graph.on(
     'node:port:click',
-    ({ node, port, x, y }: { node: any; port: any; x: number; y: number }) => {
-      // if (node && node.shape === 'customNode' && port && port.indexOf('out') != -1) {
-      //   const isSelect = node.showSearchCheck(port)
-      //   if (isSelect) {
-      //     // 显示搜索页面
-      //     const clientCoords = graph.localToClient(x, y)
-      //     emit('show-search-modal', { x: clientCoords.x + 10, y: clientCoords.y, nodeId: node.id, portId: port, fromEdgeAdd: false, fromBlankAdd: false })
-      //     setTimeout(() => {
-      //       clearSelection()
-      //       onNodeSelected(null)
-      //     }, 10);
-      //   }
-      // }
-    }
+    ({ node, port, x, y }: { node: any; port: any; x: number; y: number }) => {}
   )
 }
 
@@ -872,26 +813,6 @@ function registerGraphFullEvents() {
     })
   })
 
-  function createNewNode(nodeData: WorkflowNode): Node {
-    const newId = nodeIdFactory.next()
-    // 创建新的节点数据
-    const newNodeData: WorkflowNode = {
-      ...nodeData,
-      id: newId,
-      pos: {
-        x: nodeData.pos?.x || 0,
-        y: (nodeData.pos?.y || 0) + 120
-      },
-      inputData: nodeData.inputData.map(input => ({
-        ...input,
-        source: input.sourceType === 'node' ? '' : input.source
-      }))
-    }
-
-    // 使用NodeFactory创建X6节点
-    const x6Node = createX6Node(newNodeData)
-    return x6Node
-  }
   // 复制节点事件
   graph.on('node:copy_mouseenter', ({ node, e }) => {
     let copiedNodeData: any[] = []
@@ -911,24 +832,10 @@ function registerGraphFullEvents() {
     }
 
     try {
-      let hasIterator = false
-      selectedNodes.map((node: any) => {
-        if (node.shape === 'iteratorNode') {
-          hasIterator = true
-        }
-      })
-      if (hasIterator) {
-        iteratorManager.syncIteratorData()
-      }
-
       // 保存原始节点数据
       copiedNodeData = selectedNodes.map((node: any) => {
-        let nodeData
-        if (node.shape === 'iteratorNode') {
-          nodeData = iteratorManager.getIteratorData(node.id)
-        } else {
-          nodeData = node.data || {}
-        }
+        let nodeData = node.data || {}
+
         return {
           ...nodeData,
           pos: {
@@ -952,31 +859,9 @@ function registerGraphFullEvents() {
       // 根据原始数据重新生成节点
       copiedNodeData.forEach((nodeData: any) => {
         try {
-          if (nodeData.logicData?.logicType === LogicType.ITERATOR) {
-            // 迭代器 特殊处理
-            // 1 先生成迭代器的子项
-            const newChildList = []
-            const oldChildList = []
-            nodeData.children.forEach((childId: string) => {
-              const childNode = graph.getCellById(childId)
-              if (
-                childNode &&
-                childNode.data &&
-                childNode.data.logicData?.logicType !== LogicType.ITERATOR_START
-              ) {
-                const x6Node = createNewNode(childNode.data)
-                graph.addNode(x6Node)
-                newChildList.push((x6Node as any)?.id || '')
-                oldChildList.push(childId)
-              }
-            })
-            // 2 再生成迭代器
-            iteratorManager.copyIteratorData(nodeData, newChildList, oldChildList)
-          } else {
-            const x6Node = createNewNode(nodeData)
-            // 添加到画布
-            graph.addNode(x6Node)
-          }
+          const x6Node = createNewNode(nodeData)
+          // 添加到画布
+          graph.addNode(x6Node)
         } catch (error) {
           console.warn('重新生成节点失败:', error)
         }
@@ -1073,16 +958,6 @@ function registerGraphFullEvents() {
   })
 }
 
-/**
- * 点击编辑后的注册剩余事件
- */
-const handleRegister = () => {
-  // 注册完整功能
-  registerGraphFullEvents()
-  // 初始化键盘插件
-  initKeyboard(graph, groupManager, iteratorManager)
-}
-
 // 在文件中添加以下函数，用于根据节点距离设置连接线样式
 function updateEdgeConnectorBasedOnDistance(edge: any) {
   const sourceCell = edge.getSourceCell()
@@ -1133,43 +1008,23 @@ function updateEdgeConnectorBasedOnDistance(edge: any) {
   }
 }
 
-function printLog(msg: string) {
-  if ((window as any).showDebug) {
-    console.log(msg)
-  }
-}
-
-/**
- * 验证边的类型兼容性并设置颜色
- * @param edge 边对象
- */
-function validateEdgeTypeAndSetColor(edge: any) {
+// 验证边的类型兼容性并设置颜色, 初始化是 isDecode 为 true 不增加数据转换节点
+function validateEdgeTypeAndSetColor(edge: any, isDecode: boolean = false) {
   if (edgeCorrectionManager) {
-    edgeCorrectionManager.validateEdgeTypeAndSetColor(edge, isDecode.value)
+    edgeCorrectionManager.validateEdgeTypeAndSetColor(edge, isDecode)
   }
 }
 
-/**
- * 初始化节点和边
- * @param graph X6画布实例
- * @param data 工作流数据
- */
+// 初始化节点和边
 function initNodesAndEdges(graph: any, data: WorkflowData) {
-  // console.log('data====', data)
   // 1. 解析生成节点
   graph.startBatch('init-nodes-and-edges')
-  isDecode.value = true
   data.nodeList.forEach((node: any, _idx: number) => {
-    if (node.logicData?.logicType === LogicType.ITERATOR) {
-      return
-    }
     const rectNode = createX6Node(node)
     graph.addNode(rectNode)
   })
   // 2. 需要先生成所有节点  再生成迭代器 确保子集节点可用
-  if (iteratorManager) {
-    iteratorManager.decodeIteratorData()
-  }
+
   // 3. 解析生成边
   data.edges.forEach((edge: any, _idx: number) => {
     const targetPort = edge.targetPort || 'in_1'
@@ -1189,13 +1044,12 @@ function initNodesAndEdges(graph: any, data: WorkflowData) {
     updateEdgeConnectorBasedOnDistance(x6Edge)
 
     // 验证边的类型兼容性并设置颜色
-    validateEdgeTypeAndSetColor(x6Edge)
+    validateEdgeTypeAndSetColor(x6Edge, true)
   })
   // 4. 解析组合节点
   if (data.groupList.length > 0 && groupManager) {
     groupManager.decodeGroupData()
   }
-  isDecode.value = false
   graph.stopBatch('init-nodes-and-edges')
 }
 
@@ -1609,12 +1463,7 @@ function directContectNode(node: BaseFunctionNodeType, data: any) {
   const x6Node = createX6Node(nodeData, true)
 
   if (x6Node) {
-    if (nodeData?.logicData?.logicType === LogicType.ITERATOR) {
-      // 需要模拟一下拖拽的流程 确保生成开始节点
-      graph.addNode(x6Node, { stencil: 'v5' })
-    } else {
-      graph.addNode(x6Node)
-    }
+    graph.addNode(x6Node)
     if (data.fromBlankAdd) {
       x6Node.position(data.fromBlankX, data.fromBlankY)
       graph.stopBatch('directContectNode')
@@ -1667,7 +1516,7 @@ function onNodeSelected(nodeData: any) {
  */
 function clearSelection() {
   if (graph) {
-    clearSelectionPlugin()
+    graph.getPlugin('selection').clean()
     graph.unselect()
   }
 }
@@ -1706,13 +1555,10 @@ function syncData() {
   if (groupManager) {
     groupManager.syncGroupData()
   }
-  if (iteratorManager) {
-    iteratorManager.syncIteratorData()
-  }
   // console.log('this.workflowData.value===', )
-  workflowData.value.nodeList.forEach(iteratorData => {
-    const iteratorNode = graph.getCellById(iteratorData.id) as any
-    iteratorData.isCollapsed = iteratorNode.isCollapsed
+  workflowData.value.nodeList.forEach(node => {
+    const _node = graph.getCellById(node.id) as any
+    node.isCollapsed = _node.isCollapsed
   })
 }
 
@@ -1728,54 +1574,7 @@ function getAvailableSourceOptions(node: any, param: any) {
     const sourceNode = workflowData.value.nodeList.find(n => n.id === curEdgeSourceId)
     // console.log('sourceNode===', sourceNode)
     if (!sourceNode) {
-      const iteratorNodeId = iteratorManager.getStartNodeParentId(curEdgeSourceId)
       // 如果上游是迭代器的开始节点 则按迭代器的上游算
-      if (iteratorNodeId !== -1) {
-        // 获取迭代器的主迭代对象
-        const mainNodeSource = iteratorManager.getIteratorMainSource(iteratorNodeId)
-        // 获取迭代器的入边
-        const IteratorEdges = workflowData.value.edges.filter(e => e.target === iteratorNodeId)
-        for (const edge of IteratorEdges) {
-          let itSourceNode = workflowData.value.nodeList.find(n => n.id === edge.source)
-          if (!itSourceNode) return
-          // 常规节点
-          let edgeSource = itSourceNode.id
-          // 条件节点 需要往上找
-          if (
-            itSourceNode.funcType === 'logic' &&
-            itSourceNode.logicData.logicType === LogicType.IFELSE
-          ) {
-            const upstreamNodes = findUpstreamNodes(edge.source, true, workflowData, new Set())
-            itSourceNode = upstreamNodes[0].node
-            edgeSource = upstreamNodes[0].node.id
-          }
-          // 匹配的到主迭代器对象的source 那么就是当前迭代项的源数据
-          if (mainNodeSource === edgeSource) {
-            // 迭代子项 这里配合lua转换器的逻辑 如果选择的节点是父节点指定的迭代主体
-            // 那么这里就将source 指向开始节点的id
-            // lua代码生成器 会将开始节点默认接一下遍历的item 这样子节点 就能套用原有的通过source获取实际参数名的逻辑
-            options.push({
-              label: `${itSourceNode?.title || curEdgeSourceId} [迭代项]`,
-              value: curEdgeSourceId,
-              currentLabel: e.targetPort === param.portId ? param.attributes?.label : '',
-              currentPort: e.targetPort,
-              currentId: node.id,
-              currentSource: e.source
-            })
-          } else {
-            // 迭代的多个入参 也允许选择
-            options.push({
-              label: itSourceNode?.title || edgeSource,
-              value: edgeSource,
-              currentLabel: e.targetPort === param.portId ? param.attributes?.label : '',
-              currentPort: e.targetPort,
-              currentId: node.id,
-              currentSource: e.source
-            })
-          }
-        }
-        return options
-      }
       // 默认找不到就直接返回
       return
     }
@@ -1835,19 +1634,6 @@ function findUpstreamNodes(nodeId, isFromCondition, workflowData, visited) {
   const edges = workflowData.value.edges || []
   const node = nodeList.find(n => n.id === nodeId)
   if (!node) {
-    const iteratorNodeId = iteratorManager.getStartNodeParentId(nodeId)
-    if (iteratorNodeId !== -1) {
-      const mainNodeSource = iteratorManager.getIteratorMainSource(iteratorNodeId)
-      const mianIteratorNode = workflowData.value.nodeList.find(n => n.id === mainNodeSource)
-      if (mianIteratorNode) {
-        return [
-          {
-            node: { title: `${mianIteratorNode?.title || mainNodeSource} [迭代项]`, id: nodeId },
-            isFromCondition: true
-          }
-        ]
-      }
-    }
     console.error('findUpstreamNodes 未找到节点', nodeId)
     return []
   }
@@ -1977,8 +1763,6 @@ function handleValidationNodeSelect(nodeId: string) {
 }
 
 defineExpose({
-  handleFit: actionPlugin.handleFit,
-  handleLayout: actionPlugin.handleLayout,
   resetWorkflowData,
   startDragPreview,
   addPortData,

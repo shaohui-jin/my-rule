@@ -7,7 +7,6 @@ import { GlobalVariable } from './GlobalVariable'
 import { TypeConverter } from './TypeConverter'
 import { DimensionConverter } from './DimensionConverter'
 import { BranchInfo, NodeAnalysis } from './types'
-import { getStartNodeId } from '../workflow/IteratorManager'
 import { Calculator } from './Calculator'
 import { Json2LuaUtil } from './Json2LuaUtil'
 
@@ -227,8 +226,6 @@ export class LuaGenerator {
         if (node) {
           if (this.analyzer.isIfElseNode(node)) {
             code += this.generateIfElseBlock(node, 1, new Set())
-          } else if (analysis.type === 'iterator') {
-            code += this.generateIteratorBlock(node, 1, new Set())
           } else {
             code += this.generateNodeCode(node, 1, new Set())
           }
@@ -404,8 +401,7 @@ export class LuaGenerator {
           const exitNode = this.analyzer.getNodeById(exitId)
           if (exitNode) {
             const isExitNodeLogic = this.analyzer.isIfElseNode(exitNode)
-            const isIteratorChild = this.nodeAnalysis.get(exitId)?.isIteratorChild
-            if (this.analyzer.getNodeOutEdge(exitId).length > 0 || isIteratorChild) {
+            if (this.analyzer.getNodeOutEdge(exitId).length > 0) {
               // 如果出口节点有后续边，则赋值
               code += `${Json2LuaUtil.indent(indent + 1)}${this.getNodeVarName(
                 logicId,
@@ -462,8 +458,6 @@ export class LuaGenerator {
     } else if (analysis.type === 'condition') {
       // 条件分支固定是 condition 类型
       code += this.generateIfElseBlock(node, indent, generated, branchContext)
-    } else if (analysis.type === 'iterator') {
-      code += this.generateIteratorBlock(node, indent, generated, branchContext)
     }
     return code
   }
@@ -787,102 +781,6 @@ export class LuaGenerator {
   // 工具函数：将连字符转换为下划线
   private convertToLuaVarName(name: string): string {
     return name.replace(/-/g, '_')
-  }
-
-  // 新增：生成迭代器代码块
-  private generateIteratorBlock(
-    node: WorkflowNode,
-    indent: number,
-    generated: Set<string>,
-    branchContext?: any
-  ): string {
-    if (!node) return ''
-    let code = `${Json2LuaUtil.indent(indent)}-- 迭代器：${node.title}\n`
-
-    // 获取输入参数
-    const dataParam = this.getIteratorInputParam(node.id)
-    const resultVar = this.getNodeVarName(node.id, false)
-    const dataSource = dataParam.source
-    const targetVar = this.getArgParamName(dataSource, false, null, null)
-
-    // 生成迭代器代码
-    code += `${Json2LuaUtil.indent(indent)}${resultVar} = {}\n`
-    code += `${Json2LuaUtil.indent(indent)}if ${targetVar} and type(${targetVar}) == "table" then\n`
-    code += `${Json2LuaUtil.indent(indent)}\tfor i, item in ipairs(${targetVar}) do\n`
-    code += `${Json2LuaUtil.indent(indent)}\t\tlocal result_${getStartNodeId(node.id)} = item \n`
-
-    // 生成迭代器内部节点代码
-    const internalCode = this.generateIteratorInternalCode(
-      node,
-      indent + 2,
-      generated,
-      branchContext
-    )
-    code += internalCode.code
-
-    // 生成迭代汇总的逻辑
-    const endResultVar = this.getNodeVarName(internalCode.lastNodeId, internalCode.isConditionNode)
-    code += `${Json2LuaUtil.indent(indent)}\t\ttable.insert(${resultVar}, ${endResultVar})\n`
-    code += `${Json2LuaUtil.indent(indent)}\tend\n`
-    code += `${Json2LuaUtil.indent(indent)}end\n`
-
-    // 在测试模式下，为特定逻辑节点添加记录日志
-    if (this.isGenerateTestLuaScript && code && this.shouldRecordLogicNode(node)) {
-      code += `${Json2LuaUtil.indent(indent)}exec.logic_and_log(func_step_logs, ${
-        node.id
-      }, ${resultVar})\n`
-    }
-
-    return code
-  }
-
-  // 新增：生成迭代器内部代码
-  private generateIteratorInternalCode(
-    iteratorNode: WorkflowNode,
-    indent: number,
-    generated: Set<string>,
-    branchContext?: any
-  ): { code: string; lastNodeId: string; isConditionNode: boolean } {
-    if (!iteratorNode) return { code: '', lastNodeId: '', isConditionNode: false }
-
-    const internalExecutionOrder = this.analyzer.getIteratorExecutionOrders(iteratorNode.id)
-    let lastNodeId = ''
-    let isConditionNode = false
-    let code = ''
-
-    // 按执行顺序生成内部节点代码
-    for (const childId of internalExecutionOrder) {
-      const childNode = this.analyzer.getNodeById(childId)
-      if (!childNode) continue
-
-      const analysis = this.nodeAnalysis.get(childId)
-      if (!analysis) continue
-      lastNodeId = childId
-      // 生成内部节点代码
-      if (analysis.type === 'condition') {
-        code += this.generateNodeCode(childNode, indent, generated, branchContext)
-        // 迭代器的第一层逻辑里 有且只有一个条件节点  其余的应该在条件节点内部生成
-        isConditionNode = true
-        break
-      } else {
-        code += this.generateNodeCode(childNode, indent, generated, branchContext)
-      }
-    }
-
-    return { code, lastNodeId, isConditionNode }
-  }
-
-  // 新增：获取迭代器输入参数
-  private getIteratorInputParam(iteratorId: string): any {
-    // 这里需要根据实际的迭代器节点数据结构来获取输入参数
-    // 可能需要从 WorkflowNode 中查找对应的迭代器节点
-    const iteratorNode = this.analyzer.getIteratorById(iteratorId)
-
-    if (iteratorNode && iteratorNode.inputData) {
-      return iteratorNode.inputData.find(input => input.paramName === 'mainNode')
-    }
-
-    return null
   }
 
   // 新增：生成不同源分支汇合点的 if flag...then 结构

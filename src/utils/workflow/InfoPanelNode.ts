@@ -2,7 +2,6 @@ import { Graph, Node } from '@antv/x6'
 
 const MAX_WIDTH = 300 // 气泡最大宽度
 const TOOLTIP_DOUBLE_PADDING = 16 // 提示框内文字左右内边距(双倍的)，原因见X6文档
-const BASE_OFFSET = 8 // 基础偏移量，防止换行不成功
 const BASE_FONT_SIZE = 14
 
 export class InfoPanelNode extends Node {
@@ -14,20 +13,23 @@ export class InfoPanelNode extends Node {
   public setInfoContent(content: any) {
     if (!content || !content.desc) return false
 
-    const { node, refX, refX2, refY: offsetY,  } = content
+    const { node, refX, refX2, refY: offsetY } = content
 
     // 根据canvas算宽度截取文案换行
     let desc = this.setLineBreaks(content.desc, MAX_WIDTH - TOOLTIP_DOUBLE_PADDING)
 
     // 计算行数, 防止部分行存在过多的符号
-    const lineCount = desc.split('\n').filter(Boolean).reduce((acc, cur) => {
-      if (cur.length > 0 && cur.length < Math.ceil(MAX_WIDTH / BASE_FONT_SIZE) + 2) {
-        acc += 1
-      } else if (cur.length >= Math.ceil(MAX_WIDTH / BASE_FONT_SIZE) + 2) {
-        acc += 2
-      }
-      return acc
-    }, 0);
+    const lineCount = desc
+      .split('\n')
+      .filter(Boolean)
+      .reduce((acc, cur) => {
+        if (cur.length > 0 && cur.length < Math.ceil(MAX_WIDTH / BASE_FONT_SIZE) + 2) {
+          acc += 1
+        } else if (cur.length >= Math.ceil(MAX_WIDTH / BASE_FONT_SIZE) + 2) {
+          acc += 2
+        }
+        return acc
+      }, 0)
 
     // 设置位置（相对于触发节点）
     const sourcePosition = node.getPosition()
@@ -57,34 +59,38 @@ export class InfoPanelNode extends Node {
   }
 
   // 处理字符串，增加换行
-  public setLineBreaks(str: string, maxWidth: number, font: string = `${BASE_FONT_SIZE}px "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "微软雅黑", Arial, sans-serif`) {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return str;
-    ctx.font = font;
+  public setLineBreaks(
+    str: string,
+    maxWidth: number,
+    font: string = `${BASE_FONT_SIZE}px "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "微软雅黑", Arial, sans-serif`
+  ) {
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return str
+    ctx.font = font
     let result = ''
     const _breakText = (str: string, maxWidth: number) => {
-      let _result = '';
-      let _currentLine = '';
+      let _result = ''
+      let _currentLine = ''
       for (let i = 0; i < str.length; i++) {
-        const char = str[i];
-        const testLine = _currentLine + char;
-        const metrics = ctx.measureText(testLine);
+        const char = str[i]
+        const testLine = _currentLine + char
+        const metrics = ctx.measureText(testLine)
         if (metrics.width > maxWidth && _currentLine !== '') {
-          _result += _currentLine + '\n';
-          _currentLine = char;
+          _result += _currentLine + '\n'
+          _currentLine = char
         } else {
-          _currentLine = testLine;
+          _currentLine = testLine
         }
       }
-      _result += _currentLine;
-      return _result;
+      _result += _currentLine
+      return _result
     }
     const arr = str.split('\n')
     arr.forEach(e => {
       result += _breakText(e, maxWidth) + '\n'
     })
-    return result;
+    return result
   }
 }
 
@@ -128,8 +134,8 @@ export function createInfoPanelNode(options: any = {}) {
         points: '-4,0 4,0 0,8',
         fill: '#303133',
         strokeWidth: 1,
-        refX: -8,  // 相对于body的x偏移
-        refY: 20,  // 相对于body的y偏移
+        refX: -8, // 相对于body的x偏移
+        refY: 20, // 相对于body的y偏移
         zIndex: 999
       },
       description: {
@@ -143,7 +149,7 @@ export function createInfoPanelNode(options: any = {}) {
         textVerticalAnchor: 'top',
         textWrap: {
           width: '100%',
-          height:  '100%',
+          height: '100%',
           breakWord: 'break-all'
         },
         zIndex: 1002
@@ -157,3 +163,16 @@ export function createInfoPanelNode(options: any = {}) {
     }
   })
 }
+
+// export class InfoPanelManager extends Node {
+//   constructor() {}
+//
+//   private initRegister(): void {
+//     const that = this
+//
+//     Graph.registerNode('infoPanelNode', {
+//
+//       onClick({ view }) { ... },
+//     }, true)
+//   }
+// }

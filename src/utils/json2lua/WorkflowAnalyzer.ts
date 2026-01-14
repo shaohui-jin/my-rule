@@ -1,11 +1,9 @@
 import { LogicType, WorkflowData, WorkflowEdge, WorkflowNode } from '@/type/workflow'
 import { AnalysisResult, NodeAnalysis, BranchInfo } from './types'
-import { getStartNodeId } from '../workflow/IteratorManager'
 
 // 执行顺序结果类型定义
 interface ExecutionOrderResult {
   main: string[] // 主链路执行路径
-  [iteratorId: string]: string[] // 迭代器ID -> 执行路径的映射
 }
 
 export class WorkflowAnalyzer {
@@ -21,8 +19,6 @@ export class WorkflowAnalyzer {
   private nodeMap: Map<string, WorkflowNode>
   private outEdgeMap: Map<string, Array<any>>
   private inEdgeMap: Map<string, Array<any>>
-  private iteratorMap: Map<string, WorkflowNode>
-  private iteratorRelateMap: Map<string, string[]>
 
   private diffMergePointCache: Map<string, string[]>
   private executionOrderResult: ExecutionOrderResult
@@ -35,8 +31,6 @@ export class WorkflowAnalyzer {
     this.branchNodeCache = new Map()
     this.mergePointCache = new Map()
     this.globalVarMapPath = new Map()
-    this.iteratorMap = new Map()
-    this.iteratorRelateMap = new Map()
     // 新增初始化
     this.nodeMap = new Map()
     this.outEdgeMap = new Map()
@@ -66,12 +60,9 @@ export class WorkflowAnalyzer {
   /**
    * 获取节点分析类型
    */
-  private getNodeAnalysisType(node: WorkflowNode): 'normal' | 'condition' | 'iterator' {
+  private getNodeAnalysisType(node: WorkflowNode): 'normal' | 'condition' {
     if (this.isIfElseNode(node)) {
       return 'condition'
-    }
-    if (node.logicData?.logicType === LogicType.ITERATOR) {
-      return 'iterator'
     }
     return 'normal'
   }
@@ -94,17 +85,9 @@ export class WorkflowAnalyzer {
     this.processMergePoints()
     // 6. 处理全局参数的逻辑 -会修改执行路径
     executionOrder = this.processGlobalVarPath(executionOrder)
-    // 7. 处理迭代器内部的全局参数 -会修改执行路径
-    this.iteratorMap.forEach((_, iteratorId) => {
-      const iteratorExecutionOrders = this.getIteratorExecutionOrders(iteratorId)
-      if (iteratorExecutionOrders) {
-        const newIteratorExecutionOrders = this.processGlobalVarPath(iteratorExecutionOrders)
-        this.executionOrderResult[iteratorId] = newIteratorExecutionOrders
-      }
-    })
-    // 8. 处理不同源汇合点的特殊逻辑
+    // 7. 处理不同源汇合点的特殊逻辑
     this.processDifferentSourceMerge()
-    // 9. 打印分析结果
+    // 8. 打印分析结果
     this.printAnalysis()
 
     return {
@@ -126,7 +109,6 @@ export class WorkflowAnalyzer {
   }
 
   private initNodeMap(): void {
-    const iteratorStartNodes: string[] = []
     // 通用节点初始化
     for (const node of this.workflow.nodeList) {
       this.nodeMap.set(node.id, node)
@@ -134,37 +116,16 @@ export class WorkflowAnalyzer {
       this.inEdgeMap.set(node.id, [])
       // 先批量初始化所有 nodeAnalysis
       const nodeType = this.getNodeAnalysisType(node)
-      if (nodeType !== 'iterator') {
-        this.nodeAnalysis.set(node.id, {
-          type: nodeType,
-          level: 0 // 临时层级，后续会计算
-        })
 
-        // 如果是条件节点，则创建自己的子分支
-        if (nodeType === 'condition') {
-          this.buildBranchBase(node)
-        }
-      }
-    }
-
-    // 初始化迭代器节点 节点关系梳理需要明确迭代器和其他节点的父子关系，所以这里需要在上面之后 再额外处理
-    for (const iteratorNode of this.workflow.nodeList) {
-      if (iteratorNode.logicData?.logicType !== LogicType.ITERATOR) continue
-
-      this.nodeAnalysis.set(iteratorNode.id, {
-        type: 'iterator',
-        level: 0,
-        isIterator: true,
-        iteratorChildren: iteratorNode.children || []
+      this.nodeAnalysis.set(node.id, {
+        type: nodeType,
+        level: 0 // 临时层级，后续会计算
       })
-      // 初始化迭代器内部子节点的分析
-      this.initIteratorChildrenAnalysis(iteratorNode)
-      // 记录迭代器开始节点ID
-      iteratorStartNodes.push(getStartNodeId(iteratorNode.id))
-      // 记录迭代器节点与子节点关系
-      this.iteratorRelateMap.set(iteratorNode.id, [])
-      // 单独再记录迭代器节点与子节点关系
-      this.iteratorMap.set(iteratorNode.id, iteratorNode)
+
+      // 如果是条件节点，则创建自己的子分支
+      if (nodeType === 'condition') {
+        this.buildBranchBase(node)
+      }
     }
 
     // 初始化边关系
@@ -177,31 +138,6 @@ export class WorkflowAnalyzer {
         this.outEdgeMap.get(edge.source)!.push(edge)
       }
     }
-  }
-
-  /**
-   * 初始化迭代器内部子节点的分析
-   */
-  private initIteratorChildrenAnalysis(iteratorNode: WorkflowNode): void {
-    const children = iteratorNode.children || []
-    // 为每个子节点创建分析
-    children.forEach(childId => {
-      const childNode = this.nodeMap.get(childId)
-      if (childNode) {
-        const nodeType = this.getNodeAnalysisType(childNode)
-        this.nodeAnalysis.set(childId, {
-          type: nodeType,
-          level: 0,
-          parentIterator: iteratorNode.id,
-          isIteratorChild: true
-        })
-
-        // 如果是条件节点，创建分支信息
-        if (nodeType === 'condition') {
-          this.buildBranchBase(childNode)
-        }
-      }
-    })
   }
 
   /**
@@ -599,14 +535,8 @@ export class WorkflowAnalyzer {
    * 生成执行顺序
    */
   private generateExecutionOrder(): ExecutionOrderResult {
-    // 预计算迭代器节点集合，避免重复查找
-    const iteratorNodeIds = new Set(
-      this.workflow.nodeList
-        .filter(node => node.logicData?.logicType === LogicType.ITERATOR)
-        .map(iter => iter.id)
-    )
     // 合并所有节点
-    const allNodes = [...this.workflow.nodeList.map(node => node.id), ...iteratorNodeIds]
+    const allNodes = [...this.workflow.nodeList.map(node => node.id)]
 
     // 使用通用拓扑排序算法
     const executionOrder = this.topologicalSort(allNodes, this.workflow.edges)
@@ -616,25 +546,11 @@ export class WorkflowAnalyzer {
     const result: ExecutionOrderResult = { main: [] }
 
     for (const nodeId of executionOrder) {
-      if (iteratorNodeIds.has(nodeId)) {
-        // 迭代器节点添加到主链路
-        mainExecutionOrder.push(nodeId)
-        // 生成迭代器内部执行顺序
-        const internalOrder = this.generateIteratorInternalExecutionOrder(nodeId)
-        if (internalOrder.length > 0) {
-          result[nodeId] = internalOrder
-        }
-      } else {
-        // 检查是否是迭代器内部节点
-        const analysis = this.nodeAnalysis.get(nodeId)
-        if (analysis?.isIteratorChild) {
-          // 迭代器内部节点，不添加到主链路
-          continue
-        } else {
-          // 普通节点，添加到主链路
-          mainExecutionOrder.push(nodeId)
-        }
-      }
+      // 检查是否是迭代器内部节点
+      const analysis = this.nodeAnalysis.get(nodeId)
+
+      // 普通节点，添加到主链路
+      mainExecutionOrder.push(nodeId)
     }
 
     result.main = mainExecutionOrder
@@ -827,45 +743,12 @@ export class WorkflowAnalyzer {
     return this.nodeMap.get(nodeId)!
   }
 
-  public getIteratorById(iteratorId: string): WorkflowNode {
-    return this.iteratorMap.get(iteratorId)!
-  }
-
   public getNodeOutEdge(nodeId: string): WorkflowEdge[] {
     return this.outEdgeMap.get(nodeId) || []
   }
 
   public getNodeInput(nodeId: string): WorkflowEdge[] {
     return this.inEdgeMap.get(nodeId) || []
-  }
-
-  /**
-   * 生成迭代器内部执行顺序
-   * @param iteratorId 迭代器ID
-   * @returns 迭代器内部节点的执行顺序
-   */
-  public generateIteratorInternalExecutionOrder(iteratorId: string): string[] {
-    const iteratorNode = this.workflow.nodeList.find(iter => iter.id === iteratorId)
-    if (!iteratorNode) return []
-
-    const children = iteratorNode.children || []
-    if (children.length === 0) return []
-
-    // 筛选出迭代器内部的边
-    const internalEdges = this.workflow.edges.filter(
-      edge => children.includes(edge.source) && children.includes(edge.target)
-    )
-
-    // 使用通用拓扑排序算法
-    return this.topologicalSort(children, internalEdges)
-  }
-
-  /**
-   * 获取指定ID迭代器的执行顺序
-   * @returns 迭代器执行顺序数组
-   */
-  public getIteratorExecutionOrders(iteratorId: string): string[] {
-    return this.executionOrderResult[iteratorId] || []
   }
 
   /**

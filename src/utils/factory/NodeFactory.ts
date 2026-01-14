@@ -1,10 +1,28 @@
 import nodeIdFactory from './NodeIdFactory'
 import { type WorkflowNode, LogicType, GroupNodeData } from '@/type/workflow'
-import { CustomNode, getCustomNodeConfig } from '@/utils/workflow/CustomNode'
+import { CustomNode, getCustomNodeConfig } from '@/utils/manager/CustomNodeManager'
 import { GroupNode } from '../workflow/GroupNode'
-import { IteratorNode } from '../workflow/IteratorNode'
-import { getIteratorData } from '../workflow/IteratorManager'
-import { BaseFunctionNodeType } from '@/store/modules/baseFunction'
+
+export const createNewNode = (nodeData: WorkflowNode): Node => {
+  const newId = nodeIdFactory.next()
+  // 创建新的节点数据
+  const newNodeData: WorkflowNode = {
+    ...nodeData,
+    id: newId,
+    pos: {
+      x: nodeData.pos?.x || 0,
+      y: (nodeData.pos?.y || 0) + 120
+    },
+    inputData: nodeData.inputData.map(input => ({
+      ...input,
+      source: input.sourceType === 'node' ? '' : input.source
+    }))
+  }
+
+  // 使用NodeFactory创建X6节点
+  const x6Node = createX6Node(newNodeData)
+  return x6Node
+}
 
 // 创建函数节点
 export function createFuncNode(funcMeta: any): WorkflowNode {
@@ -52,14 +70,6 @@ export function createFuncNode(funcMeta: any): WorkflowNode {
  * @returns X6节点实例
  */
 export function createX6Node(nodeData: WorkflowNode, isPreview = false) {
-  // 如果是迭代器节点，使用特殊的IteratorNode
-  if (nodeData.logicData?.logicType === LogicType.ITERATOR) {
-    return createIteratorNodeInstance({
-      id: nodeData.id,
-      x: isPreview ? 0 : nodeData.pos?.x || 0,
-      y: isPreview ? 0 : nodeData.pos?.y || 0
-    })
-  }
   const config = getCustomNodeConfig(nodeData)
   console.log('createX6Node', nodeData)
   console.log('config', config)
@@ -96,16 +106,6 @@ export function createGroupNode(groupData: GroupNodeData) {
     },
     isCollapsed: groupData.isCollapsed || false
   })
-}
-
-/**
- * 统一的迭代器节点创建方法
- * @param options 迭代器节点配置选项
- * @returns 迭代器节点实例
- */
-export function createIteratorNodeInstance(options: { id: string; x: number; y: number }): any {
-  const config = getIteratorData(options)
-  return new IteratorNode(config)
 }
 
 export {}

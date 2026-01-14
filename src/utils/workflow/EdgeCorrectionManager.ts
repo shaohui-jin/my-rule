@@ -1,8 +1,8 @@
 import { Ref, h } from 'vue'
 import { ElMessage } from 'element-plus'
-import { getCustomNodeConfig } from './CustomNode'
+import { getCustomNodeConfig } from '@/utils/manager/CustomNodeManager'
 import { WorkflowValidator } from './WorkflowValidator'
-import { LogicType } from '@/type/workflow'
+import { LogicType, type WorkflowData } from '@/type/workflow'
 import { EDGE_STYLES } from './constants/StyleConstants'
 
 // 类型定义
@@ -15,7 +15,7 @@ interface SearchTarget {
 export class EdgeCorrectionManager {
   // ==================== 核心属性 ====================
   private graph: any
-  private workflowData: Ref<any>
+  private workflowData: Ref<WorkflowData>
   private edgeColorSet: boolean = false
 
   // ==================== 状态管理 ====================
@@ -68,15 +68,22 @@ export class EdgeCorrectionManager {
       } else {
         this.handleTypeMatch(edge)
         // 校验是否需要增加数据转换节点
-        if(!isDecode) {
-          this.midNodeCheck(sourceNodeId, sourcePortId, targetNodeId, targetPortId, edge, targetType)
+        if (!isDecode) {
+          this.midNodeCheck(
+            sourceNodeId,
+            sourcePortId,
+            targetNodeId,
+            targetPortId,
+            edge,
+            targetType
+          )
         }
       }
     }
   }
 
   edgePreviewColor(args: any) {
-    if(this.edgeColorSet) return
+    if (this.edgeColorSet) return
     const edge = args.edge
     let tempColor: any = this.edgeStyles.normal
     const sourceNodeId = args.sourceCell?.id
@@ -102,7 +109,10 @@ export class EdgeCorrectionManager {
         } else {
           const node = this.workflowData.value.nodeList.find(n => n.id === targetNodeId)
           const targetPortData = node.inputData?.find(p => p.portId === targetPortId)
-          if (targetPortData && (targetPortData.type === 'any' || targetPortData.subType === 'any')) {
+          if (
+            targetPortData &&
+            (targetPortData.type === 'any' || targetPortData.subType === 'any')
+          ) {
             tempColor = this.edgeStyles.alert
           } else {
             tempColor = this.edgeStyles.pass
@@ -166,7 +176,10 @@ export class EdgeCorrectionManager {
       this.graph.removeEdge(this.searchTarget.edgeId)
       this.fixEdgeTargetNode(edge2)
       this.fixEdgeTargetNode(edge)
-      if(node.data.funcType === 'logic' && node.data.logicData?.logicType === LogicType.DIMENSION_CONVERTER) {
+      if (
+        node.data.funcType === 'logic' &&
+        node.data.logicData?.logicType === LogicType.DIMENSION_CONVERTER
+      ) {
         // 自动添加升维或降维的逻辑处理
         const sourceNodeId = edge.getSourceCellId()
         const sourcePortId = edge.getSourcePortId()
@@ -177,22 +190,24 @@ export class EdgeCorrectionManager {
 
         // 如果上游节点的ifelse 则主动获取一下真正的sourceType
         const realSourceType = this.getRealSourceType(sourceNodeId, targetNodeId, targetPortId)
-        if(realSourceType) {
+        if (realSourceType) {
           sourceSubType = realSourceType
         }
 
         // 找到option 并尝试赋值
-        const optionParam = this.workflowData.value.nodeList.find(n => n.id === node.id)?.inputData.find(p => p.paramName === 'option')
+        const optionParam = this.workflowData.value.nodeList
+          .find(n => n.id === node.id)
+          ?.inputData.find(p => p.paramName === 'option')
         // if(this.autoAddConverCheck(sourceSubType, targetSubType, targetNodeId, targetPortId, sourceNodeId) && optionParam) {
-        if(optionParam) {
+        if (optionParam) {
           const sourceCount = sourceSubType.split('[]').length
           const targetCount = targetSubType.split('[]').length
           if (sourceCount > targetCount) {
             // 降维
             optionParam.source = 'downgrade_extract'
           } else if (sourceCount < targetCount) {
-             // 升维
-             optionParam.source = 'upgrade'
+            // 升维
+            optionParam.source = 'upgrade'
           }
         }
       }
@@ -258,8 +273,16 @@ export class EdgeCorrectionManager {
     const sourceSubType = this.getCurType(sourceType)
     const targetSubType = this.getCurType(targetType)
 
-    const isAutoAddMidCheck = this.contentAutoAddMidCheck(sourceSubType, targetSubType, targetNodeId, targetPortId, edge, sourceNodeId, sourcePortId)
-    if(isAutoAddMidCheck) {
+    const isAutoAddMidCheck = this.contentAutoAddMidCheck(
+      sourceSubType,
+      targetSubType,
+      targetNodeId,
+      targetPortId,
+      edge,
+      sourceNodeId,
+      sourcePortId
+    )
+    if (isAutoAddMidCheck) {
       return
     }
 
@@ -274,59 +297,84 @@ export class EdgeCorrectionManager {
     }
   }
 
-  private autoAddConverCheck(sourceSubType: string, targetSubType: string, targetId: string, targetPortId: string, sourceId: string) {
+  private autoAddConverCheck(
+    sourceSubType: string,
+    targetSubType: string,
+    targetId: string,
+    targetPortId: string,
+    sourceId: string
+  ) {
     // 如果类型是否相同，是则 不自动添加数据转换节点
     if (sourceSubType == targetSubType) return false
     // 如果目标节点是否有数据 如果有则不自动添加数据转换节点
-    const otherEdge = this.workflowData.value.edges.find(n => n.target === targetId && n.targetPort === targetPortId && n.source != sourceId)
-    if(otherEdge) {
+    const otherEdge = this.workflowData.value.edges.find(
+      n => n.target === targetId && n.targetPort === targetPortId && n.source != sourceId
+    )
+    if (otherEdge) {
       return false
     }
     // 如果目标节点只有一个端口，则不自动添加数据转换节点
     const targetNode = this.workflowData.value.nodeList.find(n => n.id === targetId)
-    if(targetNode && targetNode.inputData.length == 1) {
+    if (targetNode && targetNode.inputData.length == 1) {
       return false
     }
     const sourceCount = sourceSubType.split('[]').length
     const targetCount = targetSubType.split('[]').length
     // 如果类型数量相差大于1，则不自动添加数据转换节点
-    if(Math.abs(sourceCount - targetCount) > 1) {
+    if (Math.abs(sourceCount - targetCount) > 1) {
       return false
     }
     // 如果类型是自动列表中的类型，则自动添加数据转换节点
-    if(this.autoList1.includes(sourceSubType) && this.autoList1.includes(targetSubType) ||
-    this.autoList2.includes(sourceSubType) && this.autoList2.includes(targetSubType) ||
-    this.autoList3.includes(sourceSubType) && this.autoList3.includes(targetSubType)) {
+    if (
+      (this.autoList1.includes(sourceSubType) && this.autoList1.includes(targetSubType)) ||
+      (this.autoList2.includes(sourceSubType) && this.autoList2.includes(targetSubType)) ||
+      (this.autoList3.includes(sourceSubType) && this.autoList3.includes(targetSubType))
+    ) {
       return true
     }
     return false
   }
 
   // 连接成功后，校验是否需要自动补充数据转换节点
-  private midNodeCheck(sourceNodeId: string, sourcePortId: string, targetNodeId: string, targetPortId: string, edge: any, targetType: string[][]) {
+  private midNodeCheck(
+    sourceNodeId: string,
+    sourcePortId: string,
+    targetNodeId: string,
+    targetPortId: string,
+    edge: any,
+    targetType: string[][]
+  ) {
     // 获取真正的sourceType
     const realSourceType = this.getRealSourceType(sourceNodeId, targetNodeId, targetPortId)
-    if(realSourceType) {
+    if (realSourceType) {
       const targetSubType = this.getCurType(targetType?.[0] || [])
       // 校验是否需要增加数据转换节点
-      this.contentAutoAddMidCheck(realSourceType, targetSubType, targetNodeId, targetPortId, edge, sourceNodeId, sourcePortId)
+      this.contentAutoAddMidCheck(
+        realSourceType,
+        targetSubType,
+        targetNodeId,
+        targetPortId,
+        edge,
+        sourceNodeId,
+        sourcePortId
+      )
     }
   }
 
-  private getRealSourceType(sourceNodeId: string, targetNodeId: string, targetPortId: string){
+  private getRealSourceType(sourceNodeId: string, targetNodeId: string, targetPortId: string) {
     const sourceNode = this.workflowData.value.nodeList.find(n => n.id === sourceNodeId)
-    if( sourceNode.funcType === 'logic' && sourceNode.logicData?.logicType === LogicType.IFELSE) {
+    if (sourceNode.funcType === 'logic' && sourceNode.logicData?.logicType === LogicType.IFELSE) {
       // 如果上游节点是条件节点，也需要校验一下是否需要自动补充数据转换节点
       const targetNode = this.workflowData.value.nodeList.find(n => n.id === targetNodeId)
       let realSourceId = ''
       targetNode.inputData.forEach(p => {
-        if(p.portId === targetPortId) {
+        if (p.portId === targetPortId) {
           realSourceId = p.source
         }
       })
       // 找到真正的源节点
       const realSourceNode = this.workflowData.value.nodeList.find(n => n.id === realSourceId)
-      if( realSourceNode ) {
+      if (realSourceNode) {
         const realSourceType = this.getNodePortType(realSourceId, 'out_1', true)
         const sourceSubType = this.getCurType(realSourceType?.[0] || [])
         return sourceSubType
@@ -336,8 +384,24 @@ export class EdgeCorrectionManager {
   }
 
   // 当类型不匹配 且自动添加升维或降维的逻辑处理
-  private contentAutoAddMidCheck(sourceSubType: string, targetSubType: string, targetNodeId: string, targetPortId: string, edge: any, sourceNodeId: string, sourcePortId: string) {
-    if(this.autoAddConverCheck(sourceSubType, targetSubType, targetNodeId, targetPortId, sourceNodeId)) {
+  private contentAutoAddMidCheck(
+    sourceSubType: string,
+    targetSubType: string,
+    targetNodeId: string,
+    targetPortId: string,
+    edge: any,
+    sourceNodeId: string,
+    sourcePortId: string
+  ) {
+    if (
+      this.autoAddConverCheck(
+        sourceSubType,
+        targetSubType,
+        targetNodeId,
+        targetPortId,
+        sourceNodeId
+      )
+    ) {
       // 自动生成中间转换类型
       console.log('自动生成中间转换类型')
 
@@ -347,7 +411,12 @@ export class EdgeCorrectionManager {
         edgeId: edge.id
       }
 
-      const nodeData =  { type: 'dimension_converter', title: '类型转换', funcId: '12', funcType: 'logic'}
+      const nodeData = {
+        type: 'dimension_converter',
+        title: '类型转换',
+        funcId: '12',
+        funcType: 'logic'
+      }
 
       this.directContectNode(nodeData, {
         nodeId: sourceNodeId,
@@ -457,15 +526,16 @@ export class EdgeCorrectionManager {
    * @param isError 是否为错误状态
    */
   private setEdgeStyle(edge: any, style: any) {
-    edge.attr({ line: style },
-      {ignoreHistory: true})
-    edge.attr({
-      targetMarker: {
-        fill: style.stroke,
-        stroke: style.stroke
-      }
-    },
-    {ignoreHistory: true})
+    edge.attr({ line: style }, { ignoreHistory: true })
+    edge.attr(
+      {
+        targetMarker: {
+          fill: style.stroke,
+          stroke: style.stroke
+        }
+      },
+      { ignoreHistory: true }
+    )
   }
 
   /**

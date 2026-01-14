@@ -1,5 +1,4 @@
 import { InputData, LogicType, WorkflowNode, type WorkflowData } from '@/type/workflow'
-import { getStartNodeId } from './IteratorManager'
 
 /**
  * 错误信息接口
@@ -31,10 +30,6 @@ export class WorkflowValidator {
     const allNodeIds = []
     this.workflowData.nodeList.forEach(node => {
       allNodeIds.push(node.id)
-      if (node.funcType === 'logic' && node.logicData?.logicType === LogicType.ITERATOR) {
-        // 迭代器的开始节点也要算上
-        allNodeIds.push(getStartNodeId(node.id))
-      }
     })
 
     const edgesByTarget = new Map<string, any[]>()
@@ -62,7 +57,6 @@ export class WorkflowValidator {
       this.validateConditionNode(node, edgesBySource)
       this.validateIsolatedNodes(node, edgesByTarget, edgesBySource)
       this.validateGlobalVariableReferences(node, allNodeIds)
-      this.validateIteratorStartNodeConnection(node, edgesBySource, edgesByTarget)
     })
 
     return {
@@ -82,7 +76,6 @@ export class WorkflowValidator {
     if (
       node.funcType === 'logic' &&
       (node.logicData?.logicType === LogicType.IFELSE ||
-        node.logicData?.logicType === LogicType.ITERATOR ||
         node.logicData?.logicType === LogicType.GLOBAL_VARIABLE ||
         node.logicData?.logicType === LogicType.GLOBAL_PARAM)
     )
@@ -254,67 +247,6 @@ export class WorkflowValidator {
             type: 'workflow'
           })
         }
-      }
-    }
-  }
-
-  /**
-   * 校验迭代器节点的起始节点连接
-   * 规则：迭代器的起始节点必须连接到其他节点
-   */
-  private validateIteratorStartNodeConnection(
-    node: WorkflowNode,
-    edgesBySource: Map<string, any[]>,
-    edgesByTarget: Map<string, any[]>
-  ): void {
-    if (node.funcType === 'logic' && node.logicData?.logicType === LogicType.ITERATOR) {
-      const nodeErrors: string[] = []
-
-      if (node.inputData.length > 0) {
-        node.inputData.forEach(param => {
-          if (!param.source) {
-            nodeErrors.push(`入参${this.getParamName(param)}未设置数据源`)
-          }
-        })
-      }
-
-      // 获取迭代器的起始节点ID
-      const startNodeId = getStartNodeId(node.id)
-
-      // 检查起始节点是否有出边连接
-      const startNodeEdges = edgesBySource.get(startNodeId) || []
-      if (startNodeEdges.length === 0) {
-        nodeErrors.push('迭代器起始节点未连接到其他节点')
-      }
-
-      // 检查迭代器的所有子节点 是否连接到外部节点
-      const allChildNodeIds = [...node.children, startNodeId]
-      node.children.forEach(child => {
-        const childNode = this.workflowData.nodeList.find(n => n.id === child)
-        if (!childNode) return
-
-        const childBySourceEdges = edgesBySource.get(childNode.id) || []
-        const childByTargetEdges = edgesByTarget.get(childNode.id) || []
-        // 如果子节点没有出边连接到外部节点 则报错
-        childBySourceEdges.forEach(edge => {
-          if (allChildNodeIds.indexOf(edge.target) === -1) {
-            nodeErrors.push(`迭代器子节点${childNode.id}连接到了外部`)
-          }
-        })
-        childByTargetEdges.forEach(edge => {
-          if (allChildNodeIds.indexOf(edge.source) === -1) {
-            nodeErrors.push(`迭代器子节点${childNode.id}连接到了外部`)
-          }
-        })
-      })
-
-      if (nodeErrors.length > 0) {
-        this.errors.push({
-          nodeId: node.id,
-          nodeTitle: node.title || node.id,
-          errors: nodeErrors,
-          type: 'workflow'
-        })
       }
     }
   }

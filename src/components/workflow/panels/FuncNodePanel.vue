@@ -44,7 +44,7 @@
                     rules: param.rules,
                     attributes: {
                       ...param.attributes,
-                      placeholder: `请输入值`,
+                      placeholder: `请输入值`
                     }
                   }
                 ]
@@ -134,12 +134,6 @@ function cancelEditRemark() {
 
 // 切换输入模式
 const toggleInputMode = (param: any) => {
-
-  if( nodeData.value.funcType === 'logic' && nodeData.value.logicData?.logicType === LogicType.ITERATOR) {
-    ElMessage.warning(`迭代器节点不能切换输入模式`)
-    return
-  }
-
   // 切换前清空值
   param.source = ''
   param.defaultValue = ''
@@ -200,7 +194,7 @@ const updateLinkedParams = (sourceParam: any, sourceValue: string) => {
     if (targetParam && targetParam.dynamicOptions) {
       // 根据联动源的值获取对应的选项
       const newOptions = targetParam.dynamicOptions[sourceValue] || []
-      if(JSON.stringify(targetParam.options) == JSON.stringify(newOptions)) return;
+      if (JSON.stringify(targetParam.options) == JSON.stringify(newOptions)) return
 
       targetParam.options = newOptions
       // 清空之前的选择值，避免无效选择
@@ -208,7 +202,10 @@ const updateLinkedParams = (sourceParam: any, sourceValue: string) => {
         targetParam.source = ''
       }
 
-      console.log(`参数 ${sourceParam.paramName} 值 ${sourceValue} 对应的 ${targetParamName} 选项已更新:`, newOptions)
+      console.log(
+        `参数 ${sourceParam.paramName} 值 ${sourceValue} 对应的 ${targetParamName} 选项已更新:`,
+        newOptions
+      )
     }
   })
 }
@@ -217,11 +214,11 @@ const portSelects = []
 function getOptions(param, idx) {
   portSelects[idx] = []
   let options = props.getAvailableSourceOptions(param)
-  if(param.sourceType === 'node') {
+  if (param.sourceType === 'node') {
     options.forEach(opt => {
-      if(opt.label.includes('[条件]')) {
+      if (opt.label.includes('[条件]')) {
         if (param.source) {
-          if(opt.currentSource === param.source || opt.value === param.source) {
+          if (opt.currentSource === param.source || opt.value === param.source) {
             portSelects[idx].push({
               label: opt.label,
               value: opt.value
@@ -242,7 +239,7 @@ function getOptions(param, idx) {
         }
       }
     })
-    if(portSelects[idx].length) {
+    if (portSelects[idx].length) {
       // 同时因为连线的问题需要判断ifelse是否有上游节点
       param.source = portSelects[idx][0]?.value
     }
@@ -251,7 +248,7 @@ function getOptions(param, idx) {
     // portSelects.forEach(item => uniqueById.set(item.value, item));
     // // 转换为数组
     // const result = Array.from(uniqueById.values());
-    return portSelects[idx];
+    return portSelects[idx]
   } else {
     return []
   }

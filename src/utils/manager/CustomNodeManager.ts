@@ -1,5 +1,5 @@
 import { LogicType } from '@/type/workflow'
-import { COLORS, PORT_ATTRS } from './constants/StyleConstants'
+import { COLORS, PORT_ATTRS } from '../workflow/constants/StyleConstants'
 const { VITE_PUBLIC_PATH } = import.meta.env
 import { Graph, Node } from '@antv/x6'
 import { type WorkflowData } from '@/type/workflow'
@@ -452,7 +452,6 @@ export class CustomNode extends Node {
     // this.graph = graph
     // this.workflowData = workflowData
     // console.log('11111')
-    // this.initIteratorEvents()
   }
 
   private timer: TimeoutHandle
@@ -592,20 +591,11 @@ export class CustomNode extends Node {
       })
     }
   }
+}
 
-  /**
-   * 初始化迭代器相关事件
-   */
-  // private initIteratorEvents(): void {
-  //     console.log('this.graph', this.graph)
-  //     this.graph.on('node:customer_collapse', ({ node }: { node: any }) => {
-  //       this.graph.startBatch('iterator-node-collapse')
-  //       node.toggleCollapse()
-  //       // 根据折叠状态处理尺寸控制器
-  //       // if (node.isCollapsed) {
-  //       //   this.clearTransformWidgets()
-  //       // }
-  //       this.graph.stopBatch('iterator-node-collapse')
-  //     })
-  //   }
+export class CustomNodeManager extends Node {
+  // constructor() {}
+  public initRegister(): void {
+    Graph.registerNode('customNode', CustomNode, true)
+  }
 }

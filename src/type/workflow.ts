@@ -46,8 +46,6 @@ export enum LogicType {
   GLOBAL_VARIABLE = 'global_variable',
   TYPE_CONVERTER = 'type_converter',
   DIMENSION_CONVERTER = 'dimension_converter',
-  ITERATOR = 'iterator',
-  ITERATOR_START = 'iterator_start',
   CALCULATOR = 'calculator'
 }
 

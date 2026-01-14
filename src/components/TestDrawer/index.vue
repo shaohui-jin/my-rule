@@ -1842,30 +1842,12 @@ const openDrawer = (
       monaco.editor.setTheme(LIGHT_THEME)
     }
   }, 300)
-
-  // 在iframe环境中优化抽屉高度
-  setTimeout(() => {
-    optimizeDrawerHeight()
-  }, 100)
 }
 
 // 滚动到底部
 const scrollToBottom = () => {
   if (resultDetailsContainer.value) {
     resultDetailsContainer.value.scrollTop = resultDetailsContainer.value.scrollHeight
-  }
-}
-
-// 优化iframe环境下的抽屉高度
-const optimizeDrawerHeight = () => {
-  if (isIframe.value) {
-    // 在iframe环境中，动态调整抽屉高度
-    const drawer = document.querySelector('.test-drawer') as HTMLElement
-    if (drawer) {
-      const availableHeight = window.innerHeight - 40 // 留出一些边距
-      drawer.style.height = `${availableHeight}px`
-      drawer.style.maxHeight = `${availableHeight}px`
-    }
   }
 }
 
@@ -2402,16 +2384,12 @@ const scrollToLastNodeOutput = () => {
 }
 
 onMounted(() => {
-  // 添加窗口大小变化监听器，优化iframe环境下的抽屉高度
-  window.addEventListener('resize', optimizeDrawerHeight)
-
   // 添加键盘事件监听器
   document.addEventListener('keydown', handleKeyDown)
 })
 
 onUnmounted(() => {
   // 移除事件监听器
-  window.removeEventListener('resize', optimizeDrawerHeight)
   document.removeEventListener('keydown', handleKeyDown)
 
   disposeEditors()
