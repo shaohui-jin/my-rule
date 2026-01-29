@@ -13,6 +13,7 @@ dayjs.extend(duration)
 import monacoEditorPlugin from 'vite-plugin-monaco-editor'
 import path, { resolve } from 'path'
 import { writeFileSync } from 'fs'
+import { viteStaticCopy } from 'vite-plugin-static-copy'
 
 /** 当前执行node命令时文件夹的地址（工作目录） */
 const root: string = process.cwd()
@@ -99,6 +100,14 @@ export default ({ command, mode }: ConfigEnv): UserConfigExport => {
         languageWorkers: ['editorWorkerService', 'json', 'typescript', 'html', 'css']
         // publicPath: 'http://localhost:4173/my-rule/',
         // publicPath: 'https://cdn.jsdelivr.net/npm/monaco-editor@latest/min/vs/loader.min.js'
+      }),
+      viteStaticCopy({
+        targets: [
+          {
+            src: 'node_modules/monaco-editor/min/vs/**/*',
+            dest: 'vs'
+          }
+        ]
       })
       // 打包分析
     ],

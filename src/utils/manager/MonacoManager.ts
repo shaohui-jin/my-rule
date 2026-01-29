@@ -6,6 +6,7 @@ import loader from '@monaco-editor/loader'
 
 // 引入 monaco-editor 的类型定义，实际运行时的 monaco 对象由 loader 提供
 import type * as Monaco from 'monaco-editor'
+const { VITE_PUBLIC_PATH } = import.meta.env
 
 /**
  * 创建编辑器实例时的配置项
@@ -93,7 +94,7 @@ export class MonacoManager {
     // 当前配置假定项目使用 /node_modules 作为静态资源根路径
     loader.config({
       paths: {
-        vs: '/node_modules/monaco-editor/min/vs'
+        vs: VITE_PUBLIC_PATH + 'vs'
         // 或者你的本地静态资源路径
       }
     })
