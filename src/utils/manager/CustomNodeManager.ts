@@ -310,18 +310,6 @@ export function getCustomNodeConfig(node: WorkflowNode) {
         zIndex: 10,
         event: 'node:info_mouseenter'
       },
-      addButton: {
-        width: 1,
-        height: 28,
-        refX: '100%',
-        refX2: -80,
-        refY: -28,
-        cursor: 'pointer',
-        'xlink:href': VITE_PUBLIC_PATH + '/rsvg/Add.svg',
-        zIndex: 10,
-        strokeOpacity: 0,
-        event: 'node:add_mouseenter'
-      },
       copyButton: {
         width: 1,
         height: 28,
@@ -429,10 +417,6 @@ export function getCustomNodeConfig(node: WorkflowNode) {
       {
         tagName: 'image',
         selector: 'delButton'
-      },
-      {
-        tagName: 'image',
-        selector: 'addButton'
       }
     ]
   }

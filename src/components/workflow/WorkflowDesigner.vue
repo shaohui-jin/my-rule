@@ -131,7 +131,6 @@ const emit = defineEmits([
   'save-as-data',
   'test-lua',
   'show-save-modal',
-  'show-search-modal',
   'close-search-modal'
 ])
 
@@ -501,9 +500,6 @@ function registerGraphBaseEvents() {
       if (node.attr('copyButton/width') !== 28) {
         node.attr('copyButton/width', 28, { ignoreHistory: true })
         node.attr('delButton/width', 28, { ignoreHistory: true })
-        if (outPortCount <= 1 && outPortEdgeCount <= 1) {
-          node.attr('addButton/width', 28, { ignoreHistory: true })
-        }
       }
     }
 
@@ -521,7 +517,6 @@ function registerGraphBaseEvents() {
         // window.setTimeout(() => {
         node.attr('copyButton/width', 1, { ignoreHistory: true })
         node.attr('delButton/width', 1, { ignoreHistory: true })
-        node.attr('addButton/width', 1, { ignoreHistory: true })
         // }, 1000) // 延时隐藏按钮
       }
     }
@@ -695,50 +690,6 @@ function registerGraphBaseEvents() {
           size: 10
         }
       }
-      // {
-      //   name: 'button',
-      //   args: {
-      //     markup: [
-      //       {
-      //         tagName: 'circle',
-      //         selector: 'button',
-      //         attrs: {
-      //           r: 10,
-      //           fill: '#147FFA',
-      //           cursor: 'pointer',
-      //         },
-      //       },
-      //       {
-      //         tagName: 'text',
-      //         textContent: '+',
-      //         selector: 'icon',
-      //         attrs: {
-      //           fill: 'white',
-      //           fontSize: 20,
-      //           textAnchor: 'middle',
-      //           pointerEvents: 'none',
-      //           y: '6px',
-      //         },
-      //       },
-      //     ],
-      //     distance: 0.5,
-      //     onClick({cell, e}: any) {
-      //       if(cell && cell.isEdge && cell.isEdge()){
-      //         const edge = cell
-      //         const sourceNodeId = edge.getSourceCellId()
-      //         const sourcePortId = edge.getSourcePortId()
-      //         const targetNodeId = edge.getTargetCellId()
-      //         const targetPortId = edge.getTargetPortId()
-      //         edgeCorrectionManager.searchTarget = {
-      //           targetNodeId: targetNodeId,
-      //           targetPortId: targetPortId,
-      //           edgeId: edge.id
-      //         }
-      //         emit('show-search-modal', { x: e.clientX + 10, y: e.clientY, nodeId: sourceNodeId, portId: sourcePortId, fromEdgeAdd: true, fromBlankAdd: false })
-      //       }
-      //     },
-      //   },
-      // }
     ])
   })
 
@@ -771,18 +722,7 @@ function registerGraphBaseEvents() {
 
 function registerGraphFullEvents() {
   // 监听空白区域双击事件
-  graph.on('blank:dblclick', ({ e, x, y }) => {
-    emit('show-search-modal', {
-      x: e.clientX,
-      y: e.clientY,
-      nodeId: null,
-      portId: null,
-      fromEdgeAdd: false,
-      fromBlankAdd: true,
-      fromBlankX: x,
-      fromBlankY: y
-    })
-  })
+  graph.on('blank:dblclick', ({ e, x, y }) => {})
 
   // 复制节点事件
   graph.on('node:copy_mouseenter', ({ node, e }) => {
@@ -849,31 +789,6 @@ function registerGraphFullEvents() {
   graph.on('node:del_mouseenter', ({ node }) => {
     graph.removeCells([node])
     ElMessage.success(`已删除 1 个元素`)
-  })
-
-  // 添加节点事件 只存在一个源桩点，同时线也最多只有一条
-  graph.on('node:add_mouseenter', event => {
-    const { node, e } = event
-    e.stopPropagation()
-
-    const portId = node.getPorts().filter(e => e.id.includes('out'))[0].id
-    const fromEdgeAdd = graph.getEdges().find(e => e.source.cell === node.id)
-
-    if (fromEdgeAdd) {
-      edgeCorrectionManager.searchTarget = {
-        targetNodeId: fromEdgeAdd.target.cell,
-        targetPortId: fromEdgeAdd.target.port,
-        edgeId: fromEdgeAdd.id
-      }
-    }
-    emit('show-search-modal', {
-      x: e.clientX + 10,
-      y: e.clientY,
-      nodeId: node.id,
-      portId: portId,
-      fromEdgeAdd: !!fromEdgeAdd,
-      fromBlankAdd: false
-    })
   })
 
   graph.on('edge:connected', ({ edge }: { edge: any }) => {
@@ -1654,7 +1569,6 @@ function findUpstreamNodes(nodeId, isFromCondition, workflowData, visited) {
 }
 
 const handlerEventListener = (node, view) => {
-  const addIcon = view.container.querySelector('.x6-graph-pannable [event="node:add_mouseenter"]')
   const copyIcon = view.container.querySelector('.x6-graph-pannable [event="node:copy_mouseenter"]')
   const delIcon = view.container.querySelector('.x6-graph-pannable [event="node:del_mouseenter"]')
   const collapseIcon = view.container.querySelector(
@@ -1665,7 +1579,6 @@ const handlerEventListener = (node, view) => {
   )
   const infoIcon = view.container.querySelector('.x6-graph-pannable [event="node:info_mouseenter"]')
 
-  const addFn = () => showInfoPanel(node, 'addButton', '新增节点')
   const copyFn = () => showInfoPanel(node, 'copyButton', '复制节点')
   const delFn = () => showInfoPanel(node, 'delButton', '删除节点')
   const collapseFn = () =>
@@ -1677,8 +1590,6 @@ const handlerEventListener = (node, view) => {
   const titleFn = () => showInfoPanel(node, 'title', titleIcon.getAttribute('text'))
   const infoFn = () => showInfoPanel(node, 'infoButton', node.data.remark)
 
-  addIcon?.addEventListener('mouseenter', addFn)
-  addIcon?.addEventListener('mouseleave', closeInfoPanel)
   copyIcon?.addEventListener('mouseenter', copyFn)
   copyIcon?.addEventListener('mouseleave', closeInfoPanel)
   delIcon?.addEventListener('mouseenter', delFn)
@@ -1691,8 +1602,6 @@ const handlerEventListener = (node, view) => {
   infoIcon?.addEventListener('mouseleave', closeInfoPanel)
 
   return () => {
-    addIcon?.removeEventListener('mouseenter', addFn)
-    addIcon?.removeEventListener('mouseleave', closeInfoPanel)
     copyIcon?.removeEventListener('mouseenter', copyFn)
     copyIcon?.removeEventListener('mouseleave', closeInfoPanel)
     delIcon?.removeEventListener('mouseenter', delFn)
@@ -1721,7 +1630,7 @@ function closeInfoPanel() {
  */
 function showInfoPanel(
   node: any,
-  type: 'title' | 'remark' | 'addButton' | 'copyButton' | 'delButton' | 'foldButton' | 'infoButton',
+  type: 'title' | 'remark' | 'copyButton' | 'delButton' | 'foldButton' | 'infoButton',
   desc: string
 ) {
   // 如果已有信息面板，先移除
