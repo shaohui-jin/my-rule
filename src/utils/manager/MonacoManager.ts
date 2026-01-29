@@ -94,7 +94,7 @@ export class MonacoManager {
     // 当前配置假定项目使用 /node_modules 作为静态资源根路径
     loader.config({
       paths: {
-        vs: VITE_PUBLIC_PATH + 'vs'
+        vs: VITE_PUBLIC_PATH + '/vs'
         // 或者你的本地静态资源路径
       }
     })
