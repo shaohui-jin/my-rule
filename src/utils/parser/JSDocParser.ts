@@ -208,7 +208,7 @@ export default class JSDocParser {
     if (new Set(outputList.map(e => e.name)).size !== outputList.length) {
       throw new Error('函数输出字段存在重复')
     }
-    console.log('functionInfo', functionInfo)
+    // console.log('functionInfo', functionInfo)
     return functionInfo.input.length > 0 || functionInfo.output ? functionInfo : null
   }
 
@@ -271,8 +271,8 @@ export default class JSDocParser {
         return acc
       }, {})
     if (has.call(option, 'value')) {
-      console.log('props', option)
-      console.log('type', type)
+      // console.log('props', option)
+      // console.log('type', type)
       option.value = type === 'number' ? Number(option.value) : option.value
     }
     if (has.call(option, 'options')) {

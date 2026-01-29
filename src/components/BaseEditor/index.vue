@@ -11,7 +11,7 @@
             <el-icon><Close /></el-icon>
           </el-button>
         </div>
-        <div ref="fullscreenContainer" class="monaco-editor-container"></div>
+        <div ref="fullEditorContainer" class="monaco-editor-container"></div>
       </div>
     </div>
   </Teleport>
@@ -31,35 +31,39 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, defineExpose, watch } from 'vue'
+import { onMounted, ref, defineExpose, watch, onBeforeUnmount } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Download, DocumentCopy, FullScreen, Close } from '@element-plus/icons-vue'
 import { getDefaultMonacoEditorConfig } from '@/utils/MonacoEditor'
 import * as monaco from 'monaco-editor'
+import { MonacoInstance, MonacoManager } from '@/utils/manager/MonacoManager'
+import { GetPromise } from '@/utils/ts'
+
+const manager = MonacoManager.getInstance()
 
 // 容器对象
 const editorContainer = ref()
-
-// 编辑器对象
+let monacoId: GetPromise<ReturnType<typeof manager['createInstance']>>['id'] | null = null
 let codeEditor: monaco.editor.IStandaloneCodeEditor = null
-
-// 全屏编辑器对象
-let fullscreenEditor: monaco.editor.IStandaloneCodeEditor = null
 
 // 全屏状态
 const isFullscreen = ref(false)
-
-// 全屏容器引用
-const fullscreenContainer = ref()
+const fullEditorContainer = ref()
+let fullMonacoId: GetPromise<ReturnType<typeof manager['createInstance']>>['id'] | null = null
+let fullCodeEditor: monaco.editor.IStandaloneCodeEditor = null
 
 // 声明一个input事件
 const emit = defineEmits(['update:modelValue'])
+
+defineOptions({
+  name: 'BaseEditor'
+})
 
 // 从父组件中接收
 const props = defineProps({
   language: {
     type: String,
-    default: 'javascript'
+    default: 'typescript'
   },
   modelValue: {
     type: String,
@@ -69,19 +73,27 @@ const props = defineProps({
 })
 
 onMounted(() => {
-  // console.log('monaco.editor', monaco.editor)
-  codeEditor = monaco.editor.create(editorContainer.value, {
-    ...getDefaultMonacoEditorConfig(),
-    value: props.modelValue
-  })
-
-  // 设置监听事件
-  codeEditor.onDidChangeModelContent(() => {
-    emit('update:modelValue', codeEditor?.getValue())
-  })
+  manager
+    .createInstance(editorContainer.value, {
+      ...getDefaultMonacoEditorConfig(),
+      value: props.modelValue,
+      language: props.language
+    })
+    .then(({ id, editor }: MonacoInstance) => {
+      monacoId = id
+      codeEditor = editor
+      // 设置监听事件
+      codeEditor.onDidChangeModelContent(() => {
+        emit('update:modelValue', codeEditor?.getValue())
+      })
+    })
 })
 
-// 监听 props.modelValue 的变化，实现真正的双向绑定
+onBeforeUnmount(() => {
+  manager.disposeInstance(monacoId)
+  manager.disposeInstance(fullMonacoId)
+})
+
 watch(
   () => props.modelValue,
   newValue => {
@@ -122,39 +134,35 @@ const toggleFullscreen = () => {
   } else {
     // 退出全屏
     document.body.style.overflow = ''
-
-    // 销毁全屏编辑器
-    if (fullscreenEditor) {
-      fullscreenEditor.dispose()
-      fullscreenEditor = null
-    }
   }
 }
 
 // 创建全屏编辑器
 const createFullscreenEditor = () => {
-  if (fullscreenEditor || !fullscreenContainer.value) return
-
-  fullscreenEditor = monaco.editor.create(fullscreenContainer.value, {
-    ...getDefaultMonacoEditorConfig(true),
-    value: codeEditor?.getValue() || ''
-  })
-
-  // 监听编辑器内容变更
-  fullscreenEditor.onDidChangeModelContent(() => {
-    const content = fullscreenEditor?.getValue() || ''
-    emit('update:modelValue', content)
-    // 同步到原编辑器
-    if (codeEditor) {
-      codeEditor.setValue(content)
-    }
-  })
-
-  // 布局编辑器
-  setTimeout(() => {
-    fullscreenEditor?.layout()
-    fullscreenEditor?.focus()
-  }, 100)
+  manager
+    .createInstance(fullEditorContainer.value, {
+      ...getDefaultMonacoEditorConfig(true),
+      value: codeEditor?.getValue() || '',
+      language: props.language
+    })
+    .then(({ id, editor }: MonacoInstance) => {
+      fullCodeEditor = editor
+      fullMonacoId = id
+      // 设置监听事件
+      fullCodeEditor.onDidChangeModelContent(() => {
+        const content = fullCodeEditor?.getValue() || ''
+        emit('update:modelValue', content)
+        // 同步到原编辑器
+        if (codeEditor) {
+          codeEditor.setValue(content)
+        }
+      })
+      // 布局编辑器
+      setTimeout(() => {
+        fullCodeEditor?.layout()
+        fullCodeEditor?.focus()
+      }, 100)
+    })
 }
 
 const setValue = (value: string) => {

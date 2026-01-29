@@ -5,9 +5,11 @@ import IStandaloneEditorConstructionOptions = editor.IStandaloneEditorConstructi
  * 获取默认的Monaco编辑器配置
  * @param isFull
  */
-export const getDefaultMonacoEditorConfig = (isFull: boolean = false): IStandaloneEditorConstructionOptions => {
+export const getDefaultMonacoEditorConfig = (
+  isFull: boolean = false
+): IStandaloneEditorConstructionOptions => {
   return {
-    language: 'javascript',
+    language: 'typescript',
     // language: 'lua',
     automaticLayout: true, // 自动调整布局
     theme: 'vs-dark',
@@ -25,7 +27,7 @@ export const getDefaultMonacoEditorConfig = (isFull: boolean = false): IStandalo
     smoothScrolling: false, // 滚动动画
     fontSize: isFull ? 14 : 12,
     wordWrap: 'on',
-    wordBasedSuggestions: "allDocuments", // 禁用基于单词的智能提示（例如，自动完成）
+    wordBasedSuggestions: 'allDocuments', // 禁用基于单词的智能提示（例如，自动完成）
     quickSuggestions: true // 启用快速建议（例如，输入时自动显示建议）
   }
 }

@@ -60,7 +60,7 @@
         <div
           class="bg-gray-900 text-theme-light rounded-lg p-2 overflow-y-auto code-editor h-[300px] max-h-[300px] sm:h-[400px] sm:max-h-[400px] scrollbar-overlay lg:flex-1 lg:h-auto lg:min-h-0 lg:max-h-none"
         >
-          <pre class="annotation-code whitespace-pre-wrap break-words">{{ state.js2JsonCode }}</pre>
+          <BasePre :preData="state.js2JsonCode"></BasePre>
         </div>
       </div>
 
@@ -149,6 +149,7 @@
 
 <script setup lang="ts">
 import BaseEditor from '@/components/BaseEditor/index.vue'
+import BasePre from '@/components/BasePre/index.vue'
 import JSDocParser, { JsDocData } from '@/utils/parser/JSDocParser'
 import FormParser, { FromConfig } from '@/utils/parser/FormParser'
 import SimpleFormRenderer from '@/components/funcForm/SimpleFormRenderer.vue'
