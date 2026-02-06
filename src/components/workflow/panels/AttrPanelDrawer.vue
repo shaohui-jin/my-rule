@@ -207,8 +207,8 @@ function handleNodeBaseDataUpdate(nodeId: string) {
   right: -500px;
   width: 450px;
   height: calc(100% - 70px);
-  background: #fff;
-  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
+  background: var(--el-bg-color);
+  box-shadow: -2px 0 8px rgba(60, 121, 180, 0.12);
   z-index: 2001;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
@@ -226,10 +226,11 @@ function handleNodeBaseDataUpdate(nodeId: string) {
 
 /* 抽屉内容动画 */
 .drawer-content {
-  flex: 1;
+  flex: 1 1 0;
+  width: 100%;
   overflow-y: auto;
-  padding: 0 20px;
-  background: #fff;
+  padding: 0 16px;
+  background: var(--el-bg-color);
   opacity: 0;
   transform: translateX(20px);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -246,24 +247,25 @@ function handleNodeBaseDataUpdate(nodeId: string) {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 20px;
-  background: #fff;
-  border-bottom: 1px solid #e4e7ed;
+  padding: 12px 16px;
+  background: var(--el-bg-color);
+  border-bottom: 1px solid var(--el-border-color-lighter);
   flex-shrink: 0;
 }
 
 .drawer-title-container {
   display: flex;
   align-items: center;
-  flex: 1;
+  flex: 1 1 0;
   overflow: hidden;
 }
 
 .drawer-title {
   display: flex;
   align-items: center;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 500;
+  line-height: 1.5;
   @apply text-theme-dark;
   width: 100%;
 }
@@ -271,22 +273,24 @@ function handleNodeBaseDataUpdate(nodeId: string) {
 .drawer-actions {
   display: flex;
   align-items: center;
-  margin-left: 16px;
+  margin-left: 12px;
+  gap: 6px;
 }
 
 .node-id {
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 25px;
-  height: 25px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   border: 2px solid;
   @apply border-theme-medium text-theme-medium;
   font-weight: 600;
-  font-size: 14px;
-  margin-right: 6px;
+  font-size: 12px;
+  margin-right: 8px;
   flex-shrink: 0;
+  line-height: 1;
 }
 
 .node-title-container {
@@ -295,10 +299,11 @@ function handleNodeBaseDataUpdate(nodeId: string) {
   align-items: center;
   flex: 1;
   cursor: pointer;
-  padding: 0 8px;
+  padding: 4px 8px;
   border-radius: 4px;
   transition: background-color 0.2s;
   max-width: calc(100% - 40px);
+  min-height: 28px;
 }
 
 .node-title-container:hover {
@@ -306,9 +311,8 @@ function handleNodeBaseDataUpdate(nodeId: string) {
 }
 
 .node-title {
-  font-size: 18px;
-  line-height: 30px;
-  height: 30px;
+  font-size: 16px;
+  line-height: 1.5;
   font-weight: 500;
   @apply text-theme-dark;
   width: 100%;
@@ -316,12 +320,14 @@ function handleNodeBaseDataUpdate(nodeId: string) {
   overflow: hidden;
   text-overflow: ellipsis;
   display: inline-block;
+  margin: 0;
 }
 
 .node-title-input {
   width: 100%;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 500;
+  line-height: 1.5;
   @apply text-theme-dark;
 }
 
@@ -329,7 +335,7 @@ function handleNodeBaseDataUpdate(nodeId: string) {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 6px;
+  margin-right: 0;
 }
 
 .close-btn {
@@ -342,7 +348,7 @@ function handleNodeBaseDataUpdate(nodeId: string) {
 }
 
 :deep(.el-form-item) {
-  margin-bottom: 18px;
+  margin-bottom: 12px;
   display: flex;
   align-items: flex-start;
 }
@@ -351,7 +357,7 @@ function handleNodeBaseDataUpdate(nodeId: string) {
 :deep(.el-form-item__label) {
   padding: 0;
   height: auto;
-  line-height: 1.2;
+  line-height: 1.5;
   text-align: right;
   flex-shrink: 0;
   position: relative; /* 添加相对定位 */
@@ -360,7 +366,7 @@ function handleNodeBaseDataUpdate(nodeId: string) {
 /* 移除 element-plus 的默认 margin */
 :deep(.el-form-item__content) {
   margin-left: 0 !important;
-  padding-left: 12px; /* 固定的左边距 */
+  padding-left: 10px; /* 固定的左边距 */
   flex: 1;
   min-width: 0;
   display: flex;

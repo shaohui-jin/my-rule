@@ -1,168 +1,97 @@
 <template>
   <div class="condition-node-panel">
-    <el-form label-width="70px" :model="nodeData">
-      <!-- 节点备注编辑区域 -->
-      <div class="remark-container" @click="startEditRemark">
-        <textarea
-          ref="remarkInputRef"
-          v-model="nodeData.remark"
-          class="remark-input"
-          placeholder="请输入备注"
-          rows="3"
-          :disabled="props.disabled"
-          @blur="finishEditRemark"
-          @keydown.enter.exact.prevent="finishEditRemark"
-          @keydown.esc.prevent="cancelEditRemark"
-        ></textarea>
-      </div>
+    <!-- 节点备注编辑区域 -->
+    <div class="remark-container" @click="startEditRemark">
+      <el-input
+        type="textarea"
+        ref="remarkInputRef"
+        v-model="nodeData.remark"
+        class="remark-input"
+        placeholder="请输入备注"
+        rows="3"
+        :disabled="props.disabled"
+        @blur="finishEditRemark"
+        @keydown.enter.exact.prevent="finishEditRemark"
+        @keydown.esc.prevent="cancelEditRemark"
+      ></el-input>
+    </div>
 
-      <div class="param-group-title">输入参数</div>
-      <div class="param-list">
-        <div v-for="(item, idx) in allInputOptions" :key="idx" class="param-row">
-          <div class="param-label-col">
-            <span class="param-label">{{ item.rstLabel }}</span>
-          </div>
-          <div class="param-input-group">
-            <el-input
-              :model-value="item.label"
-              disabled
-              style="pointer-events: none; user-select: none"
-              placeholder=""
+    <div class="param-group-title">输入参数</div>
+    <div class="param-list">
+      <div v-for="(item, idx) in allInputOptions" :key="idx" class="param-row">
+        <div class="param-label-col">
+          <span class="param-label">{{ item.rstLabel }}</span>
+        </div>
+        <div class="param-input-group">
+          <el-input
+            :model-value="item.label"
+            disabled
+            style="pointer-events: none; user-select: none"
+            placeholder=""
+          />
+        </div>
+      </div>
+    </div>
+    <div class="divider" />
+    <div class="param-group-title-row">
+      <div class="param-group-title">出参配置：</div>
+      <div class="button-group">
+        <el-button type="primary" @click="addElseIf" class="add-else-btn narrow-add-btn">
+          + 分支
+        </el-button>
+      </div>
+    </div>
+    <div class="branch-list scrollable-branch-list">
+      <div v-for="(param, idx) in nodeData.outputData" :key="idx" class="branch-card">
+        <div class="branch-row">
+          <span class="branch-label">
+            {{ idx === 0 ? 'if' : idx === nodeData.outputData.length - 1 ? 'else' : 'elseif' }}
+          </span>
+          <template v-if="idx !== nodeData.outputData.length - 1">
+            <BaseFunctionExpression
+              v-if="nodeData.version > '1.0.0'"
+              v-model="param.conditionCheck"
+              :nodeData="nodeData"
+              :workflowData="workflowData"
+              placeholder="rst = 5 (lua规范)"
+              type="textarea"
+              :disabled="props.disabled"
+              class="branch-cond-input"
             />
-          </div>
-        </div>
-      </div>
-      <div class="divider" />
-      <div class="param-group-title-row">
-        <div class="param-group-title">出参配置：</div>
-        <div class="button-group">
-          <el-tooltip placement="top" raw-content>
-            <template #content>
-              <div
-                style="
-                  font-family: 'Courier New', Courier, monospace;
-                  line-height: 1.5;
-                  font-size: 13px;
-                "
-              >
-                <p style="margin: 0 0 5px 0">
-                  <strong>Lua 条件表达式指南</strong>
-                </p>
-                <p style="margin: 0 0 5px 0">1. 请使用 Lua 规范编写条件表达式。</p>
-                <p style="margin: 0 0 5px 0; font-size: 1.1em; color: #e6a23c; font-weight: bold">
-                  2. 表达式中的
-                  <code>rst</code>
-                  代表上游节点的返回值。
-                </p>
-                <div>3. Lua 基本语法:</div>
-                <div style="padding-left: 10px">
-                  <p style="margin: 2px 0">
-                    <strong>关系运算符:</strong>
-                    <code>=</code>
-                    ,
-                    <code>&lt;&gt;</code>
-                    ,
-                    <code>&gt;</code>
-                    ,
-                    <code>&lt;</code>
-                    ,
-                    <code>&gt;=</code>
-                    ,
-                    <code>&lt;=</code>
-                  </p>
-                  <p style="margin: 2px 0">
-                    <strong>逻辑运算符:</strong>
-                    <code>and</code>
-                    ,
-                    <code>or</code>
-                    ,
-                    <code>not</code>
-                  </p>
-                </div>
-                <p style="margin: 8px 0 5px 0">
-                  <strong>示例:</strong>
-                </p>
-                <div style="background: #f5f5f5; padding: 5px; border-radius: 4px">
-                  <p style="margin: 0 0 5px 0">
-                    <code style="color: #666"> rows(rst) &gt; 0 or rst[1].w == 10</code>
-                    <br />
-                    <span style="color: #666">
-                      含义: 返回值列表长度大于0, 或其
-                      <strong>第1个</strong>
-                      元素的 'w' 属性等于10。
-                    </span>
-                  </p>
-                  <p style="margin: 0">
-                    <code style="color: #666">rst &gt;= 0 and rst &lt;&gt; 10</code>
-                    <br />
-                    <span style="color: #666">
-                      含义: 返回值大于等于
-                      <strong>0</strong>
-                      , 且不等于10。
-                    </span>
-                  </p>
-                </div>
-              </div>
-            </template>
-            <el-icon class="help-icon"><QuestionFilled /></el-icon>
-          </el-tooltip>
-          <el-button type="primary" @click="addElseIf" class="add-else-btn narrow-add-btn">
-            + 分支
-          </el-button>
-        </div>
-      </div>
-      <div class="branch-list scrollable-branch-list">
-        <div v-for="(param, idx) in nodeData.outputData" :key="idx" class="branch-card">
-          <div class="branch-row">
-            <span class="branch-label">
-              {{ idx === 0 ? 'if' : idx === nodeData.outputData.length - 1 ? 'else' : 'elseif' }}
-            </span>
-            <template v-if="idx !== nodeData.outputData.length - 1">
-              <BaseFunctionExpression
-                v-if="nodeData.version > '1.0.0'"
-                v-model="param.conditionCheck"
-                :nodeData="nodeData"
-                :workflowData="workflowData"
-                placeholder="rst = 5 (lua规范)"
-                type="textarea"
-                :disabled="props.disabled"
-                class="branch-cond-input"
-              />
-              <el-input
-                v-else
-                :disabled="props.disabled"
-                v-model="param.conditionCheck"
-                placeholder="#rst == 5 (lua规范)"
-                class="branch-cond-input"
-                style="flex: 1"
-              />
-            </template>
-          </div>
-          <div class="branch-row">
-            <span class="branch-label">目标</span>
             <el-input
-              :model-value="getOutputTargetInfo(nodeData, param, props.workflowData)"
-              disabled
-              placeholder="目标"
-              class="branch-target-input"
+              v-else
+              :disabled="props.disabled"
+              v-model="param.conditionCheck"
+              placeholder="#rst == 5 (lua规范)"
+              class="branch-cond-input"
               style="flex: 1"
             />
-          </div>
-          <el-button
-            v-if="
-              idx !== 0 && idx !== nodeData.outputData.length - 1 && nodeData.outputData.length > 2
-            "
-            type="danger"
-            @click="removeBranch(idx)"
-            circle
-            class="branch-del"
-            style="position: absolute; top: 16px; right: 16px; z-index: 2"
-          >
-            <span class="branch-del-inner">-</span>
-          </el-button>
+          </template>
         </div>
+        <div class="branch-row">
+          <span class="branch-label">目标</span>
+          <el-input
+            :model-value="getOutputTargetInfo(nodeData, param, props.workflowData)"
+            disabled
+            placeholder="目标"
+            class="branch-target-input"
+            style="flex: 1"
+          />
+        </div>
+        <el-button
+          v-if="
+            idx !== 0 && idx !== nodeData.outputData.length - 1 && nodeData.outputData.length > 2
+          "
+          type="danger"
+          @click="removeBranch(idx)"
+          circle
+          class="branch-del"
+          style="position: absolute; top: 16px; right: 16px; z-index: 2"
+        >
+          <span class="branch-del-inner">-</span>
+        </el-button>
       </div>
-    </el-form>
+    </div>
   </div>
 </template>
 
@@ -289,16 +218,15 @@ function removeBranch(idx: number) {
   padding: 8px 12px;
   font-size: 14px;
   line-height: 1.5;
-  color: #333;
-  background-color: #f5f7fa;
+  color: var(--el-text-color-primary);
+  background-color: var(--el-fill-color-light);
   border-radius: 4px;
   white-space: pre-wrap;
   word-break: break-word;
 }
 
-
 .remark-content.no-remark {
-  color: #909399;
+  color: var(--el-color-info);
   font-style: italic;
 }
 
@@ -308,8 +236,7 @@ function removeBranch(idx: number) {
   padding: 8px 12px;
   font-size: 14px;
   line-height: 1.5;
-  color: #333;
-  background-color: #f5f7fa;
+  color: var(--el-text-color-primary);
   border-radius: 4px;
   outline: none;
   font-family: inherit;
@@ -329,15 +256,15 @@ function removeBranch(idx: number) {
 }
 .divider {
   height: 1px;
-  background: #ececec;
-  margin: 10px 0 6px 0;
+  background: var(--el-border-color-lighter);
+  margin: 12px 0 8px 0;
 }
 
 .param-group-title {
   font-weight: 600;
   font-size: 15px;
-  margin: 8px 0 4px 0;
-  color: #222;
+  margin: 10px 0 6px 0;
+  color: var(--el-text-color-primary);
   letter-spacing: 1px;
   user-select: none;
 }
@@ -345,8 +272,8 @@ function removeBranch(idx: number) {
 .param-list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin-bottom: 8px;
+  gap: 6px;
+  margin-bottom: 10px;
 }
 
 .param-row {
@@ -368,7 +295,7 @@ function removeBranch(idx: number) {
 }
 
 .param-label {
-  color: #333;
+  color: var(--el-text-color-primary);
   font-size: 13px;
   font-weight: 500;
   text-align: right;
@@ -380,7 +307,7 @@ function removeBranch(idx: number) {
 }
 
 .param-type-under {
-  color: #aaa;
+  color: var(--el-text-color-secondary);
   font-size: 11px;
   margin-top: 1px;
   text-align: right;
@@ -427,7 +354,7 @@ function removeBranch(idx: number) {
 }
 
 .branch-card {
-  background: #f8fafd;
+  background: var(--el-color-primary-light-9);
   border-radius: 8px;
   padding: 6px 8px 4px 8px;
   position: relative;
@@ -443,7 +370,7 @@ function removeBranch(idx: number) {
 .branch-label {
   width: 40px;
   font-size: 13px;
-  color: #333;
+  color: var(--el-text-color-primary);
   font-weight: 500;
   margin-right: 4px;
   text-align: right;
@@ -469,9 +396,9 @@ function removeBranch(idx: number) {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  border: 1.2px solid #ff4d4f !important;
+  border: 1.2px solid var(--el-color-danger) !important;
   background: transparent !important;
-  color: #ff4d4f !important;
+  color: var(--el-color-danger) !important;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -484,7 +411,7 @@ function removeBranch(idx: number) {
 }
 
 .branch-del-inner {
-  color: #ff4d4f;
+  color: var(--el-color-danger);
   font-size: 13px;
   font-weight: bold;
   display: flex;
@@ -503,30 +430,35 @@ function removeBranch(idx: number) {
   font-weight: 500;
   letter-spacing: 1px;
   border-radius: 5px;
-  background: #409eff;
+  background: var(--el-color-primary);
   color: #fff;
   border: none;
   transition: background 0.2s;
-  box-shadow: 0 1px 4px rgba(64, 158, 255, 0.08);
+  box-shadow: 0 1px 4px rgba(60, 121, 180, 0.15);
   padding: 0 8px;
   font-size: 12px;
 }
 
 .add-else-btn:hover {
-  background: #66b1ff;
+  background: var(--el-color-primary-light-3);
   color: #fff;
   border: none;
   transition: background 0.2s;
-  box-shadow: 0 1px 4px rgba(64, 158, 255, 0.08);
+  box-shadow: 0 1px 4px rgba(60, 121, 180, 0.2);
   padding: 0 8px;
   font-size: 12px;
 }
 
 .help-icon {
   margin-right: 8px;
-  color: #909399;
+  color: var(--el-color-info);
   cursor: pointer;
   font-size: 16px;
+  transition: color 0.2s;
+}
+
+.help-icon:hover {
+  color: var(--el-color-primary);
 }
 
 .button-group {
@@ -554,7 +486,7 @@ function removeBranch(idx: number) {
 .panel-section-title {
   font-size: 15px;
   font-weight: 600;
-  color: #222;
+  color: var(--el-text-color-primary);
   margin: 0 0 4px 0;
   letter-spacing: 1px;
   user-select: none;
