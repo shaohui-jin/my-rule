@@ -6,35 +6,35 @@
 // 颜色常量
 export const COLORS = {
   // 主色调
-  primary: '#1890ff',
+  primary: 'var(--el-color-primary, #1890ff)',
   
   // 状态颜色
-  error: '#ff4d4f',
-  success: '#52c41a',
-  warning: '#faad14',
+  error: 'var(--el-color-danger, #ff4d4f)',
+  success: 'var(--el-color-success, #52c41a)',
+  warning: 'var(--el-color-warning, #faad14)',
   
   // 边框和分割线
-  border: '#e2e2e2',
-  borderLight: '#f0f0f0',
+  border: 'var(--el-border-color, #e2e2e2)',
+  borderLight: 'var(--el-border-color-lighter, #f0f0f0)',
   
   // 背景色
   background: {
-    white: '#ffffff',
-    light: '#f5f7fa',
-    lighter: '#fafcff',
-    dark: '#f0f2f5'
+    white: 'var(--el-bg-color, #ffffff)',
+    light: 'var(--el-fill-color-light, #f5f7fa)',
+    lighter: 'var(--el-fill-color-lighter, #fafcff)',
+    dark: 'var(--el-fill-color, #f0f2f5)'
   },
   
   // 文字颜色
   text: {
-    primary: '#333',
-    secondary: '#888',
-    disabled: '#ccc',
+    primary: 'var(--el-text-color-primary, #333)',
+    secondary: 'var(--el-text-color-secondary, #888)',
+    disabled: 'var(--el-text-color-disabled, #ccc)',
     white: '#ffffff'
   },
   
   // 选择框颜色
-  selection: '#1890ff'
+  selection: 'var(--el-color-primary, #1890ff)'
 } as const
 
 // 只保留真正需要统一管理的尺寸常量

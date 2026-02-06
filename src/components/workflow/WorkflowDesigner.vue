@@ -331,7 +331,7 @@ const initGraph = () => {
         args: {
           padding: -1, // 高亮显示的间距，可选值：-1（不显示间距）。
           attrs: {
-            stroke: '#73d13d' // 高亮显示的颜色，可选值：'#73d13d'（绿色）、'#f56c6c'（红色）、'#409eff'（蓝色）。
+            stroke: 'var(--el-color-success, #73d13d)' // 跟随 Element/Tailwind 主题色系
           }
         }
       }
@@ -528,7 +528,9 @@ function registerGraphBaseEvents() {
     closeInfoPanel()
   })
 
-  graph.on('node:customer_collapse', ({ node }: { node: any }) => {
+  graph.on('node:customer_collapse', ({ node, e }: { node: any; e: Event }) => {
+    e.stopPropagation()
+    e.preventDefault()
     // console.log('node', node)
     node.toggleCollapse(workflowData.value)
   })
@@ -681,7 +683,13 @@ function registerGraphBaseEvents() {
     edge.addTools([
       {
         name: 'target-arrowhead',
-        args: { attrs: { fill: edge.hasCorrectionText ? '#ff6b6b' : '#1890ff' } }
+        args: {
+          attrs: {
+            fill: edge.hasCorrectionText
+              ? 'var(--el-color-danger, #ff6b6b)'
+              : 'var(--el-color-primary, #1890ff)'
+          }
+        }
       },
       {
         name: 'button-remove',
@@ -1569,49 +1577,58 @@ function findUpstreamNodes(nodeId, isFromCondition, workflowData, visited) {
 }
 
 const handlerEventListener = (node, view) => {
-  const copyIcon = view.container.querySelector('.x6-graph-pannable [event="node:copy_mouseenter"]')
-  const delIcon = view.container.querySelector('.x6-graph-pannable [event="node:del_mouseenter"]')
-  const collapseIcon = view.container.querySelector(
-    '.x6-graph-pannable [event="node:customer_collapse"]'
-  )
-  const titleIcon = view.container.querySelector(
-    '.x6-graph-pannable [event="node:custom_titletip"]'
-  )
-  const infoIcon = view.container.querySelector('.x6-graph-pannable [event="node:info_mouseenter"]')
+  // 用事件委托替代逐个 add/remove：mouseenter/leave 不冒泡，委托时改用 mouseover/mouseout
+  const root = view.container?.querySelector('.x6-graph-pannable') || view.container
 
-  const copyFn = () => showInfoPanel(node, 'copyButton', '复制节点')
-  const delFn = () => showInfoPanel(node, 'delButton', '删除节点')
-  const collapseFn = () =>
-    showInfoPanel(
-      node,
-      'foldButton',
-      collapseIcon.getAttribute('xlink:href').includes('UnFold') ? '展开' : '折叠'
-    )
-  const titleFn = () => showInfoPanel(node, 'title', titleIcon.getAttribute('text'))
-  const infoFn = () => showInfoPanel(node, 'infoButton', node.data.remark)
+  const getEventEl = (target: EventTarget | null) => {
+    const el = target as HTMLElement | null
+    return el?.closest?.('[event]') as HTMLElement | null
+  }
 
-  copyIcon?.addEventListener('mouseenter', copyFn)
-  copyIcon?.addEventListener('mouseleave', closeInfoPanel)
-  delIcon?.addEventListener('mouseenter', delFn)
-  delIcon?.addEventListener('mouseleave', closeInfoPanel)
-  collapseIcon?.addEventListener('mouseenter', collapseFn)
-  collapseIcon?.addEventListener('mouseleave', closeInfoPanel)
-  titleIcon?.addEventListener('mouseenter', titleFn)
-  titleIcon?.addEventListener('mouseleave', closeInfoPanel)
-  infoIcon?.addEventListener('mouseenter', infoFn)
-  infoIcon?.addEventListener('mouseleave', closeInfoPanel)
+  const onMouseOver = (e: MouseEvent) => {
+    const el = getEventEl(e.target)
+    if (!el) return
+    // 避免在同一元素内部移动导致重复触发
+    if (e.relatedTarget && el.contains(e.relatedTarget as Node)) return
+
+    const eventName = el.getAttribute('event')
+    switch (eventName) {
+      case 'node:copy_mouseenter':
+        showInfoPanel(node, 'copyButton', '复制节点')
+        break
+      case 'node:del_mouseenter':
+        showInfoPanel(node, 'delButton', '删除节点')
+        break
+      case 'node:customer_collapse': {
+        const href = el.getAttribute('xlink:href') || ''
+        showInfoPanel(node, 'foldButton', href.includes('UnFold') ? '展开' : '折叠')
+        break
+      }
+      case 'node:custom_titletip': {
+        const text = el.getAttribute('text') || ''
+        showInfoPanel(node, 'title', text)
+        break
+      }
+      case 'node:info_mouseenter':
+        showInfoPanel(node, 'infoButton', node.data.remark)
+        break
+    }
+  }
+
+  const onMouseOut = (e: MouseEvent) => {
+    const el = getEventEl(e.target)
+    if (!el) return
+    // 离开该元素（而不是在元素内部移动）才关闭
+    if (e.relatedTarget && el.contains(e.relatedTarget as Node)) return
+    closeInfoPanel()
+  }
+
+  root?.addEventListener('mouseover', onMouseOver)
+  root?.addEventListener('mouseout', onMouseOut)
 
   return () => {
-    copyIcon?.removeEventListener('mouseenter', copyFn)
-    copyIcon?.removeEventListener('mouseleave', closeInfoPanel)
-    delIcon?.removeEventListener('mouseenter', delFn)
-    delIcon?.removeEventListener('mouseleave', closeInfoPanel)
-    collapseIcon?.removeEventListener('mouseenter', collapseFn)
-    collapseIcon?.removeEventListener('mouseleave', closeInfoPanel)
-    titleIcon?.removeEventListener('mouseenter', titleFn)
-    titleIcon?.removeEventListener('mouseleave', closeInfoPanel)
-    infoIcon?.removeEventListener('mouseenter', infoFn)
-    infoIcon?.removeEventListener('mouseleave', closeInfoPanel)
+    root?.removeEventListener('mouseover', onMouseOver)
+    root?.removeEventListener('mouseout', onMouseOut)
   }
 }
 
@@ -1763,7 +1780,7 @@ function findUpstreamNonConditionNodes(nodeId: string, workflowData: any): strin
   width: 100%;
   height: 100%;
   position: relative;
-  background: #fff;
+  background: var(--el-bg-color, #fff);
   overflow: hidden;
 }
 
@@ -1773,11 +1790,11 @@ function findUpstreamNonConditionNodes(nodeId: string, workflowData: any): strin
   height: 100%;
   position: relative;
   :deep(.snapline) {
-    border-color: #1890ff;
+    border-color: var(--el-color-primary, #1890ff);
     border-style: dashed;
     .x6-widget-snapline-vertical,
     .x6-widget-snapline-horizontal {
-      stroke: #1890ff;
+      stroke: var(--el-color-primary, #1890ff);
       stroke-width: 1px;
       stroke-dasharray: 3, 3;
     }
@@ -1785,13 +1802,13 @@ function findUpstreamNonConditionNodes(nodeId: string, workflowData: any): strin
   :deep(.x6-port-in) {
     .v-line:last-child {
       font-size: 13px;
-      fill: #e8c38e;
+      fill: var(--el-color-warning, #e8c38e);
     }
   }
   :deep(.x6-port-out) {
     .v-line:last-child {
       font-size: 13px;
-      fill: #e8c38e;
+      fill: var(--el-color-warning, #e8c38e);
     }
   }
 }
@@ -1803,7 +1820,7 @@ function findUpstreamNonConditionNodes(nodeId: string, workflowData: any): strin
   bottom: 20px;
   width: 200px;
   height: 150px;
-  background: #fff;
+  background: var(--el-bg-color-overlay, var(--el-bg-color, #fff));
   border-radius: 8px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
   z-index: 100;
@@ -1824,7 +1841,7 @@ function findUpstreamNonConditionNodes(nodeId: string, workflowData: any): strin
   align-items: center;
   padding: 4px;
   border-radius: 4px;
-  background: #fff;
+  background: var(--el-bg-color-overlay, var(--el-bg-color, #fff));
   svg {
     cursor: pointer;
   }
@@ -1841,7 +1858,7 @@ function findUpstreamNonConditionNodes(nodeId: string, workflowData: any): strin
   //line-height: 64px;
   padding: 4px;
   border-radius: 4px;
-  background: #fff;
+  background: var(--el-bg-color-overlay, var(--el-bg-color, #fff));
   div {
     cursor: pointer;
     display: flex;
@@ -1856,7 +1873,7 @@ function findUpstreamNonConditionNodes(nodeId: string, workflowData: any): strin
   top: 0;
   width: 300px;
   height: 100%;
-  background: #fff;
+  background: var(--el-bg-color-overlay, var(--el-bg-color, #fff));
   box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
   z-index: 1000;
   padding: 20px;
@@ -1868,7 +1885,7 @@ function findUpstreamNonConditionNodes(nodeId: string, workflowData: any): strin
   font-size: 18px;
   font-weight: 500;
   margin-bottom: 20px;
-  color: #333;
+  color: var(--el-text-color-primary, #333);
 }
 
 .toolbar {
@@ -1878,7 +1895,7 @@ function findUpstreamNonConditionNodes(nodeId: string, workflowData: any): strin
   z-index: 100;
   display: flex;
   gap: 10px;
-  background: white;
+  background: var(--el-bg-color-overlay, var(--el-bg-color, #fff));
   padding: 10px;
   border-radius: 4px;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
@@ -1895,7 +1912,7 @@ function findUpstreamNonConditionNodes(nodeId: string, workflowData: any): strin
   box-shadow: none;
   padding: 0;
   font-size: 12px;
-  color: #999;
+  color: var(--el-text-color-secondary, #999);
   font-weight: 500;
   pointer-events: none;
   user-select: none;
@@ -1911,7 +1928,7 @@ function findUpstreamNonConditionNodes(nodeId: string, workflowData: any): strin
   box-shadow: none;
   padding: 0;
   font-size: 24px;
-  color: #999;
+  color: var(--el-text-color-secondary, #999);
   font-weight: 500;
   pointer-events: none;
   user-select: none;
@@ -1921,7 +1938,7 @@ function findUpstreamNonConditionNodes(nodeId: string, workflowData: any): strin
   width: 20px !important;
   height: 20px !important;
   padding: 0 !important;
-  border: 1px solid #d9d9d9 !important;
+  border: 1px solid var(--el-border-color, #d9d9d9) !important;
   background: rgba(255, 255, 255, 0.9) !important;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
   display: flex !important;
@@ -1931,8 +1948,8 @@ function findUpstreamNonConditionNodes(nodeId: string, workflowData: any): strin
 }
 
 .ungroup-btn:hover {
-  border-color: #ff4d4f !important;
-  color: #ff4d4f !important;
+  border-color: var(--el-color-danger, #ff4d4f) !important;
+  color: var(--el-color-danger, #ff4d4f) !important;
   transform: scale(1.1) !important;
 }
 
@@ -1948,15 +1965,15 @@ function findUpstreamNonConditionNodes(nodeId: string, workflowData: any): strin
   height: 8px;
 }
 .table-container::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: var(--el-fill-color-light, #f1f1f1);
   border-radius: 4px;
 }
 .table-container::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
+  background: var(--el-border-color, #c1c1c1);
   border-radius: 4px;
 }
 .table-container::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
+  background: var(--el-border-color-dark, #a8a8a8);
 }
 
 /* 确认框样式 */

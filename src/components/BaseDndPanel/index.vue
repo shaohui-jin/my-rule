@@ -57,7 +57,7 @@ function onNodeMouseLeave(funcId: string) {
     width: 80px;
     height: 80px;
     background: #f7f9fa;
-    border: 1.5px solid var(--workflow-border, #e0e0e0);
+    border: 1.5px solid var(--el-color-primary-light-7, #e0e0e0);
     border-radius: 12px;
     display: flex;
     flex-direction: column;
@@ -76,7 +76,7 @@ function onNodeMouseLeave(funcId: string) {
       cursor: pointer !important;
     }
     &:hover {
-      border: 1.5px solid var(--workflow-primary, #1890ff);
+      border: 1.5px solid var(--el-color-primary, #1890ff);
       background: #f0f7ff;
     }
 
