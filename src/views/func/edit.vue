@@ -148,12 +148,12 @@
 </template>
 
 <script setup lang="ts">
-import BaseEditor from '@/components/BaseEditor/index.vue'
-import BasePre from '@/components/BasePre/index.vue'
+import BaseEditor from '@/components/base/BaseEditor.vue'
+import BasePre from '@/components/base/BasePre.vue'
 import JSDocParser, { JsDocData } from '@/utils/parser/JSDocParser'
 import FormParser, { FromConfig } from '@/utils/parser/FormParser'
 import SimpleFormRenderer from '@/components/funcForm/SimpleFormRenderer.vue'
-import BaseFormRender from '@/components/BaseFormRender/index.vue'
+import BaseFormRender from '@/components/base/BaseFormRender.vue'
 import { reactive, ref, onMounted, onActivated } from 'vue'
 import { Bottom, Right, QuestionFilled } from '@element-plus/icons-vue'
 import { ElMessage, ElNotification } from 'element-plus'

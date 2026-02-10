@@ -60,8 +60,8 @@ const BaseFunctionNode: BaseFunctionNodeType[] = [
         }
       ],
       outputData: [
-        { paramName: 'result', type: 'table', subType: 'any', conditionCheck: '', portId: 'out_1' },
-        { paramName: 'result', type: 'table', subType: 'any', conditionCheck: '', portId: 'out_2' }
+        { paramName: 'result', type: 'table', subType: 'any', functionCode: '', portId: 'out_1' },
+        { paramName: 'result', type: 'table', subType: 'any', functionCode: '', portId: 'out_2' }
       ],
       version: '1.0.0'
     }
@@ -362,9 +362,8 @@ const BaseFunctionNode: BaseFunctionNodeType[] = [
         }
       ],
       outputData: [
-        { paramName: 'result', type: 'any', subType: 'any', conditionCheck: '', portId: 'out_1' }
-      ],
-      version: '1.0.0'
+        { paramName: 'result', type: 'any', subType: 'any', functionCode: '', portId: 'out_1' }
+      ]
     }
   },
   {

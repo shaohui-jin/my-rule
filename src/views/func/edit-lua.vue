@@ -3,7 +3,7 @@ import LuaParser from 'luaparse'
 import { parseLuaToFormConfig } from '@/components/funcForm/util.js'
 import { reactive, ref, onMounted, onActivated } from 'vue'
 // @ts-ignore
-import BaseEditor from '@/components/BaseEditor/index.vue'
+import BaseEditor from '@/components/base/BaseEditor.vue'
 import SimpleFormRenderer from '@/components/funcForm/SimpleFormRenderer.vue'
 import { Bottom, Right, QuestionFilled } from '@element-plus/icons-vue'
 import { ElMessage, ElNotification } from 'element-plus'
@@ -269,28 +269,28 @@ const Lua2FormJson = () => {
     return
   }
   // try {
-    const ast = LuaParser.parse(state.luaScript, { luaVersion: '5.2' })
-    const functionComments = ast.comments
-      ?.filter((comment: any) => comment.type === 'Comment' && comment.value.trim().startsWith('@'))
-      .map((comment: any) => {
-        comment.value = comment.value.trim()
-        return comment
-      })
-    console.log('functionComments', functionComments)
-    // 提取函数定义信息
-    extractFunctionInfo(ast)
-    // 入参和出参配置生成
-    state.formJson.input = parseLuaToFormConfig(functionComments, 'input')
-    state.formJson.output = parseLuaToFormConfig(functionComments, 'output')
-    console.log('state.formJson.input', state.formJson.input)
-    console.log('state.formJson.output', state.formJson.output)
-    // 设置入参默认值
-    setInputFormData(functionComments)
-    // ElNotification({
-    //   message: '函数解析表单成功！',
-    //   type: 'success',
-    //   duration: 1000
-    // })
+  const ast = LuaParser.parse(state.luaScript, { luaVersion: '5.2' })
+  const functionComments = ast.comments
+    ?.filter((comment: any) => comment.type === 'Comment' && comment.value.trim().startsWith('@'))
+    .map((comment: any) => {
+      comment.value = comment.value.trim()
+      return comment
+    })
+  console.log('functionComments', functionComments)
+  // 提取函数定义信息
+  extractFunctionInfo(ast)
+  // 入参和出参配置生成
+  state.formJson.input = parseLuaToFormConfig(functionComments, 'input')
+  state.formJson.output = parseLuaToFormConfig(functionComments, 'output')
+  console.log('state.formJson.input', state.formJson.input)
+  console.log('state.formJson.output', state.formJson.output)
+  // 设置入参默认值
+  setInputFormData(functionComments)
+  // ElNotification({
+  //   message: '函数解析表单成功！',
+  //   type: 'success',
+  //   duration: 1000
+  // })
   // } catch (error) {
   //   ElNotification({
   //     title: '解析失败',
@@ -419,28 +419,56 @@ onActivated(() => {
             popper-class="func-edit-help-popper"
           >
             <template #reference>
-              <el-button
-                :icon="QuestionFilled"
-              >Lua 注释提取规则</el-button>
+              <el-button :icon="QuestionFilled">Lua 注释提取规则</el-button>
             </template>
             <template #default>
               <div class="help-content">
-                <p>系统会识别以 <code>-- @</code> 开头的特殊注释行，用于生成表单配置。</p>
+                <p>
+                  系统会识别以
+                  <code>-- @</code>
+                  开头的特殊注释行，用于生成表单配置。
+                </p>
 
                 <strong>核心规则:</strong>
                 <ul>
-                  <li><code>@param &lt;name&gt; &lt;type&gt; &lt;desc&gt; # [options]</code> - 定义输入参数。</li>
-                  <li><code>@field &lt;parent&gt;.&lt;field&gt; &lt;type&gt; &lt;desc&gt;</code> - 定义 <code>table</code> 对象的字段。</li>
-                  <li><code>@return &lt;type&gt; &lt;desc&gt;</code> - 定义函数返回值。</li>
+                  <li>
+                    <code>@param &lt;name&gt; &lt;type&gt; &lt;desc&gt; # [options]</code>
+                    - 定义输入参数。
+                  </li>
+                  <li>
+                    <code>@field &lt;parent&gt;.&lt;field&gt; &lt;type&gt; &lt;desc&gt;</code>
+                    - 定义
+                    <code>table</code>
+                    对象的字段。
+                  </li>
+                  <li>
+                    <code>@return &lt;type&gt; &lt;desc&gt;</code>
+                    - 定义函数返回值。
+                  </li>
                 </ul>
 
                 <strong>高级选项 (# 后):</strong>
                 <ul>
-                  <li><code>default:&lt;value&gt;</code>: 设置默认值</li>
-                  <li><code>options:[{...}]</code>: 定义下拉选项</li>
-                  <li><code>desc:&lt;desc&gt;</code>: 设置字段描述</li>
-                  <li><code>componentType:&lt;componentType&gt;</code>: 设置组件类型</li>
-                  <li><code>multiple:&lt;multiple&gt;</code>: 设置是否多选</li>
+                  <li>
+                    <code>default:&lt;value&gt;</code>
+                    : 设置默认值
+                  </li>
+                  <li>
+                    <code>options:[{...}]</code>
+                    : 定义下拉选项
+                  </li>
+                  <li>
+                    <code>desc:&lt;desc&gt;</code>
+                    : 设置字段描述
+                  </li>
+                  <li>
+                    <code>componentType:&lt;componentType&gt;</code>
+                    : 设置组件类型
+                  </li>
+                  <li>
+                    <code>multiple:&lt;multiple&gt;</code>
+                    : 设置是否多选
+                  </li>
                 </ul>
 
                 <strong>示例:</strong>
@@ -449,7 +477,7 @@ onActivated(() => {
             </template>
           </el-popover>
         </span>
-        <div style="margin-left: auto; display: flex;">
+        <div style="margin-left: auto; display: flex">
           <el-button type="primary" @click="saveFuncData">保存</el-button>
           <el-button :icon="Right" type="primary" @click="Lua2FormJson">更新表单配置</el-button>
         </div>
@@ -459,7 +487,15 @@ onActivated(() => {
       </div>
     </div>
     <div class="right">
-      <h4 style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #e4e7ed; color: #0431fa; font-size: 18px;" >
+      <h4
+        style="
+          margin-bottom: 16px;
+          padding-bottom: 16px;
+          border-bottom: 1px solid #e4e7ed;
+          color: #0431fa;
+          font-size: 18px;
+        "
+      >
         表单预览
       </h4>
       <div class="function-basic-info">

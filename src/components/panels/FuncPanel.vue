@@ -3,7 +3,8 @@
     <el-form label-width="70px" :model="nodeData" @submit.prevent>
       <!-- 节点备注编辑区域 -->
       <div class="remark-container" @click="startEditRemark">
-        <textarea
+        <el-input
+          type="textarea"
           ref="remarkInputRef"
           v-model="nodeData.remark"
           class="remark-input"
@@ -290,7 +291,6 @@ function getOptions(param, idx) {
 .remark-input {
   width: 100%;
   min-height: 60px;
-  padding: 8px 12px;
   font-size: 14px;
   line-height: 1.5;
   color: #333;

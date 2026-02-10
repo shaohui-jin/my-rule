@@ -178,11 +178,11 @@ export class WorkflowValidator {
         }
       })
 
-      // 校验outputData每项的conditionCheck，最后一个分支（else）跳过
+      // 校验outputData每项的functionCode，最后一个分支（else）跳过
       if (Array.isArray(node.outputData)) {
         node.outputData.forEach((out, idx) => {
           if (idx < node.outputData.length - 1) {
-            if (!out.conditionCheck || out.conditionCheck === '') {
+            if (!out.functionCode || out.functionCode === '') {
               nodeErrors.push(`分支${idx + 1}条件未设置`)
             }
           }

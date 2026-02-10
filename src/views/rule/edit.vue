@@ -1,11 +1,11 @@
 <template>
   <div class="rule-edit-layout">
-    <BaseDndPanel @node-mouse-down="(e, node) => onNodeMouseDown(node, e)" />
+    <DndPanel @node-mouse-down="(e, node) => onNodeMouseDown(node, e)" />
 
     <!-- 中间画布区域：用于展示和编辑工作流 -->
     <div class="center-panel">
       <div class="canvas-center-wrap">
-        <WorkflowDesigner
+        <Designer
           ref="editorRef"
           :data="workflowData"
           @show-attr-panel="onShowAttrPanel"
@@ -64,20 +64,10 @@
 </template>
 
 <script setup lang="ts">
-import {
-  ref,
-  onMounted,
-  onUnmounted,
-  onActivated,
-  onDeactivated,
-  nextTick,
-  computed,
-  watch
-} from 'vue'
-import { onBeforeRouteLeave, useRoute } from 'vue-router'
-import WorkflowDesigner from '@/components/workflow/WorkflowDesigner.vue'
-import BaseDndPanel from '@/components/BaseDndPanel/index.vue'
-import AttrPanelDrawer from '@/components/workflow/panels/AttrPanelDrawer.vue'
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import Designer from '@/components/designer/index.vue'
+import AttrPanelDrawer from '@/components/panels/AttrPanelDrawer.vue'
+import DndPanel from '@/components/panels/DndPanel.vue'
 import { LogicType, type WorkflowData } from '@/type/workflow'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import nodeIdFactory from '@/utils/factory/NodeIdFactory'

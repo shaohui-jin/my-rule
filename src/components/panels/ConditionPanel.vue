@@ -49,22 +49,13 @@
           </span>
           <template v-if="idx !== nodeData.outputData.length - 1">
             <BaseFunctionExpression
-              v-if="nodeData.version > '1.0.0'"
-              v-model="param.conditionCheck"
+              v-model="param.functionCode"
               :nodeData="nodeData"
               :workflowData="workflowData"
-              placeholder="rst = 5 (lua规范)"
+              placeholder="rst = 5 (js规范)"
               type="textarea"
               :disabled="props.disabled"
               class="branch-cond-input"
-            />
-            <el-input
-              v-else
-              :disabled="props.disabled"
-              v-model="param.conditionCheck"
-              placeholder="#rst == 5 (lua规范)"
-              class="branch-cond-input"
-              style="flex: 1"
             />
           </template>
         </div>
@@ -79,16 +70,14 @@
           />
         </div>
         <el-button
-          v-if="
-            idx !== 0 && idx !== nodeData.outputData.length - 1 && nodeData.outputData.length > 2
-          "
+          v-if="canDeleteBranch(idx)"
           type="danger"
           @click="removeBranch(idx)"
           circle
           class="branch-del"
           style="position: absolute; top: 16px; right: 16px; z-index: 2"
         >
-          <span class="branch-del-inner">-</span>
+          -
         </el-button>
       </div>
     </div>
@@ -175,7 +164,7 @@ function addElseIf(): void {
     return
   }
   const newBranch = {
-    conditionCheck: '',
+    functionCode: '',
     target: '',
     type: 'table',
     subType: 'any',
@@ -184,13 +173,19 @@ function addElseIf(): void {
   emit('update:addPortData', newBranch, nodeData.value.id)
 }
 
+// 判断是否可以删除分支（中间分支且总数大于2）
+function canDeleteBranch(idx: number): boolean {
+  const { outputData } = nodeData.value
+  const isMiddleBranch = idx !== 0 && idx !== outputData.length - 1
+  const hasEnoughBranches = outputData.length > 2
+  return isMiddleBranch && hasEnoughBranches
+}
+
 function removeBranch(idx: number) {
-  if (props.disabled) {
+  if (props.disabled || !canDeleteBranch(idx)) {
     return
   }
-  if (nodeData.value.outputData.length > 2) {
-    emit('update:removePortData', idx, nodeData.value.id)
-  }
+  emit('update:removePortData', idx, nodeData.value.id)
 }
 </script>
 
@@ -213,27 +208,9 @@ function removeBranch(idx: number) {
   overflow: hidden;
 }
 
-.remark-content {
-  min-height: 60px;
-  padding: 8px 12px;
-  font-size: 14px;
-  line-height: 1.5;
-  color: var(--el-text-color-primary);
-  background-color: var(--el-fill-color-light);
-  border-radius: 4px;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-.remark-content.no-remark {
-  color: var(--el-color-info);
-  font-style: italic;
-}
-
 .remark-input {
   width: 100%;
   min-height: 60px;
-  padding: 8px 12px;
   font-size: 14px;
   line-height: 1.5;
   color: var(--el-text-color-primary);
@@ -243,17 +220,6 @@ function removeBranch(idx: number) {
   margin-bottom: 0;
 }
 
-.el-form {
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 0;
-  min-height: 0;
-  padding-left: 0 !important;
-  padding-right: 0 !important;
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
-  margin-top: 0;
-}
 .divider {
   height: 1px;
   background: var(--el-border-color-lighter);
@@ -306,14 +272,6 @@ function removeBranch(idx: number) {
   user-select: none;
 }
 
-.param-type-under {
-  color: var(--el-text-color-secondary);
-  font-size: 11px;
-  margin-top: 1px;
-  text-align: right;
-  user-select: none;
-}
-
 .param-input-group {
   display: flex;
   align-items: center;
@@ -331,21 +289,6 @@ function removeBranch(idx: number) {
   font-size: 13px;
 }
 
-.param-toggle {
-  background: transparent;
-  border: none;
-  padding: 0;
-  margin-left: 2px;
-  width: 14px;
-  height: 14px;
-  min-width: 14px;
-  min-height: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-}
-
 .branch-list {
   display: flex;
   flex-direction: column;
@@ -356,7 +299,6 @@ function removeBranch(idx: number) {
 .branch-card {
   background: var(--el-color-primary-light-9);
   border-radius: 8px;
-  padding: 6px 8px 4px 8px;
   position: relative;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
 }
@@ -392,34 +334,21 @@ function removeBranch(idx: number) {
 .branch-del {
   position: absolute;
   top: -10px !important;
-  right: 0px !important;
+  right: 0 !important;
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  border: 1.2px solid var(--el-color-danger) !important;
-  background: transparent !important;
-  color: var(--el-color-danger) !important;
+  background-color: var(--el-color-danger);
+  color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
+  font-size: 16px;
   font-weight: bold;
   line-height: 1;
   padding: 0;
   box-shadow: none !important;
   z-index: 2;
-}
-
-.branch-del-inner {
-  color: var(--el-color-danger);
-  font-size: 13px;
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  line-height: 1;
 }
 
 .add-else-btn {
@@ -449,18 +378,6 @@ function removeBranch(idx: number) {
   font-size: 12px;
 }
 
-.help-icon {
-  margin-right: 8px;
-  color: var(--el-color-info);
-  cursor: pointer;
-  font-size: 16px;
-  transition: color 0.2s;
-}
-
-.help-icon:hover {
-  color: var(--el-color-primary);
-}
-
 .button-group {
   display: flex;
   align-items: center;
@@ -481,18 +398,5 @@ function removeBranch(idx: number) {
   font-size: 12px;
   border-radius: 5px;
   margin-left: 4px;
-}
-
-.panel-section-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
-  margin: 0 0 4px 0;
-  letter-spacing: 1px;
-  user-select: none;
-}
-
-.el-form-item {
-  margin-bottom: 8px !important;
 }
 </style>

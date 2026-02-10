@@ -9,7 +9,7 @@
       @mouseleave="onNodeMouseLeave(item.funcId)"
     >
       <div class="dnd-panel-item-icon logic">
-        <NodeTypeIcon :type="item.type" :size="32" />
+        <BaseNodeIcon :type="item.type" :size="32" />
       </div>
       <div class="dnd-panel-item-title">{{ item.title }}</div>
     </div>
@@ -17,7 +17,7 @@
 </template>
 
 <script setup lang="ts">
-import NodeTypeIcon from '@/components/BaseNodeIcon/index.vue'
+import BaseNodeIcon from '@/components/base/BaseNodeIcon.vue'
 import { BaseFunctionNodeType, useFunctionStore } from '@/store/modules/baseFunction'
 
 const functionStore = useFunctionStore()

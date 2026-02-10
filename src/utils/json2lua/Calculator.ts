@@ -10,11 +10,15 @@ export class Calculator {
   /**
    * 生成计算器节点代码
    */
-  public generateCalculatorCode(node: WorkflowNode, indent: number, rstArray: Array<{ key: string; value: string }>): string {
+  public generateCalculatorCode(
+    node: WorkflowNode,
+    indent: number,
+    rstArray: Array<{ key: string; value: string }>
+  ): string {
     let code = ''
 
     // 获取输入参数
-    const resultParam = node.outputData?.find(output => output.paramName === 'result').conditionCheck
+    const resultParam = node.outputData?.find(output => output.paramName === 'result').functionCode
 
     if (!resultParam) {
       code += `\n${Json2LuaUtil.indent(indent)}-- 错误：缺少必要的输出参数\n\n`

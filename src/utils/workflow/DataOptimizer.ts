@@ -147,9 +147,9 @@ export function compressParamData(param: any): any {
   if (param.portId) compressed.portId = param.portId
   if (param.widgetType) compressed.widgetType = param.widgetType
 
-  // conditionCheck 字段处理（用于if/else条件表达式存储）
-  if (param.conditionCheck) {
-    compressed.conditionCheck = param.conditionCheck
+  // functionCode 字段处理（用于if/else条件表达式存储）
+  if (param.functionCode) {
+    compressed.functionCode = param.functionCode
   }
 
   // 默认值处理
@@ -236,9 +236,9 @@ export function expandParamData(compressed: any): any {
   expanded.portId = safeDefault(compressed.portId, '')
   expanded.widgetType = safeDefault(compressed.widgetType, 'input')
 
-  // conditionCheck 字段还原（用于if/else条件表达式存储）
-  if (compressed.conditionCheck) {
-    expanded.conditionCheck = compressed.conditionCheck
+  // functionCode 字段还原（用于if/else条件表达式存储）
+  if (compressed.functionCode) {
+    expanded.functionCode = compressed.functionCode
   }
 
   // 生成唯一id

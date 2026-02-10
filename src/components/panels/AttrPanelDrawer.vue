@@ -32,7 +32,7 @@
       </div>
       <div class="drawer-actions">
         <div class="node-type-icon">
-          <NodeTypeIcon
+          <BaseNodeIcon
             :type="nodeData?.funcType"
             :logic-type="nodeData?.logicData?.logicType"
             :size="24"
@@ -67,11 +67,11 @@
 <script setup lang="ts">
 import { ref, computed, nextTick } from 'vue'
 import { LogicType, type WorkflowData } from '@/type/workflow'
-import FuncNodePanel from './FuncNodePanel.vue'
-import ConditionNodePanel from './ConditionNodePanel.vue'
-import CalculatorNodePanel from './CalculatorNodePanel.vue'
+import FuncPanel from './FuncPanel.vue'
+import ConditionPanel from './ConditionPanel.vue'
+import CalculatorPanel from './CalculatorPanel.vue'
 import { Close } from '@element-plus/icons-vue'
-import NodeTypeIcon from '@/components/BaseNodeIcon/index.vue'
+import BaseNodeIcon from '@/components/base/BaseNodeIcon.vue'
 
 /**
  * 组件属性定义
@@ -109,9 +109,9 @@ const originalTitle = ref('')
  * 面板组件映射
  */
 const panelMap = {
-  func: FuncNodePanel,
-  logic_condition: ConditionNodePanel,
-  logic_calculator: CalculatorNodePanel
+  func: FuncPanel,
+  logic_condition: ConditionPanel,
+  logic_calculator: CalculatorPanel
 }
 
 /**
@@ -205,7 +205,7 @@ function handleNodeBaseDataUpdate(nodeId: string) {
   position: absolute;
   top: 60px;
   right: -500px;
-  width: 450px;
+  width: 500px;
   height: calc(100% - 70px);
   background: var(--el-bg-color);
   box-shadow: -2px 0 8px rgba(60, 121, 180, 0.12);
@@ -227,8 +227,8 @@ function handleNodeBaseDataUpdate(nodeId: string) {
 /* 抽屉内容动画 */
 .drawer-content {
   flex: 1 1 0;
-  width: 100%;
-  overflow-y: auto;
+  //width: 100%;
+  overflow: hidden;
   padding: 0 16px;
   background: var(--el-bg-color);
   opacity: 0;

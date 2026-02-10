@@ -300,7 +300,7 @@ export class LuaGenerator {
     try {
       // 获取指定索引的 outputData
       const output = logicNode.outputData?.[outputIndex]
-      if (!output?.conditionCheck) {
+      if (!output?.functionCode) {
         return 'true' // 对于 else 分支，返回 true
       }
 
@@ -311,7 +311,7 @@ export class LuaGenerator {
         return `expression_${logicId}_${output.portId}(${resStr})`
       } else {
         // 替换条件表达式中的 rst/rst1/rst2... 为实际变量（全量替换，从后往前）
-        let conditionExpr = output.conditionCheck
+        let conditionExpr = output.functionCode
 
         // 从后往前替换，避免 rst1 被误替换为 rst
         for (let i = rstArray.length - 1; i >= 0; i--) {

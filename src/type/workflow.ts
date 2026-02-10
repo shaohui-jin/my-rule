@@ -34,7 +34,7 @@ export interface OutputData {
   type: string // 参数类型
   subType?: string // 参数子类型
   value?: any // 参数值
-  conditionCheck?: string // 条件检查
+  functionCode?: string // 条件检查
   portId?: string // 唯一端口ID
 }
 

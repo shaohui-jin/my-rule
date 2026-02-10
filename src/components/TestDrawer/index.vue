@@ -306,7 +306,7 @@
                     <template #title>
                       <div class="node-item">
                         <div class="node-icon">
-                          <NodeTypeIcon
+                          <BaseNodeIcon
                             :type="node.funcType"
                             :logic-type="node.logicData?.logicType"
                             :size="24"
@@ -487,7 +487,7 @@ import {
 import { LuaGenerator } from '@/utils/json2lua/LuaGenerator'
 import { getFunctionListByIds, transformFunctionData } from '@/api/workflow/WorkFlowApi'
 import { formatMilliseconds } from '@/utils'
-import NodeTypeIcon from '@/components/BaseNodeIcon/index.vue'
+import BaseNodeIcon from '@/components/base/BaseNodeIcon.vue'
 import { getLuaCodeMapByExpression } from '@/utils/expression'
 
 // 定义主题常量

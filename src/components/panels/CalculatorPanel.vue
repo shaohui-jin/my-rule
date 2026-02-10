@@ -3,7 +3,8 @@
     <el-form label-width="70px" :model="nodeData">
       <!-- 节点备注编辑区域 -->
       <div class="remark-container" @click="startEditRemark">
-        <textarea
+        <el-input
+          type="textarea"
           ref="remarkInputRef"
           v-model="nodeData.remark"
           class="remark-input"
@@ -13,7 +14,7 @@
           @blur="finishEditRemark"
           @keydown.enter.exact.prevent="finishEditRemark"
           @keydown.esc.prevent="cancelEditRemark"
-        ></textarea>
+        ></el-input>
       </div>
       <div class="param-group-title">输入参数：</div>
       <div class="param-list">
@@ -34,87 +35,13 @@
       <div class="divider" />
       <div class="param-group-title-row">
         <div class="param-group-title">出参配置：</div>
-        <div class="button-group">
-          <el-tooltip placement="top" raw-content>
-            <template #content>
-              <div
-                style="
-                  font-family: 'Courier New', Courier, monospace;
-                  line-height: 1.5;
-                  font-size: 13px;
-                "
-              >
-                <p style="margin: 0 0 5px 0">
-                  <strong>Lua 条件表达式指南</strong>
-                </p>
-                <p style="margin: 0 0 5px 0">1. 请使用 Lua 规范编写条件表达式。</p>
-                <p style="margin: 0 0 5px 0; font-size: 1.1em; color: #e6a23c; font-weight: bold">
-                  2. 表达式中的
-                  <code>rst</code>
-                  代表上游节点的返回值。
-                </p>
-                <div>3. Lua 基本语法:</div>
-                <div style="padding-left: 10px">
-                  <p style="margin: 2px 0">
-                    <strong>关系运算符:</strong>
-                    <code>=</code>
-                    ,
-                    <code>&lt;&gt;</code>
-                    ,
-                    <code>&gt;</code>
-                    ,
-                    <code>&lt;</code>
-                    ,
-                    <code>&gt;=</code>
-                    ,
-                    <code>&lt;=</code>
-                  </p>
-                  <p style="margin: 2px 0">
-                    <strong>逻辑运算符:</strong>
-                    <code>and</code>
-                    ,
-                    <code>or</code>
-                    ,
-                    <code>not</code>
-                  </p>
-                </div>
-                <p style="margin: 8px 0 5px 0">
-                  <strong>示例:</strong>
-                </p>
-                <div style="background: #f5f5f5; padding: 5px; border-radius: 4px">
-                  <p style="margin: 0 0 5px 0">
-                    <code style="color: #666"> rows(rst) &gt; 0 or rst[1].w == 10</code>
-                    <br />
-                    <span style="color: #666">
-                      含义: 返回值列表长度大于0, 或其
-                      <strong>第1个</strong>
-                      元素的 'w' 属性等于10。
-                    </span>
-                  </p>
-                  <p style="margin: 0">
-                    <code style="color: #666">rst &gt;= 0 and rst &lt;&gt; 10</code>
-                    <br />
-                    <span style="color: #666">
-                      含义: 返回值大于等于
-                      <strong>0</strong>
-                      , 且不等于10。
-                    </span>
-                  </p>
-                </div>
-              </div>
-            </template>
-            <el-icon class="help-icon"><QuestionFilled /></el-icon>
-          </el-tooltip>
-        </div>
       </div>
       <div class="branch-list scrollable-branch-list">
         <div v-for="(param, idx) in nodeData.outputData" :key="idx" class="branch-card">
           <div class="branch-row">
-            <BaseFunctionExpression
-              v-model="param.conditionCheck"
-              :nodeData="nodeData"
-              :workflowData="workflowData"
-              placeholder="rst = 5 (lua规范)"
+            <BaseFunctionInput
+              v-model="param.functionCode"
+              :placeholder="param.placeholder"
               type="textarea"
               :disabled="props.disabled"
               class="branch-cond-input"
@@ -144,6 +71,7 @@ import { toRefs, defineEmits, computed, ref } from 'vue'
 import { QuestionFilled } from '@element-plus/icons-vue'
 import { getOutputTargetInfo } from './panelUtils'
 import BaseFunctionExpression from '@/components/BaseFunctionExpression/index.vue'
+import BaseFunctionInput from '@/components/base/BaseFunctionInput.vue'
 
 const props = defineProps<{
   nodeData: any
@@ -234,7 +162,6 @@ const allInputOptions = computed(() => {
   word-break: break-word;
 }
 
-
 .remark-content.no-remark {
   color: #909399;
   font-style: italic;
@@ -243,7 +170,6 @@ const allInputOptions = computed(() => {
 .remark-input {
   width: 100%;
   min-height: 60px;
-  padding: 8px 12px;
   font-size: 14px;
   line-height: 1.5;
   color: #333;
@@ -366,7 +292,6 @@ const allInputOptions = computed(() => {
 
 .branch-card {
   border-radius: 8px;
-  padding: 6px 8px 4px 8px;
   position: relative;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
 }
@@ -396,7 +321,6 @@ const allInputOptions = computed(() => {
   flex: 1 1 0;
   min-height: 0;
   max-height: none;
-  overflow-y: auto;
   padding-right: 2px;
 }
 
