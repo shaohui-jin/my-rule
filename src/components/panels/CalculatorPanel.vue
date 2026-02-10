@@ -122,7 +122,7 @@ const allInputOptions = computed(() => {
       arr.push({
         label: option.label,
         value: option.value,
-        rstLabel: idx === 0 ? 'rst' : `rst${idx}`
+        rstLabel: idx === 0 ? 'data' : `data${idx}`
       })
       idx++
     }

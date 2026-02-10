@@ -12,7 +12,7 @@
   --el-color-primary-light-8: #e6f0f8;
   --el-color-primary-light-9: #ecf5fc;
   --el-color-primary-dark-2: #014f9c;
-  
+
   /* 成功色保持默认，或可根据需要调整 */
   --el-color-success: #67c23a;
   --el-color-success-light-3: #95d475;
@@ -21,7 +21,7 @@
   --el-color-success-light-8: #e1f3d8;
   --el-color-success-light-9: #f0f9eb;
   --el-color-success-dark-2: #529b2e;
-  
+
   /* 警告色保持默认 */
   --el-color-warning: #e6a23c;
   --el-color-warning-light-3: #eebe77;
@@ -30,7 +30,7 @@
   --el-color-warning-light-8: #faecd8;
   --el-color-warning-light-9: #fdf6ec;
   --el-color-warning-dark-2: #cf9236;
-  
+
   /* 危险色保持默认 */
   --el-color-danger: #f56c6c;
   --el-color-danger-light-3: #f89898;
@@ -39,7 +39,7 @@
   --el-color-danger-light-8: #fde2e2;
   --el-color-danger-light-9: #fef0f0;
   --el-color-danger-dark-2: #dd6161;
-  
+
   /* 信息色保持默认 */
   --el-color-info: #909399;
   --el-color-info-light-3: #b1b3b8;
@@ -55,4 +55,10 @@ body {
   margin: 0;
   padding: 0;
   background-color: #ecf5fc;
+}
+
+.el-dialog__header,
+.el-dialog__footer {
+  margin: 0;
+  padding: 10px 20px;
 }

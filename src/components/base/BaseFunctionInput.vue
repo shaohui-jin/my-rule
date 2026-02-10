@@ -1,7 +1,11 @@
 <template>
   <div class="func-wrapper">
     <div class="func-input-body">
-      <div ref="editorContainer" class="func-container" :class="{ 'is-disabled': props.disabled }">
+      <div
+        ref="editorContainer"
+        class="func-container el-container"
+        :class="{ 'is-disabled': props.disabled }"
+      >
         <el-icon @click.capture.stop="showFullScreen">
           <svg
             viewBox="0 0 14 14"
@@ -35,7 +39,7 @@
     :close-on-press-escape="false"
   >
     <template #default>
-      <div ref="editorFullContainer" class="func-dialog-container" />
+      <div ref="editorFullContainer" class="func-dialog-container el-container" />
     </template>
     <template #footer>
       <el-button type="primary" @click="commitExpress">确定</el-button>
@@ -66,10 +70,6 @@ const props = defineProps({
   disabled: {
     type: Boolean,
     default: false
-  },
-  placeholder: {
-    type: String,
-    default: 'function fn(data) {} (typescript规范)'
   }
 })
 
@@ -105,7 +105,7 @@ const init = () => {
     manager
       .createInstance(editorContainer.value, {
         ...getDefaultMonacoEditorConfig(),
-        value: inputValue.value,
+        value: inputValue.value || 'console.log(data)',
         theme: 'vs'
       })
       .then(({ id, editor }: MonacoInstance) => {
@@ -144,18 +144,8 @@ const showFullScreen = () => {
 }
 
 const commitExpress = () => {
-  // 格式化 移除换行
-  const expression = (dialogInputValue.value || '')
-    .replaceAll('\r\n', ' ')
-    .replaceAll('\n', ' ')
-    .replaceAll('\r', ' ')
-  codeFullEditor.setValue(expression)
-  nextTick(() => {
-    inputValue.value = dialogInputValue.value
-    emit('input', inputValue.value)
-    emit('change', inputValue.value)
-    fullScreenShow.value = false
-  })
+  codeEditor.setValue(dialogInputValue.value)
+  fullScreenShow.value = false
 }
 
 const cancelExpress = () => {
@@ -192,6 +182,46 @@ defineExpose({})
   box-shadow: unset;
 }
 
+.el-container {
+  // 模拟 el-input textarea 样式
+  border: 1px solid var(--el-input-border-color, var(--el-border-color, #dcdfe6));
+  border-radius: var(--el-input-border-radius, var(--el-border-radius-base, 4px));
+  background-color: var(--el-input-bg-color, var(--el-fill-color-blank, #ffffff));
+  padding: 5px 11px;
+  box-sizing: border-box;
+  transition: border-color 0.2s cubic-bezier(0.645, 0.045, 0.355, 1);
+  font-size: var(--el-font-size-base, 14px);
+  color: var(--el-text-color-regular, #606266);
+  line-height: 1.5;
+  //overflow: hidden;
+  position: relative;
+
+  // 聚焦状态
+  &:focus-within {
+    border-color: var(--el-input-focus-border-color, var(--el-color-primary, #409eff));
+    outline: none;
+  }
+
+  // 禁用状态
+  &.is-disabled {
+    background-color: var(--el-disabled-bg-color, #f5f7fa);
+    border-color: var(--el-disabled-border-color, #e4e7ed);
+    color: var(--el-disabled-text-color, #a8abb2);
+    cursor: not-allowed;
+  }
+
+  // 确保 Monaco Editor 不会覆盖容器边框
+  :deep(.monaco-editor) {
+    border: none !important;
+    border-radius: 0 !important;
+  }
+
+  :deep(.monaco-editor .overflow-guard) {
+    border: none !important;
+    border-radius: 0 !important;
+  }
+}
+
 .func-wrapper {
   width: 100%;
   position: relative;
@@ -199,44 +229,6 @@ defineExpose({})
     position: relative;
     .func-container {
       height: 100px;
-      // 模拟 el-input textarea 样式
-      border: 1px solid var(--el-input-border-color, var(--el-border-color, #dcdfe6));
-      border-radius: var(--el-input-border-radius, var(--el-border-radius-base, 4px));
-      background-color: var(--el-input-bg-color, var(--el-fill-color-blank, #ffffff));
-      padding: 5px 11px;
-      box-sizing: border-box;
-      transition: border-color 0.2s cubic-bezier(0.645, 0.045, 0.355, 1);
-      font-size: var(--el-font-size-base, 14px);
-      color: var(--el-text-color-regular, #606266);
-      line-height: 1.5;
-      //overflow: hidden;
-      position: relative;
-
-      // 聚焦状态
-      &:focus-within {
-        border-color: var(--el-input-focus-border-color, var(--el-color-primary, #409eff));
-        outline: none;
-      }
-
-      // 禁用状态
-      &.is-disabled {
-        background-color: var(--el-disabled-bg-color, #f5f7fa);
-        border-color: var(--el-disabled-border-color, #e4e7ed);
-        color: var(--el-disabled-text-color, #a8abb2);
-        cursor: not-allowed;
-      }
-
-      // 确保 Monaco Editor 不会覆盖容器边框
-      :deep(.monaco-editor) {
-        border: none !important;
-        border-radius: 0 !important;
-      }
-
-      :deep(.monaco-editor .overflow-guard) {
-        border: none !important;
-        border-radius: 0 !important;
-      }
-
       :deep(.el-icon) {
         cursor: pointer;
         position: absolute;
