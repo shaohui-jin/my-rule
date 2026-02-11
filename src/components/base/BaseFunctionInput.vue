@@ -105,7 +105,9 @@ const init = () => {
     manager
       .createInstance(editorContainer.value, {
         ...getDefaultMonacoEditorConfig(),
-        value: inputValue.value || 'console.log(data)',
+        value:
+          inputValue.value ||
+          'function demo(data) {\n' + '    // 测试代码块\n' + '    return data + 1\n' + '}',
         theme: 'vs'
       })
       .then(({ id, editor }: MonacoInstance) => {
@@ -225,6 +227,8 @@ defineExpose({})
 .func-wrapper {
   width: 100%;
   position: relative;
+  flex: 1 1 0;
+  overflow: hidden;
   .func-input-body {
     position: relative;
     .func-container {

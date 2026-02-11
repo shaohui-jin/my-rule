@@ -1,4 +1,4 @@
-import { LogicType, type WorkflowNode } from '@/type/workflow'
+import { LogicType, OutputData, type WorkflowNode } from '@/type/workflow'
 import { COLORS, PORT_ATTRS } from '../workflow/constants/StyleConstants'
 const { VITE_PUBLIC_PATH } = import.meta.env
 import { Graph, Node } from '@antv/x6'
@@ -23,15 +23,14 @@ function createPortConfig(
   desc = '',
   typeText = ''
 ) {
-  let portTitleType = portTitle
-  if (portTitleType.length > 13) {
-    portTitleType =
-      portTitleType.substring(0, 13) +
+  let text = portTitle
+  if (portTitle.length > 13) {
+    text =
+      portTitle.substring(0, 13) +
       '...\n' +
       (typeText.length > 13 ? typeText.substring(0, 13) + '...' : typeText)
   } else {
-    portTitleType =
-      portTitleType + '\n' + (typeText.length > 13 ? typeText.substring(0, 13) + '...' : typeText)
+    text = portTitle + '\n' + (typeText.length > 13 ? typeText.substring(0, 13) + '...' : typeText)
   }
   return {
     id,
@@ -41,7 +40,7 @@ function createPortConfig(
     attrs: {
       ...PORT_ATTRS,
       text: {
-        text: portTitleType,
+        text,
         fontSize: 13,
         textWrap: {
           width: 95,
@@ -83,48 +82,29 @@ function getPortPosition(
 }
 
 // 生成端口配置
-function generatePorts(node: any, nodeHeight: number) {
+function generatePorts(node: WorkflowNode, nodeHeight: number) {
   let inputPorts = []
   let outputPorts = []
 
   if (node.funcType === 'logic' && node.logicData?.logicType === LogicType.IFELSE) {
     // 条件节点：左侧1个port，右侧多个port
     const inPos = getPortPosition('left', 1, 0, nodeHeight, NODE_CONFIG_TITLE_HEIGHT)
-    inputPorts = [createPortConfig('in_1', 'in', inPos, '条件判断对象')]
-    outputPorts = (node.outputData || []).map((item: any, idx: number, arr: any[]) => {
+    const { label, paramType } = node.inputData[0].attributes
+    inputPorts = [createPortConfig('in_1', 'in', inPos, label, '', paramType)]
+    outputPorts = (node.outputData || []).map((item: OutputData, idx: number, arr: any[]) => {
       const pos = getPortPosition('right', arr.length, idx, nodeHeight, NODE_CONFIG_TITLE_HEIGHT)
       let portTitle = idx === 0 ? 'if' : idx === arr.length - 1 ? 'else' : 'elseif'
-      return createPortConfig(item.portId, 'out', pos, portTitle)
+      return createPortConfig(item.portId, 'out', pos, portTitle, '', item.type || 'any')
     })
-  } else if (node.funcType === 'logic' && node.logicData?.logicType === LogicType.CALCULATOR) {
-    inputPorts = [
-      createPortConfig(
-        'in_1',
-        'in',
-        getPortPosition('left', 1, 0, nodeHeight, NODE_CONFIG_TITLE_HEIGHT),
-        '计算器对象'
-      )
-    ]
-    outputPorts = [
-      createPortConfig(
-        'out_1',
-        'out',
-        getPortPosition('right', 1, 0, nodeHeight, NODE_CONFIG_TITLE_HEIGHT),
-        'any'
-      )
-    ]
   } else {
     // 函数节点：根据 paramGroup 数量生成入参端口
     let inputPortCount = 1
-
     let tempinputPortCount = 0
-    // let nodeHeightTotal = 0
-    // 分析 paramGroup 数量
+
     const paramGroups = new Set<string>()
     const paramDescGroups = new Set<string>()
     const paramPortIdGroups = new Set<string>()
     const paramTypeGroups = []
-    // console.log('node.inputData====', node)
     if (node.inputData && Array.isArray(node.inputData)) {
       node.inputData.forEach((input: any) => {
         if (input.sourceType == 'node') {
@@ -139,22 +119,17 @@ function generatePorts(node: any, nodeHeight: number) {
       // 必须有一个入参桩点
       inputPortCount = tempinputPortCount || 1
     }
-    // console.log('node=====111', node)
     const inputTitleList = [...Array.from(paramGroups)]
     const inputDescList = [...Array.from(paramDescGroups)]
     const inputPortIdList = [...Array.from(paramPortIdGroups)]
     const inputTypeTextList = [...Array.from(paramTypeGroups)]
-    // console.log('inputPortIdList====', inputTypeTextList, paramTypeGroups)
-    // console.log('inputPortIdList====', inputTitleList, node.inputData)
     if (inputPortIdList.length == 0) {
       // 没有入参桩点 则默认生成一个 否则边的连接会找不到绑定的桩点
       inputPortIdList.push('in_1')
     }
-    // 生成入参端口
     for (let i = 0; i < inputPortCount; i++) {
       const inPos = getPortPosition('left', inputPortCount, i, nodeHeight, NODE_CONFIG_TITLE_HEIGHT)
       // 这个in_1是按顺序生成的，所以生成的数据是按顺序塞入进去的需要修改成原数据的portId,如果没有原数据则使用默认的循环
-      // inputPorts.push(createPortConfig(`in_${i + 1}`, 'in', inPos, inputTitleList[i], inputDescList[i]))
       inputPorts.push(
         createPortConfig(
           inputPortIdList[i],
@@ -166,7 +141,7 @@ function generatePorts(node: any, nodeHeight: number) {
         )
       )
     }
-    // console.log('node.outputData===', node.outputData)
+
     // 出参端口：默认1个
     const outPos = getPortPosition('right', 1, 0, nodeHeight, NODE_CONFIG_TITLE_HEIGHT)
     outputPorts = [
@@ -174,9 +149,9 @@ function generatePorts(node: any, nodeHeight: number) {
         'out_1',
         'out',
         outPos,
-        node.outputData?.[0]?.attributes?.label || '',
-        node.outputData?.[0]?.attributes?.desc || '',
-        node.outputData?.[0]?.subType || node.outputData?.[0]?.type || ''
+        node.outputData[0].attributes?.label || '',
+        node.outputData[0].attributes?.desc || '',
+        node.outputData[0].subType || node.outputData[0].type || ''
       )
     ]
   }

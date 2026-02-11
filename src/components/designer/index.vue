@@ -71,7 +71,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import WorkflowValidationModal from '@/components/panels/WorkflowValidationModal.vue'
 import { LuaGenerator } from '@/utils/json2lua/LuaGenerator'
 import { FunctionNode } from '@/api/workflow/WorkFlowApi'
-import { getLuaCodeMapByExpression } from '@/utils/expression'
+import { getFunctionCode } from '@/utils/parser/FuncParser'
 
 import { WorkflowValidator, type ValidationError } from '@/utils/workflow/WorkflowValidator'
 import { EdgeCorrectionManager } from '@/utils/workflow/EdgeCorrectionManager'
@@ -1059,13 +1059,12 @@ async function doSave() {
   const validRst = validateWorkflow()
   if (!validRst) return null
   // 获取工作流数据
-  const flowData = await getFlowData({ isGenerateTestLuaScript: false })
+  const flowData = await getFlowData()
   if (!flowData) return null
   return flowData
 }
 
-async function getFlowData(options?: { isGenerateTestLuaScript?: boolean }) {
-  const { isGenerateTestLuaScript = false } = options || {}
+async function getFlowData() {
   const workFlowJson = workflowData.value
   const allFuncId = getFuncIdList(workFlowJson)
   const functionNodes = getFunctionNodes(props.functionNodes, allFuncId)
@@ -1073,19 +1072,11 @@ async function getFlowData(options?: { isGenerateTestLuaScript?: boolean }) {
     console.log('函数配置数据未加载')
   }
 
-  const { expressionLuaCodeMap, expressionParamArr } = await getLuaCodeMapByExpression(
-    workflowData.value.nodeList
-  )
-  if (!expressionLuaCodeMap) return
+  const { codeMap } = await getFunctionCode(workflowData.value.nodeList)
   // 生成lua代码
-  const luaCode = luaGenerator.generate(
-    workflowData.value,
-    functionNodes,
-    isGenerateTestLuaScript,
-    expressionLuaCodeMap
-  )
+  const luaCode = luaGenerator.generate(workflowData.value, functionNodes, codeMap)
   console.log(luaCode)
-  return { luaCode, allFuncId, expressionParamArr }
+  return { luaCode, allFuncId }
 }
 
 /**
@@ -1104,7 +1095,7 @@ const handleTest = async () => {
   const validRst = validateWorkflow()
   if (!validRst) return
   // 获取工作流数据
-  const flowData = await getFlowData({ isGenerateTestLuaScript: true })
+  const flowData = await getFlowData()
   if (!flowData) return
   emit('test-lua', flowData.luaCode)
 }

@@ -56,12 +56,18 @@ const BaseFunctionNode: BaseFunctionNodeType[] = [
           source: '',
           sourceType: 'node',
           portId: 'in_1',
-          defaultValue: ''
+          defaultValue: '',
+          attributes: {
+            paramType: 'any',
+            inputType: 'text',
+            showLabel: true,
+            label: '上游数据'
+          }
         }
       ],
       outputData: [
-        { paramName: 'result', type: 'table', subType: 'any', functionCode: '', portId: 'out_1' },
-        { paramName: 'result', type: 'table', subType: 'any', functionCode: '', portId: 'out_2' }
+        { paramName: 'result', type: 'any', subType: 'any', functionCode: '', portId: 'out_1' },
+        { paramName: 'result', type: 'any', subType: 'any', functionCode: '', portId: 'out_2' }
       ],
       version: '1.0.0'
     }
@@ -143,6 +149,14 @@ const BaseFunctionNode: BaseFunctionNodeType[] = [
             },
             { label: 'context(指定上下文)', value: 'context', desc: '指定上下文' }
           ]
+        }
+      ],
+      outputData: [
+        {
+          paramName: 'result',
+          type: 'any',
+          subType: 'any',
+          portId: 'out_1'
         }
       ]
     }
@@ -302,7 +316,7 @@ const BaseFunctionNode: BaseFunctionNodeType[] = [
             paramType: 'any',
             inputType: 'text',
             showLabel: true,
-            label: '数据源'
+            label: '上游数据'
           },
           defaultValue: ''
         },
@@ -358,7 +372,13 @@ const BaseFunctionNode: BaseFunctionNodeType[] = [
           source: '',
           sourceType: 'node',
           portId: 'in_1',
-          defaultValue: ''
+          defaultValue: '',
+          attributes: {
+            paramType: 'any',
+            inputType: 'text',
+            showLabel: true,
+            label: '上游数据'
+          }
         }
       ],
       outputData: [
@@ -392,7 +412,7 @@ const BaseFunctionNode: BaseFunctionNodeType[] = [
             paramType: 'any',
             inputType: 'text',
             showLabel: true,
-            label: '数据源'
+            label: '上游数据'
           },
           defaultValue: ''
         },

@@ -9,6 +9,7 @@ import { DimensionConverter } from './DimensionConverter'
 import { BranchInfo, NodeAnalysis } from './types'
 import { Calculator } from './Calculator'
 import { Json2LuaUtil } from './Json2LuaUtil'
+import { isIfElseNode } from '@/utils/type/node'
 
 // 模块信息接口
 interface ModuleInfo {
@@ -22,7 +23,7 @@ export class LuaGenerator {
   private workflow: WorkflowData
   private funcData: any
   private modules: Map<string, ModuleInfo>
-  private expressionLuaCodeMap: Record<string, string>
+  private codeMap: Record<string, string>
   private analyzer: WorkflowAnalyzer
   private nodeAnalysis: Map<string, NodeAnalysis>
   private branchInfoMap: Map<string, BranchInfo>
@@ -36,7 +37,7 @@ export class LuaGenerator {
   private calculator: Calculator
   private hasDiffMerge: boolean
 
-  private isGenerateTestLuaScript: boolean
+  private isGenerateTestLuaScript: boolean = true
 
   constructor() {
     const paramNameResolverFunc = (nodeId: string, branchContext?: any) =>
@@ -55,17 +56,11 @@ export class LuaGenerator {
     this.modules = new Map()
   }
 
-  public generate(
-    workflow: WorkflowData,
-    funcData: any,
-    isGenerateTestLuaScript = false,
-    expressionLuaCodeMap
-  ): string {
+  public generate(workflow: WorkflowData, funcData: any, codeMap): string {
     this.clear()
-    this.isGenerateTestLuaScript = !!isGenerateTestLuaScript
     this.workflow = workflow
     this.funcData = funcData
-    this.expressionLuaCodeMap = expressionLuaCodeMap
+    this.codeMap = codeMap
     this.aggregate.setWorkflow(workflow)
     this.analyzer = new WorkflowAnalyzer(workflow)
     const analysisResult = this.analyzer.analyze()
@@ -102,7 +97,7 @@ export class LuaGenerator {
     code += this.generateExpressionMainFlow()
     code += this.generateMainFlow()
     code += this.generateReturnStatement()
-    code += 'end\n'
+    code += '}\n'
     code += this.generateModuleExport()
 
     return code
@@ -127,25 +122,27 @@ export class LuaGenerator {
 
   // 生成模块声明和导入
   private generateModuleDeclarations(): string {
-    let code = 'local _M = {}\n\n'
+    let code = '\n// 声明函数通用日志模块\n'
 
     // 直接生成 require 语句，统一封装到dynamic目录下
     // 这里没有做合并 因为 约定 每个函数 独立实现功能
-    this.modules.forEach((module, _key) => {
-      // 如果path有值（比如lib），则生成dynamic/lib/xxxx
-      // 如果path没有值，则生成dynamic/xxxx
-      const localName = this.convertToLuaVarName(module.name)
-      const requirePath = module.path
-        ? `dynamic.${module.path.replaceAll('/', '.')}.${module.name}`
-        : `dynamic.${module.name}`
-      console.log('requirePath', requirePath)
-      code += `local ${localName} = require("${requirePath}")\n`
-    })
+    // this.modules.forEach((module, _key) => {
+    //   // 如果path有值（比如lib），则生成dynamic/lib/xxxx
+    //   // 如果path没有值，则生成dynamic/xxxx
+    //   const localName = this.convertToLuaVarName(module.name)
+    //   const requirePath = module.path
+    //     ? `dynamic.${module.path.replaceAll('/', '.')}.${module.name}`
+    //     : `dynamic.${module.name}`
+    //   console.log('requirePath', requirePath)
+    //   code += `local ${localName} = require("${requirePath}")\n`
+    // })
 
     // 加测试模块工具方法
-    if (this.isGenerateTestLuaScript) {
-      code += `local exec = require("utils.function-executor")\n`
-    }
+    // if (this.isGenerateTestLuaScript) {
+    code += `const log = console.log\n`
+    code += `const warn = console.warn\n`
+    code += `const error = console.error\n`
+    // }
 
     code += '\n'
     return code
@@ -153,17 +150,12 @@ export class LuaGenerator {
 
   // 生成函数声明
   private generateFunctionDeclaration(): string {
-    return `function _M.dowork(root, target, context)\n`
+    return `function work(root: any, target: any, context: any) {\n`
   }
 
   // 生成变量声明
   private generateVariableDeclarations(): string {
-    let code = '\t-- 声明所有变量\n'
-
-    // 加上下文
-    if (this.isGenerateTestLuaScript) {
-      code += `\tlocal func_step_logs = context.func_step_logs\n`
-    }
+    let code = '\t// 声明所有变量\n'
 
     // 使用 Set 来存储已声明的变量，避免重复
     const declaredVars = new Set<string>()
@@ -171,40 +163,42 @@ export class LuaGenerator {
     // 声明主流程节点变量
     this.workflow.nodeList.forEach(node => {
       const varName = isIfElseNode(node) ? `tempResult_${node.id}` : `result_${node.id}`
-
+      const typeName = node.outputData[0].type
+      console.log('node', node)
       if (!declaredVars.has(varName)) {
-        code += `\tlocal ${varName}\n`
+        // if else默认是any类型，其他的获取返回参数的第一项的值
+        code += `\tlet ${varName}: ${typeName} = null\n`
         declaredVars.add(varName)
       }
 
       // 在测试模式下，为函数节点添加错误变量声明
-      if (this.isGenerateTestLuaScript && node.funcType === 'func') {
-        const errorVarName = `error_${node.id}`
-        if (!declaredVars.has(errorVarName)) {
-          code += `\tlocal ${errorVarName}\n`
-          declaredVars.add(errorVarName)
-        }
-      }
+      // if (this.isGenerateTestLuaScript && node.funcType === 'func') {
+      //   const errorVarName = `error_${node.id}`
+      //   if (!declaredVars.has(errorVarName)) {
+      //     code += `\tlocal ${errorVarName}\n`
+      //     declaredVars.add(errorVarName)
+      //   }
+      // }
     })
 
     // 添加分支执行标志声明
-    const flagDeclarations = this.analyzer.getFlagDeclarations()
-    if (flagDeclarations.length > 0) {
-      this.hasDiffMerge = true
-      code += '\n\t-- 分支执行标志\n'
-      flagDeclarations.forEach(flagVar => {
-        code += `\tlocal ${flagVar} = false\n`
-      })
-    }
+    // const flagDeclarations = this.analyzer.getFlagDeclarations()
+    // if (flagDeclarations.length > 0) {
+    //   this.hasDiffMerge = true
+    //   code += '\n\t-- 分支执行标志\n'
+    //   flagDeclarations.forEach(flagVar => {
+    //     code += `\tlocal ${flagVar} = false\n`
+    //   })
+    // }
 
     // 添加不同源汇合点标志声明
-    const mergeDeclarations = this.analyzer.getMergeDeclarations()
-    if (mergeDeclarations.length > 0) {
-      code += '\n\t-- 不同源汇合点标志\n'
-      mergeDeclarations.forEach(mergeVar => {
-        code += `\tlocal ${mergeVar} = false\n`
-      })
-    }
+    // const mergeDeclarations = this.analyzer.getMergeDeclarations()
+    // if (mergeDeclarations.length > 0) {
+    //   code += '\n\t-- 不同源汇合点标志\n'
+    //   mergeDeclarations.forEach(mergeVar => {
+    //     code += `\tlocal ${mergeVar} = false\n`
+    //   })
+    // }
 
     code += '\n'
     return code
@@ -240,19 +234,22 @@ export class LuaGenerator {
   }
 
   private generateExpressionMainFlow(): string {
-    let code = '\t-- 声明表达式所有变量\n'
+    let code = '\t// 声明表达式所有变量\n'
 
-    Object.keys(this.expressionLuaCodeMap).forEach(key => {
+    Object.keys(this.codeMap).forEach(key => {
       const nodeId = key.split('_')[0]
       const node = this.analyzer.getNodeById(nodeId)
 
-      const rstArray = this.getNodeIncomingEdges(nodeId)
-      // 如果有rst 就当做全部都是有前缀的
-      const funcTarget = this.expressionLuaCodeMap[key].includes('rst')
-        ? rstArray.map(e => e.key).join(', ')
+      const dataArray = this.getNodeIncomingEdges(nodeId)
+      // 如果有data 就当做全部都是有前缀的
+      const funcTarget = this.codeMap[key].includes('data')
+        ? dataArray.map(e => e.key).join(', ')
         : 'target'
-
-      code += `\tlocal expression_${key} = function(${funcTarget}) return ${this.expressionLuaCodeMap[key]} end\n`
+      code += `\tconst function_${key} = (${funcTarget}) => {\n\t  return (\n\t\t${this.codeMap[key]
+        .trim()
+        .split('\n')
+        .join('\n\t\t')}\n\t  )(${funcTarget})\n\t}`
+      code += '\n'
     })
 
     console.log('声明表达式所有变量 结束-------------------')
@@ -289,7 +286,7 @@ export class LuaGenerator {
     // 构建 rst/rst1/rst2... 到 resultVar 的映射
     const rstArray: Array<{ key: string; value: string }> = []
     resultVars.forEach((v, idx) => {
-      const key = idx === 0 ? 'rst' : `rst${idx}`
+      const key = idx === 0 ? 'data' : `data${idx}`
       rstArray.push({ key, value: v })
     })
     return rstArray

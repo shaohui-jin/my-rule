@@ -10,3 +10,7 @@ export const isCustom = (node: Node) => {
 export const isIfElseNode = (node: WorkflowNode): boolean => {
   return node && node.funcType === 'logic' && node.logicData?.logicType === LogicType.IFELSE
 }
+
+export const isCalculatorNode = (node: WorkflowNode): boolean => {
+  return node && node.funcType === 'logic' && node.logicData?.logicType === LogicType.CALCULATOR
+}

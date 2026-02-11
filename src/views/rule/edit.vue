@@ -137,13 +137,10 @@ function syncNodeIdFactoryWithWorkflow(data: WorkflowData) {
  */
 const saveDialogRef = ref(null)
 const saveText = ref('')
-const saveDialogFlowData = ref<{ luaCode: string; allFuncId: string[]; expressionParamArr: any[] }>(
-  {
-    luaCode: '',
-    allFuncId: [],
-    expressionParamArr: []
-  }
-)
+const saveDialogFlowData = ref<{ luaCode: string; allFuncId: string[] }>({
+  luaCode: '',
+  allFuncId: []
+})
 
 const handleShowSaveModel = flowData => {
   saveDialogFlowData.value = flowData
@@ -154,7 +151,6 @@ const handleShowSaveModel = flowData => {
 async function saveRuleData(
   luaCode: string,
   funcIds: string[],
-  expressionParamArr: any[],
   modifyReason?: string
 ): Promise<boolean> {
   if (!workflowData.value.id) {
@@ -286,7 +282,7 @@ const debugLuaScript = async () => {
       return
     }
 
-    const currentFlowData = await editorRef.value.getFlowData({ isGenerateTestLuaScript: false })
+    const currentFlowData = await editorRef.value.getFlowData()
     if (!currentFlowData) {
       console.error('无法生成当前画布的Lua脚本')
       return
@@ -398,11 +394,7 @@ const performSaveAs = async (formData: any) => {
 
       // 使用从WorkflowDesigner传递的数据保存规则
       if (saveAsData.value) {
-        const saveSuccess = await saveRuleData(
-          saveAsData.value.luaCode,
-          saveAsData.value.allFuncId,
-          saveAsData.value.expressionParamArr
-        )
+        const saveSuccess = await saveRuleData(saveAsData.value.luaCode, saveAsData.value.allFuncId)
         if (saveSuccess) {
           ElMessage.success('另存成功')
           saveAsDialogVisible.value = false

@@ -41,8 +41,6 @@
           <div class="branch-row">
             <BaseFunctionInput
               v-model="param.functionCode"
-              :placeholder="param.placeholder"
-              type="textarea"
               :disabled="props.disabled"
               class="branch-cond-input"
             />
@@ -131,7 +129,7 @@ const allInputOptions = computed(() => {
 })
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .condition-node-panel {
   display: flex;
   flex-direction: column;
@@ -150,47 +148,19 @@ const allInputOptions = computed(() => {
   overflow: hidden;
 }
 
-.remark-content {
-  min-height: 60px;
-  padding: 8px 12px;
-  font-size: 14px;
-  line-height: 1.5;
-  color: #333;
-  background-color: #f5f7fa;
-  border-radius: 4px;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-.remark-content.no-remark {
-  color: #909399;
-  font-style: italic;
-}
-
 .remark-input {
   width: 100%;
   min-height: 60px;
   font-size: 14px;
   line-height: 1.5;
   color: #333;
-  background-color: #f5f7fa;
+  color: var(--el-text-color-primary);
   border-radius: 4px;
   outline: none;
   font-family: inherit;
   margin-bottom: 0;
 }
 
-.el-form {
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 0;
-  min-height: 0;
-  padding-left: 0 !important;
-  padding-right: 0 !important;
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
-  margin-top: 0;
-}
 .divider {
   height: 1px;
   background: #ececec;
@@ -201,7 +171,7 @@ const allInputOptions = computed(() => {
   font-weight: 600;
   font-size: 15px;
   margin: 8px 0 4px 0;
-  color: #222;
+  color: var(--el-text-color-primary);
   letter-spacing: 1px;
   user-select: none;
 }
@@ -232,7 +202,7 @@ const allInputOptions = computed(() => {
 }
 
 .param-label {
-  color: #333;
+  color: var(--el-text-color-primary);
   font-size: 13px;
   font-weight: 500;
   text-align: right;
@@ -268,21 +238,6 @@ const allInputOptions = computed(() => {
   font-size: 13px;
 }
 
-.param-toggle {
-  background: transparent;
-  border: none;
-  padding: 0;
-  margin-left: 2px;
-  width: 14px;
-  height: 14px;
-  min-width: 14px;
-  min-height: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-}
-
 .branch-list {
   display: flex;
   flex-direction: column;
@@ -299,7 +254,8 @@ const allInputOptions = computed(() => {
 .branch-row {
   display: flex;
   align-items: center;
-  margin-bottom: 4px;
+  //margin-bottom: 4px;
+  padding: 4px;
 }
 
 .branch-label-col {
@@ -324,73 +280,6 @@ const allInputOptions = computed(() => {
   padding-right: 2px;
 }
 
-.branch-del {
-  position: absolute;
-  top: -10px !important;
-  right: 0px !important;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  border: 1.2px solid #ff4d4f !important;
-  background: transparent !important;
-  color: #ff4d4f !important;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 13px;
-  font-weight: bold;
-  line-height: 1;
-  padding: 0;
-  box-shadow: none !important;
-  z-index: 2;
-}
-
-.branch-del-inner {
-  color: #ff4d4f;
-  font-size: 13px;
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  line-height: 1;
-}
-
-.add-else-btn {
-  margin-top: 2px;
-  margin-left: 6px;
-  min-width: 50px;
-  height: 20px;
-  font-weight: 500;
-  letter-spacing: 1px;
-  border-radius: 5px;
-  background: #409eff;
-  color: #fff;
-  border: none;
-  transition: background 0.2s;
-  box-shadow: 0 1px 4px rgba(64, 158, 255, 0.08);
-  padding: 0 8px;
-  font-size: 12px;
-}
-
-.add-else-btn:hover {
-  background: #66b1ff;
-  color: #fff;
-  border: none;
-  transition: background 0.2s;
-  box-shadow: 0 1px 4px rgba(64, 158, 255, 0.08);
-  padding: 0 8px;
-  font-size: 12px;
-}
-
-.help-icon {
-  margin-right: 8px;
-  color: #909399;
-  cursor: pointer;
-  font-size: 16px;
-}
-
 .button-group {
   display: flex;
   align-items: center;
@@ -401,28 +290,5 @@ const allInputOptions = computed(() => {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 4px;
-}
-
-.narrow-add-btn {
-  min-width: 32px;
-  width: 50px;
-  padding: 0 4px;
-  height: 18px;
-  font-size: 12px;
-  border-radius: 5px;
-  margin-left: 4px;
-}
-
-.panel-section-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: #222;
-  margin: 0 0 4px 0;
-  letter-spacing: 1px;
-  user-select: none;
-}
-
-.el-form-item {
-  margin-bottom: 8px !important;
 }
 </style>

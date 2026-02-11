@@ -20,14 +20,6 @@ export default {
       }
     },
     {
-      path: '/func/edit-lua',
-      name: 'functionEditLua',
-      component: () => import('@/views/func/edit-lua.vue'),
-      meta: {
-        title: '函数编辑'
-      }
-    },
-    {
       path: '/rule/list',
       name: 'ruleList',
       component: () => import('@/views/rule/list.vue'),

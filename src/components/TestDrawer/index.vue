@@ -488,7 +488,7 @@ import { LuaGenerator } from '@/utils/json2lua/LuaGenerator'
 import { getFunctionListByIds, transformFunctionData } from '@/api/workflow/WorkFlowApi'
 import { formatMilliseconds } from '@/utils'
 import BaseNodeIcon from '@/components/base/BaseNodeIcon.vue'
-import { getLuaCodeMapByExpression } from '@/utils/expression'
+import { getFunctionCode } from '@/utils/parser/FuncParser'
 
 // 定义主题常量
 const DARK_THEME = 'vs'
@@ -594,17 +594,15 @@ const generateLuaFromConfig = async (configData: string): Promise<string> => {
     .filter((n: any) => n.funcType === 'func')
     .map((n: any) => n.funcId)
   if (allFuncId.length === 0) {
-    const luaCode = luaGenerator.generate(workFlowJson, [], true, {})
-    return luaCode
+    return luaGenerator.generate(workFlowJson, [], {})
   }
   const functionItems = await getFunctionListByIds(allFuncId)
   const functionNodes = functionItems.map(item => transformFunctionData(item))
 
-  const { expressionLuaCodeMap } = await getLuaCodeMapByExpression(workFlowJson.nodeList)
-  if (!expressionLuaCodeMap) return
+  const { codeMap } = await getFunctionCode(workFlowJson.nodeList)
+  if (!codeMap) return
 
-  const luaCode = luaGenerator.generate(workFlowJson, functionNodes, true, expressionLuaCodeMap)
-  return luaCode
+  return luaGenerator.generate(workFlowJson, functionNodes, codeMap)
 }
 
 // 获取规则数据

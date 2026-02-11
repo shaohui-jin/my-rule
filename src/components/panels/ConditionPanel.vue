@@ -48,12 +48,8 @@
             {{ idx === 0 ? 'if' : idx === nodeData.outputData.length - 1 ? 'else' : 'elseif' }}
           </span>
           <template v-if="idx !== nodeData.outputData.length - 1">
-            <BaseFunctionExpression
+            <BaseFunctionInput
               v-model="param.functionCode"
-              :nodeData="nodeData"
-              :workflowData="workflowData"
-              placeholder="rst = 5 (js规范)"
-              type="textarea"
               :disabled="props.disabled"
               class="branch-cond-input"
             />
@@ -75,7 +71,6 @@
           @click="removeBranch(idx)"
           circle
           class="branch-del"
-          style="position: absolute; top: 16px; right: 16px; z-index: 2"
         >
           -
         </el-button>
@@ -89,6 +84,7 @@ import { toRefs, defineEmits, computed, ref } from 'vue'
 import { QuestionFilled } from '@element-plus/icons-vue'
 import { getOutputTargetInfo } from './panelUtils'
 import BaseFunctionExpression from '@/components/BaseFunctionExpression/index.vue'
+import BaseFunctionInput from '@/components/base/BaseFunctionInput.vue'
 
 const props = defineProps<{
   nodeData: any
@@ -189,7 +185,7 @@ function removeBranch(idx: number) {
 }
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .condition-node-panel {
   display: flex;
   flex-direction: column;
@@ -223,13 +219,13 @@ function removeBranch(idx: number) {
 .divider {
   height: 1px;
   background: var(--el-border-color-lighter);
-  margin: 12px 0 8px 0;
+  margin: 10px 0 6px 0;
 }
 
 .param-group-title {
   font-weight: 600;
   font-size: 15px;
-  margin: 10px 0 6px 0;
+  margin: 8px 0 4px 0;
   color: var(--el-text-color-primary);
   letter-spacing: 1px;
   user-select: none;
@@ -306,7 +302,8 @@ function removeBranch(idx: number) {
 .branch-row {
   display: flex;
   align-items: center;
-  margin-bottom: 4px;
+  //margin-bottom: 4px;
+  padding: 4px;
 }
 
 .branch-label {
@@ -327,8 +324,9 @@ function removeBranch(idx: number) {
   flex: 1 1 0;
   min-height: 0;
   max-height: none;
-  overflow-y: auto;
-  padding-right: 2px;
+  overflow-y: overlay;
+  overflow-x: hidden;
+  padding: 8px 0;
 }
 
 .branch-del {
@@ -348,7 +346,7 @@ function removeBranch(idx: number) {
   line-height: 1;
   padding: 0;
   box-shadow: none !important;
-  z-index: 2;
+  z-index: 12;
 }
 
 .add-else-btn {
