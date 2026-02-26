@@ -1,12 +1,6 @@
 <template>
   <div class="rule-detail">
-    <el-form
-      ref="formRef"
-      :model="form"
-      :rules="rules"
-      label-width="100px"
-      class="rule-form"
-    >
+    <el-form ref="formRef" :model="form" :rules="rules" label-width="100px" class="rule-form">
       <el-form-item label="规则编码" prop="ruleCode">
         <el-input
           v-model="form.ruleCode"
@@ -18,7 +12,12 @@
         <el-input v-model="form.ruleName" placeholder="请输入规则名称" />
       </el-form-item>
       <el-form-item label="规则类型" prop="ruleType">
-        <el-select v-model="form.ruleType" placeholder="请选择规则类型" style="width: 100%" disabled>
+        <el-select
+          v-model="form.ruleType"
+          placeholder="请选择规则类型"
+          style="width: 100%"
+          disabled
+        >
           <el-option
             v-for="item in ruleTypeOptions"
             :key="item.value"
@@ -28,7 +27,12 @@
         </el-select>
       </el-form-item>
       <el-form-item label="业务场景" prop="sceneCategory">
-        <el-select v-model="form.sceneCategory" placeholder="请选择业务场景" style="width: 100%" :disabled="props.operationMode === 'EDIT'">
+        <el-select
+          v-model="form.sceneCategory"
+          placeholder="请选择业务场景"
+          style="width: 100%"
+          :disabled="props.operationMode === 'EDIT'"
+        >
           <el-option
             v-for="item in sceneCategoryOptions"
             :key="item.value"
@@ -38,15 +42,15 @@
         </el-select>
       </el-form-item>
       <el-form-item label="规则描述" prop="ruleDesc">
-        <el-input
-          v-model="form.ruleDesc"
-          type="textarea"
-          :rows="3"
-          placeholder="请输入规则描述"
-        />
+        <el-input v-model="form.ruleDesc" type="textarea" :rows="4" placeholder="请输入规则描述" />
       </el-form-item>
       <el-form-item label="规则状态" prop="ruleStatus">
-        <el-select v-model="form.ruleStatus" placeholder="请选择规则状态" style="width: 100%" disabled>
+        <el-select
+          v-model="form.ruleStatus"
+          placeholder="请选择规则状态"
+          style="width: 100%"
+          disabled
+        >
           <el-option label="启用" value="ENABLED" />
         </el-select>
       </el-form-item>
@@ -93,12 +97,8 @@ const rules = {
     { required: true, message: '请输入规则名称', trigger: 'blur' },
     { max: 100, message: '长度不能超过 100 个字符', trigger: 'blur' }
   ],
-  ruleType: [
-    { required: true, message: '请选择规则类型', trigger: 'change' }
-  ],
-  sceneCategory: [
-    { required: true, message: '请选择业务场景', trigger: 'change' }
-  ],
+  ruleType: [{ required: true, message: '请选择规则类型', trigger: 'change' }],
+  sceneCategory: [{ required: true, message: '请选择业务场景', trigger: 'change' }],
   ruleDesc: [
     { required: true, message: '请输入规则描述', trigger: 'blur' },
     { max: 5000, message: '长度不能超过 5000 个字符', trigger: 'blur' }
@@ -124,7 +124,7 @@ onMounted(() => {
 
 watch(
   () => props.detail,
-  (val) => {
+  val => {
     if (val) {
       form.ruleCode = val.ruleCode || ''
       form.ruleName = val.ruleName || ''
@@ -138,7 +138,7 @@ watch(
 )
 
 const validate = (callback: (isValid: boolean) => void) => {
-  formRef.value?.validate((valid) => {
+  formRef.value?.validate(valid => {
     if (valid) {
       // 将表单数据复制到detail对象中
       Object.assign(props.detail, {

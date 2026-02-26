@@ -65,7 +65,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick } from 'vue'
+import { ref, computed, nextTick, PropType } from 'vue'
 import { LogicType, type WorkflowData } from '@/type/workflow'
 import FuncPanel from './FuncPanel.vue'
 import ConditionPanel from './ConditionPanel.vue'
@@ -73,20 +73,15 @@ import CalculatorPanel from './CalculatorPanel.vue'
 import { Close } from '@element-plus/icons-vue'
 import BaseNodeIcon from '@/components/base/BaseNodeIcon.vue'
 
-/**
- * 组件属性定义
- */
-interface Props {
-  visible: boolean
-  disabled: boolean
-  nodeData: any
-  workflowData: WorkflowData
-  getAvailableSourceOptions: (param: any) => any[]
-  getAvailableTargetOptions: () => any[]
-  getAllAvailableOptions: (param: any) => any[]
-}
-
-const props = defineProps<Props>()
+const props = defineProps({
+  visible: { type: Boolean, default: false },
+  disabled: { type: Boolean, default: false },
+  nodeData: { type: Object, default: () => ({}) },
+  workflowData: { type: Object as PropType<WorkflowData>, default: () => ({}) },
+  getAvailableSourceOptions: { type: Function as PropType<(param: any) => any[]> },
+  getAvailableTargetOptions: { type: Function as PropType<() => any[]> },
+  getAllAvailableOptions: { type: Function as PropType<(param: any) => any[]> }
+})
 
 /**
  * 组件事件定义

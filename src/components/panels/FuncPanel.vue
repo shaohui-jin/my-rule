@@ -9,7 +9,7 @@
           v-model="nodeData.remark"
           class="remark-input"
           placeholder="请输入备注"
-          rows="3"
+          rows="4"
           :disabled="props.disabled"
           @blur="finishEditRemark"
           @input="finishEditRemark"

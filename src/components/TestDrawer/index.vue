@@ -1297,7 +1297,7 @@ const createFullscreenScriptEditor = () => {
     scriptEditorFullscreenContainer.value as HTMLElement,
     {
       value: scriptContent.value,
-      language: 'lua',
+      language: 'typescript',
       theme: DARK_THEME,
       readOnly: isPreviewMode.value,
       minimap: { enabled: true },

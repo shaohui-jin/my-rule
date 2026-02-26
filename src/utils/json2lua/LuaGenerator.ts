@@ -1,14 +1,12 @@
 import { LogicType, WorkflowData, WorkflowNode } from '@/type/workflow'
 import { WorkflowAnalyzer } from './WorkflowAnalyzer'
-import { Aggregate } from './Aggregate'
-import { GlobalParam } from './GlobalParam'
-import { SubPropertyExtractor } from './SubPropertyExtractor'
-import { GlobalVariable } from './GlobalVariable'
+import { GlobalParam } from '../parserFunc/GlobalParam'
+import { GlobalVariable } from '../parserFunc/GlobalVariable'
 import { TypeConverter } from './TypeConverter'
 import { DimensionConverter } from './DimensionConverter'
 import { BranchInfo, NodeAnalysis } from './types'
-import { Calculator } from './Calculator'
-import { Json2LuaUtil } from './Json2LuaUtil'
+import { Calculator } from '../parserFunc/Calculator'
+import { CodeFactory } from '../factory/CodeFactory'
 import { isIfElseNode } from '@/utils/type/node'
 
 // 模块信息接口
@@ -28,9 +26,7 @@ export class LuaGenerator {
   private nodeAnalysis: Map<string, NodeAnalysis>
   private branchInfoMap: Map<string, BranchInfo>
   private executionOrder: string[]
-  private aggregate: Aggregate
   private globalParam: GlobalParam
-  private subPropertyExtractor: SubPropertyExtractor
   private globalVariable: GlobalVariable
   private typeConverter: TypeConverter
   private dimensionConverter: DimensionConverter
@@ -43,11 +39,8 @@ export class LuaGenerator {
     const paramNameResolverFunc = (nodeId: string, branchContext?: any) =>
       this.getArgParamNameForLogic(nodeId, branchContext)
 
-    this.aggregate = new Aggregate()
     this.globalParam = new GlobalParam()
     this.globalVariable = new GlobalVariable()
-    this.subPropertyExtractor = new SubPropertyExtractor()
-    this.subPropertyExtractor.paramNameResolver = paramNameResolverFunc
     this.typeConverter = new TypeConverter()
     this.typeConverter.paramNameResolver = paramNameResolverFunc
     this.dimensionConverter = new DimensionConverter()
@@ -61,7 +54,6 @@ export class LuaGenerator {
     this.workflow = workflow
     this.funcData = funcData
     this.codeMap = codeMap
-    this.aggregate.setWorkflow(workflow)
     this.analyzer = new WorkflowAnalyzer(workflow)
     const analysisResult = this.analyzer.analyze()
     this.nodeAnalysis = analysisResult.nodeAnalysis
@@ -79,7 +71,6 @@ export class LuaGenerator {
     this.executionOrder = []
     if (this.nodeAnalysis) this.nodeAnalysis.clear()
     if (this.branchInfoMap) this.branchInfoMap.clear()
-    if (this.aggregate) this.aggregate.clearWorkflow()
     if (this.analyzer) this.analyzer.clear()
     this.hasDiffMerge = false
   }
@@ -92,13 +83,12 @@ export class LuaGenerator {
     // 2. 生成代码
     let code = ''
     code += this.generateModuleDeclarations()
-    code += this.generateFunctionDeclaration()
+    code += this.generateFunctionCode()
+    code += `function work(root, context) {\n`
     code += this.generateVariableDeclarations()
-    code += this.generateExpressionMainFlow()
     code += this.generateMainFlow()
     code += this.generateReturnStatement()
     code += '}\n'
-    code += this.generateModuleExport()
 
     return code
   }
@@ -107,7 +97,7 @@ export class LuaGenerator {
   private collectModules(): void {
     this.workflow.nodeList.forEach(node => {
       if (node.funcId) {
-        const funcInfo = this.funcData.find((f: any) => f.funcId === node.funcId)
+        const funcInfo = this.funcData.find((f: any) => f.funcId == node.funcId)
         if (funcInfo) {
           const moduleKey = `${funcInfo.path}/${funcInfo.className}`
           this.modules.set(moduleKey, {
@@ -124,33 +114,40 @@ export class LuaGenerator {
   private generateModuleDeclarations(): string {
     let code = '\n// 声明函数通用日志模块\n'
 
-    // 直接生成 require 语句，统一封装到dynamic目录下
-    // 这里没有做合并 因为 约定 每个函数 独立实现功能
-    // this.modules.forEach((module, _key) => {
-    //   // 如果path有值（比如lib），则生成dynamic/lib/xxxx
-    //   // 如果path没有值，则生成dynamic/xxxx
-    //   const localName = this.convertToLuaVarName(module.name)
-    //   const requirePath = module.path
-    //     ? `dynamic.${module.path.replaceAll('/', '.')}.${module.name}`
-    //     : `dynamic.${module.name}`
-    //   console.log('requirePath', requirePath)
-    //   code += `local ${localName} = require("${requirePath}")\n`
-    // })
-
     // 加测试模块工具方法
-    // if (this.isGenerateTestLuaScript) {
     code += `const log = console.log\n`
     code += `const warn = console.warn\n`
     code += `const error = console.error\n`
-    // }
 
     code += '\n'
     return code
   }
 
-  // 生成函数声明
-  private generateFunctionDeclaration(): string {
-    return `function work(root: any, target: any, context: any) {\n`
+  // 函数提取到最外面
+  private generateFunctionCode(): string {
+    let code = '// 声明表达式所有变量\n'
+    Object.keys(this.codeMap).forEach(key => {
+      const nodeId = key.split('_')[0]
+      const node = this.analyzer.getNodeById(nodeId)
+
+      const dataArray = this.getNodeIncomingEdges(nodeId)
+      // 如果有data 就当做全部都是有前缀的
+      const funcTarget = this.codeMap[key].includes('data')
+        ? dataArray.map(e => e.key).join(', ')
+        : 'target'
+      const levelOne = '\n  '
+      const levelTwo = '\n    '
+      const funcCode = this.codeMap[key].trim()
+        ? `return (${this.codeMap[key]
+            .trim()
+            .split('\n')
+            .map(e => levelTwo + e)
+            .join('')}${levelOne})(${funcTarget})`
+        : `return ''`
+      code += `const ${CodeFactory.functionPrefix}_${key} = (${funcTarget}) => {${levelOne}${funcCode} \n}`
+      code += '\n\n'
+    })
+    return code
   }
 
   // 生成变量声明
@@ -163,11 +160,10 @@ export class LuaGenerator {
     // 声明主流程节点变量
     this.workflow.nodeList.forEach(node => {
       const varName = isIfElseNode(node) ? `tempResult_${node.id}` : `result_${node.id}`
-      const typeName = node.outputData[0].type
-      console.log('node', node)
+
       if (!declaredVars.has(varName)) {
         // if else默认是any类型，其他的获取返回参数的第一项的值
-        code += `\tlet ${varName}: ${typeName} = null\n`
+        code += `\tlet ${varName} = null\n`
         declaredVars.add(varName)
       }
 
@@ -233,31 +229,6 @@ export class LuaGenerator {
     return code
   }
 
-  private generateExpressionMainFlow(): string {
-    let code = '\t// 声明表达式所有变量\n'
-
-    Object.keys(this.codeMap).forEach(key => {
-      const nodeId = key.split('_')[0]
-      const node = this.analyzer.getNodeById(nodeId)
-
-      const dataArray = this.getNodeIncomingEdges(nodeId)
-      // 如果有data 就当做全部都是有前缀的
-      const funcTarget = this.codeMap[key].includes('data')
-        ? dataArray.map(e => e.key).join(', ')
-        : 'target'
-      code += `\tconst function_${key} = (${funcTarget}) => {\n\t  return (\n\t\t${this.codeMap[key]
-        .trim()
-        .split('\n')
-        .join('\n\t\t')}\n\t  )(${funcTarget})\n\t}`
-      code += '\n'
-    })
-
-    console.log('声明表达式所有变量 结束-------------------')
-    code += '\n'
-
-    return code
-  }
-
   // 工具函数：获取节点变量名
   private getNodeVarName(nodeId: string | number, isIfElseNode = false): string {
     return isIfElseNode ? `tempResult_${nodeId}` : `result_${nodeId}`
@@ -284,12 +255,12 @@ export class LuaGenerator {
     })
 
     // 构建 rst/rst1/rst2... 到 resultVar 的映射
-    const rstArray: Array<{ key: string; value: string }> = []
+    const dataArray: Array<{ key: string; value: string }> = []
     resultVars.forEach((v, idx) => {
       const key = idx === 0 ? 'data' : `data${idx}`
-      rstArray.push({ key, value: v })
+      dataArray.push({ key, value: v })
     })
-    return rstArray
+    return dataArray
   }
 
   // 生成条件表达式
@@ -301,18 +272,18 @@ export class LuaGenerator {
         return 'true' // 对于 else 分支，返回 true
       }
 
-      const rstArray = this.getNodeIncomingEdges(logicNode.id)
+      const dataArray = this.getNodeIncomingEdges(logicNode.id)
 
       if (logicNode.version && logicNode.version > '1.0.0') {
-        let resStr = rstArray.map(e => e.value).join(', ')
+        let resStr = dataArray.map(e => e.value).join(', ')
         return `expression_${logicId}_${output.portId}(${resStr})`
       } else {
         // 替换条件表达式中的 rst/rst1/rst2... 为实际变量（全量替换，从后往前）
         let conditionExpr = output.functionCode
 
         // 从后往前替换，避免 rst1 被误替换为 rst
-        for (let i = rstArray.length - 1; i >= 0; i--) {
-          const { key, value } = rstArray[i]
+        for (let i = dataArray.length - 1; i >= 0; i--) {
+          const { key, value } = dataArray[i]
           const regex = new RegExp(`\\b${key}\\b`, 'g')
           conditionExpr = conditionExpr.replace(regex, value)
         }
@@ -341,11 +312,11 @@ export class LuaGenerator {
   ): string {
     try {
       const logicId = node.id
-      let code = `${Json2LuaUtil.indent(indent)}-- 条件分支 ${logicId}\n`
+      let code = `${CodeFactory.indent(indent)}-- 条件分支 ${logicId}\n`
       // 在测试模式下，为特定逻辑节点添加记录日志
       if (this.isGenerateTestLuaScript && code && this.shouldRecordLogicNode(node)) {
         // 记录基础函数执行日志，正式脚本不会有下面这行代
-        code += `${Json2LuaUtil.indent(
+        code += `${CodeFactory.indent(
           indent
         )}exec.logic_and_log(func_step_logs, ${logicId}, '条件分支')\n`
       }
@@ -361,19 +332,19 @@ export class LuaGenerator {
       branchList.forEach((branch, idx) => {
         // 生成条件语句
         if (branch.branchType === 'if') {
-          code += `${Json2LuaUtil.indent(indent)}if ${this.generateConditionExpression(
+          code += `${CodeFactory.indent(indent)}if ${this.generateConditionExpression(
             node,
             idx,
             logicId
           )} then\n`
         } else if (branch.branchType === 'elseif') {
-          code += `${Json2LuaUtil.indent(indent)}elseif ${this.generateConditionExpression(
+          code += `${CodeFactory.indent(indent)}elseif ${this.generateConditionExpression(
             node,
             idx,
             logicId
           )} then\n`
         } else {
-          code += `${Json2LuaUtil.indent(indent)}else\n`
+          code += `${CodeFactory.indent(indent)}else\n`
         }
 
         // 处理分支内的节点（分支感知）
@@ -387,7 +358,7 @@ export class LuaGenerator {
         // 分支执行标志赋值
         if (this.hasDiffMerge) {
           const flagVar = `flag_${branch.branchId}`
-          code += `${Json2LuaUtil.indent(indent + 1)}${flagVar} = true\n`
+          code += `${CodeFactory.indent(indent + 1)}${flagVar} = true\n`
         }
 
         // 分支出口赋值
@@ -398,13 +369,13 @@ export class LuaGenerator {
             const isExitNodeLogic = isIfElseNode(exitNode)
             if (this.analyzer.getNodeOutEdge(exitId).length > 0) {
               // 如果出口节点有后续边，则赋值
-              code += `${Json2LuaUtil.indent(indent + 1)}${this.getNodeVarName(
+              code += `${CodeFactory.indent(indent + 1)}${this.getNodeVarName(
                 logicId,
                 true
               )} = ${this.getNodeVarName(exitId, isExitNodeLogic)}\n`
             } else {
               // 如果出口节点没有后续边，则直接返回
-              code += `${Json2LuaUtil.indent(indent + 1)}return ${this.getNodeVarName(
+              code += `${CodeFactory.indent(indent + 1)}return ${this.getNodeVarName(
                 exitId,
                 isExitNodeLogic
               )}\n`
@@ -413,7 +384,7 @@ export class LuaGenerator {
         }
       })
 
-      code += `${Json2LuaUtil.indent(indent)}end\n`
+      code += `${CodeFactory.indent(indent)}end\n`
       return code
     } catch (error) {
       console.error('[LuaGen] 生成 if-else 结构体失败:', error)
@@ -421,7 +392,14 @@ export class LuaGenerator {
     }
   }
 
-  // 生成节点代码（分支感知）
+  /**
+   * 为给定的工作流节点生成代码
+   * @param {WorkflowNode} node - 需要生成代码的流程节点
+   * @param {number} indent - 生成代码时用于缩进的空格数量
+   * @param {Set<string>} generated - 已生成节点ID的集合，用于避免重复
+   * @param {any} [branchContext] - 可选的分支相关上下文，用于条件或逻辑节点
+   * @return {string} 生成的代码字符串
+   */
   private generateNodeCode(
     node: WorkflowNode,
     indent: number,
@@ -439,21 +417,16 @@ export class LuaGenerator {
 
     // 生成注释
     if (node.remark && node.funcType === 'func') {
-      code += `${Json2LuaUtil.indent(indent)}-- ${node.remark.replace(/\n/g, ' ')}\n`
+      code += `${CodeFactory.indent(indent)}-- ${node.remark.replace(/\n/g, ' ')}\n`
     }
 
-    // 生成函数调用
-    if (analysis.type === 'normal') {
-      // 主线代码生成
-      if (node.funcType === 'func' && node.funcId) {
-        code += this.generateFuncCodeWithBranch(node, indent, branchContext)
-      } else if (node.funcType === 'logic') {
-        code += this.generateLogicNodeCode(node, indent, branchContext)
-      }
-    } else if (analysis.type === 'condition') {
-      // 条件分支固定是 condition 类型
-      code += this.generateIfElseBlock(node, indent, generated, branchContext)
-    }
+    // 主线代码生成
+    // if (node.funcType === 'func' && node.funcId) {
+    //   code += this.generateFuncCodeWithBranch(node, indent, branchContext)
+    // } else if (node.funcType === 'logic') {
+    code += this.generateLogicNodeCode(node, indent, generated, branchContext)
+    // }
+
     return code
   }
 
@@ -465,7 +438,7 @@ export class LuaGenerator {
   ): string {
     // TODO: 函数调整
     let code = ''
-    const funcInfo = this.funcData.find(rule => rule.funcId === node.funcId)
+    const funcInfo = this.funcData.find(rule => rule.funcId == node.funcId)
     if (funcInfo) {
       const moduleName = this.convertToLuaVarName(funcInfo.className)
       const args = this.generateFunctionArgsWithBranch(node, branchContext)
@@ -475,26 +448,26 @@ export class LuaGenerator {
         const errorVarName = `error_${node.id}`
         // 根据是否有参数来决定是否添加逗号
         const argsPart = args ? `, ${args}` : ''
-        code += `${Json2LuaUtil.indent(
+        code += `${CodeFactory.indent(
           indent
         )}-- 记录抽象函数执行日志，正式脚本会还原为：${this.getNodeVarName(
           node.id
         )} = ${moduleName}.${funcInfo.funcName}(${args})\n`
-        code += `${Json2LuaUtil.indent(indent)}${this.getNodeVarName(
+        code += `${CodeFactory.indent(indent)}${this.getNodeVarName(
           node.id
         )}, ${errorVarName} = exec.func_and_log(func_step_logs, ${node.id}, ${moduleName}.${
           funcInfo.funcName
         }${argsPart})\n`
 
         // 补充 error信息校验 如果失败则 直接返回
-        code += `${Json2LuaUtil.indent(indent)}if ${errorVarName} then\n`
-        code += `${Json2LuaUtil.indent(indent + 1)}return ${this.getNodeVarName(
+        code += `${CodeFactory.indent(indent)}if ${errorVarName} then\n`
+        code += `${CodeFactory.indent(indent + 1)}return ${this.getNodeVarName(
           node.id
         )}, ${errorVarName}\n`
-        code += `${Json2LuaUtil.indent(indent)}end\n`
+        code += `${CodeFactory.indent(indent)}end\n`
       } else {
         // 正常模式：直接函数调用
-        code += `${Json2LuaUtil.indent(indent)}${this.getNodeVarName(node.id)} = ${moduleName}.${
+        code += `${CodeFactory.indent(indent)}${this.getNodeVarName(node.id)} = ${moduleName}.${
           funcInfo.funcName
         }(${args})\n`
       }
@@ -502,6 +475,14 @@ export class LuaGenerator {
     return code
   }
 
+  /**
+   * 为指定的工作流节点生成预置代码
+   * @param {WorkflowNode} node - 需生成预添加代码的工作流节点
+   * @param {number} indent - 生成代码时用于缩进的空格数
+   * @param {Set<string>} generated - 已处理节点的标识符集合，用于避免重复
+   * @param {any} [branchContext] - 可选的与包含节点的分支相关的上下文信息
+   * @return {string} T 生成的预添加代码字符串。若未找到全局变量映射路径或其不包含节点的ID，则返回空字符串
+   */
   private generatePreAddedCode(
     node: WorkflowNode,
     indent: number,
@@ -511,14 +492,17 @@ export class LuaGenerator {
     let addCode = ''
     // 若无则直接返回
     const globalVarMapPath = this.analyzer.getGlobalVarMapPath()
+
     if (globalVarMapPath.size == 0 || !globalVarMapPath.has(node.id)) {
       return addCode
     }
     // 全局变量节点链路作为 前置代码生成
     const paths = globalVarMapPath.get(node.id)
+
     if (paths && paths.length > 0) {
       paths.forEach(path => {
         const node = this.analyzer.getNodeById(path)
+
         if (node) {
           addCode += this.generateNodeCode(node, indent, generated, branchContext)
         }
@@ -680,45 +664,32 @@ export class LuaGenerator {
   }
 
   // 生成逻辑节点代码
-  private generateLogicNodeCode(node: WorkflowNode, indent: number, branchContext?: any): string {
+  private generateLogicNodeCode(
+    node: WorkflowNode,
+    indent: number,
+    generated: Set<string>,
+    branchContext?: any
+  ): string {
     let code = ''
-    // 根据逻辑类型生成不同的代码
-    if (node.logicData?.logicType === LogicType.AGGREGATE) {
-      code = this.aggregate.generateAggregateCode(node, indent)
-    } else if (node.logicData?.logicType === LogicType.GLOBAL_PARAM) {
-      code = this.globalParam.generateGlobalParamCode(node, indent)
-    } else if (node.logicData?.logicType === LogicType.SUB_PROPERTY_EXTRACTOR) {
-      code = this.subPropertyExtractor.generateSubPropertyExtractorCode(
-        node,
-        Json2LuaUtil.indent(indent),
-        branchContext
-      )
-    } else if (node.logicData?.logicType === LogicType.GLOBAL_VARIABLE) {
-      code = this.globalVariable.generateGlobalVariableCode(node, Json2LuaUtil.indent(indent))
-    } else if (node.logicData?.logicType === LogicType.TYPE_CONVERTER) {
-      code = this.typeConverter.generateTypeConverterCode(
-        node,
-        Json2LuaUtil.indent(indent),
-        branchContext
-      )
-    } else if (node.logicData?.logicType === LogicType.DIMENSION_CONVERTER) {
-      code = this.dimensionConverter.generateDimensionConverterCode(
-        node,
-        Json2LuaUtil.indent(indent),
-        branchContext
-      )
-    } else if (node.logicData?.logicType === LogicType.CALCULATOR) {
-      const rstArray = this.getNodeIncomingEdges(node.id)
-      code = this.calculator.generateCalculatorCode(node, indent, rstArray)
+    if (node.logicData?.logicType === LogicType.GLOBAL_VARIABLE) {
+      code = this.globalVariable.generateCode(node, indent, this.analyzer)
+    }
+    if (node.logicData?.logicType === LogicType.CALCULATOR) {
+      const dataArray = this.getNodeIncomingEdges(node.id)
+      code = this.calculator.generateCode(node, indent, dataArray)
+    }
+    if (node.logicData?.logicType === LogicType.GLOBAL_PARAM) {
+      code = this.globalParam.generateCode(node, indent)
     }
 
-    // 在测试模式下，为特定逻辑节点添加记录日志
-    if (this.isGenerateTestLuaScript && code && this.shouldRecordLogicNode(node)) {
-      const resultVar = this.getNodeVarName(node.id, false)
-      code += `${Json2LuaUtil.indent(indent)}-- 记录基础函数执行日志，正式脚本不会有下面这行代码\n`
-      code += `${Json2LuaUtil.indent(indent)}exec.logic_and_log(func_step_logs, ${
-        node.id
-      }, ${resultVar})\n`
+    if (node.logicData?.logicType === LogicType.IFELSE) {
+      code = this.generateIfElseBlock(node, indent, generated, branchContext)
+    }
+    if (node.logicData?.logicType === LogicType.TYPE_CONVERTER) {
+      code = this.typeConverter.generateCode(node, indent, branchContext)
+    }
+    if (node.logicData?.logicType === LogicType.DIMENSION_CONVERTER) {
+      code = this.dimensionConverter.generateCode(node, indent, branchContext)
     }
 
     return code
@@ -768,11 +739,6 @@ export class LuaGenerator {
     return `\n\treturn result_${lastNode.id}\n`
   }
 
-  // 生成模块导出
-  private generateModuleExport(): string {
-    return '\nreturn _M\n'
-  }
-
   // 工具函数：将连字符转换为下划线
   private convertToLuaVarName(name: string): string {
     return name.replace(/-/g, '_')
@@ -789,8 +755,8 @@ export class LuaGenerator {
     // 2. 收集所有子孙节点（遇到新的不同源分支汇合点时递归）
     const descendants = this.analyzer.collectDescendants(nodeId)
     // 3. 生成 if 结构
-    let code = `\n${Json2LuaUtil.indent(indent)}-- 不同源分支汇合点\n`
-    code += `${Json2LuaUtil.indent(indent)}if ${ifCond} then\n`
+    let code = `\n${CodeFactory.indent(indent)}-- 不同源分支汇合点\n`
+    code += `${CodeFactory.indent(indent)}if ${ifCond} then\n`
     // 4. 生成本汇合点及其所有子孙节点代码（本地去重）
     const localVisited = new Set<string>()
     // 先生成本节点
@@ -813,22 +779,22 @@ export class LuaGenerator {
       // 取最后一个子孙节点的变量名
       const lastId = descendants.length > 0 ? descendants[descendants.length - 1] : nodeId
       const isIfElse = isIfElseNode(this.analyzer.getNodeById(lastId))
-      code += `${Json2LuaUtil.indent(indent + 1)}${mergeVar} = ${this.getNodeVarName(
+      code += `${CodeFactory.indent(indent + 1)}${mergeVar} = ${this.getNodeVarName(
         lastId,
         isIfElse
       )}\n`
 
       // 在测试模式下，为不同源分支汇合点添加记录日志
       if (this.isGenerateTestLuaScript) {
-        code += `${Json2LuaUtil.indent(
+        code += `${CodeFactory.indent(
           indent + 1
         )}-- 记录基础函数执行日志，正式脚本不会有下面这行代码\n`
-        code += `${Json2LuaUtil.indent(
+        code += `${CodeFactory.indent(
           indent + 1
         )}exec.logic_and_log(func_step_logs, ${nodeId}, ${mergeVar})\n`
       }
     }
-    code += `${Json2LuaUtil.indent(indent)}end\n`
+    code += `${CodeFactory.indent(indent)}end\n`
     return code
   }
 

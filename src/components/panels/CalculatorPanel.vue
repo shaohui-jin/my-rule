@@ -9,7 +9,7 @@
           v-model="nodeData.remark"
           class="remark-input"
           placeholder="请输入备注"
-          rows="3"
+          rows="4"
           :disabled="props.disabled"
           @blur="finishEditRemark"
           @keydown.enter.exact.prevent="finishEditRemark"
@@ -20,7 +20,7 @@
       <div class="param-list">
         <div v-for="(item, idx) in allInputOptions" :key="idx" class="param-row">
           <div class="param-label-col">
-            <span class="param-label">{{ item.rstLabel }}</span>
+            <span class="param-label">{{ item.dataLabel }}</span>
           </div>
           <div class="param-input-group">
             <el-input
@@ -47,11 +47,11 @@
           </div>
           <div class="branch-row">
             <span class="branch-label-col">
-              <span class="param-label">{{ param.paramName }}</span>
+              <span class="param-label">目标</span>
               <span class="param-type-under">({{ param.type }})</span>
             </span>
             <el-input
-              model-value="输出结果"
+              :model-value="getOutputTargetInfo(nodeData, param, props.workflowData)"
               disabled
               placeholder="目标"
               class="branch-target-input"
@@ -65,21 +65,21 @@
 </template>
 
 <script setup lang="ts">
-import { toRefs, defineEmits, computed, ref } from 'vue'
-import { QuestionFilled } from '@element-plus/icons-vue'
-import { getOutputTargetInfo } from './panelUtils'
-import BaseFunctionExpression from '@/components/BaseFunctionExpression/index.vue'
+import { toRefs, defineEmits, computed, ref, PropType } from 'vue'
 import BaseFunctionInput from '@/components/base/BaseFunctionInput.vue'
+import { getOutputTargetInfo } from './panelUtils'
+import type { WorkflowData } from '@/type/workflow'
 
-const props = defineProps<{
-  nodeData: any
-  workflowData: any
-  disabled: boolean
-  getAvailableSourceOptions: (param: any) => any[]
-  onParamSourceChange: (param: any, value: any) => void
-  onParamInputChange: (param: any, value: any) => void
-  getAvailableTargetOptions: () => any[]
-}>()
+const props = defineProps({
+  nodeData: { type: Object, default: () => ({}) },
+  workflowData: { type: Object as PropType<WorkflowData>, default: () => ({}) },
+  disabled: { type: Boolean, default: false },
+  getAvailableSourceOptions: { type: Function as PropType<(param: any) => any[]> },
+  getAvailableTargetOptions: { type: Function as PropType<() => any[]> },
+  onParamSourceChange: { type: Function as PropType<(param: any) => any[]> },
+  onParamInputChange: { type: Function as PropType<(param: any) => any[]> }
+})
+
 const emit = defineEmits(['update:nodeBaseData', 'update:addPortData', 'update:removePortData'])
 const { nodeData } = toRefs(props)
 
@@ -110,9 +110,9 @@ function cancelEditRemark() {
   nodeData.value.remark = originalRemark.value
 }
 
-// 新增：将所有param的options展开为一维数组，并生成rst序号
+// 新增：将所有param的options展开为一维数组，并生成data序号
 const allInputOptions = computed(() => {
-  const arr: { label: string; value: any; rstLabel: string }[] = []
+  const arr: { label: string; value: any; dataLabel: string }[] = []
   let idx = 0
   for (const param of nodeData.value.inputData || []) {
     const options = props.getAvailableSourceOptions(param) || []
@@ -120,7 +120,7 @@ const allInputOptions = computed(() => {
       arr.push({
         label: option.label,
         value: option.value,
-        rstLabel: idx === 0 ? 'data' : `data${idx}`
+        dataLabel: idx === 0 ? 'data' : `data${idx}`
       })
       idx++
     }

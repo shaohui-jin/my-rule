@@ -448,6 +448,7 @@ const handleTestLua = (luaScript: string) => {
       nodeList: workflowData.value.nodeList
     })
   }
+  console.log('data', data)
   testDrawerRef.value.openDrawer(data, false, true)
 }
 

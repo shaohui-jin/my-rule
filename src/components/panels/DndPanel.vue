@@ -4,6 +4,8 @@
       v-for="item in baseFunctionNode"
       :key="item.funcId"
       class="dnd-panel-item"
+      @touchmove="onTouchMove"
+      @touchstart="e => onNodeMouseDown(item, e)"
       @mousedown="e => onNodeMouseDown(item, e)"
       @mouseenter="onNodeMouseEnter(item.funcId)"
       @mouseleave="onNodeMouseLeave(item.funcId)"
@@ -25,9 +27,14 @@ const baseFunctionNode = useFunctionStore().getFuncNode()
 
 const emit = defineEmits(['node-mouse-down'])
 
-function onNodeMouseDown(item: BaseFunctionNodeType, e: MouseEvent) {
+const onTouchMove = (e: MouseEvent) => {
+  e.preventDefault()
+}
+
+const onNodeMouseDown = (item: BaseFunctionNodeType, e: MouseEvent) => {
   emit('node-mouse-down', e, item)
 }
+
 let showTipTimer = null
 function onNodeMouseEnter(funcId: string) {
   showTipTimer = window.setTimeout(() => {
@@ -49,7 +56,8 @@ function onNodeMouseLeave(funcId: string) {
   width: 100px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  //justify-content: space-between;
+  gap: 10px;
   min-height: 0;
   padding-right: 10px;
   z-index: 2000;

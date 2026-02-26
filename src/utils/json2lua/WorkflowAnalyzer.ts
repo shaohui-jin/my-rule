@@ -13,7 +13,7 @@ export class WorkflowAnalyzer {
   private branchInfoMap: Map<string, BranchInfo>
   private nodeBranchMap: Map<string, BranchInfo>
   private branchNodeCache: Map<string, Set<string>>
-  private globalVarMapPath: Map<string, string[]>
+  private globalVarMapPath: Map<string, string[]> // 全局变量的节点map
   private mergePointCache: Map<string, { sources: string[]; logicNodeId: string }>
 
   // 新增：节点和边的索引Map
@@ -461,7 +461,7 @@ export class WorkflowAnalyzer {
     console.log('------------------------------------------')
 
     // 5. 全局变量映射
-    console.log('== 全局变量映射 ==')
+    console.log('== 全局变量映射 globalVarMapPath ==')
     if (this.globalVarMapPath.size === 0) {
       console.log('未找到全局变量映射。')
     } else {

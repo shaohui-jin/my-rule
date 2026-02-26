@@ -1,16 +1,12 @@
 import { WorkflowNode } from '@/type/workflow'
-import { Json2LuaUtil } from './Json2LuaUtil'
+import { CodeFactory } from '../factory/CodeFactory'
 
 export class TypeConverter {
   public paramNameResolver: Function
   constructor() {}
 
   // 生成类型转换节点代码
-  public generateTypeConverterCode(
-    node: WorkflowNode,
-    indent: string,
-    branchContext?: any
-  ): string {
+  public generateCode(node: WorkflowNode, _indent: number, branchContext?: any): string {
     let code = ''
 
     // 获取输入参数
@@ -21,13 +17,14 @@ export class TypeConverter {
       return code
     }
 
-    const resultVar = Json2LuaUtil.getNodeVarName(node.id)
+    const resultVar = CodeFactory.getNodeVarName(node)
     const dataSource = dataParam.source
     const targetVar = this.paramNameResolver(dataSource, branchContext)
     const convertType = convertTypeParam.source
       ? convertTypeParam.source
       : convertTypeParam.defaultValue
 
+    let indent = CodeFactory.indent(_indent)
     // 生成类型转换代码
     code += `${indent}-- 类型转换：${convertType}\n`
     code += `${indent}${resultVar} = nil\n`

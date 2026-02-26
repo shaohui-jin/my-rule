@@ -1,16 +1,12 @@
 import { WorkflowNode } from '@/type/workflow'
-import { Json2LuaUtil } from './Json2LuaUtil'
+import { CodeFactory } from '../factory/CodeFactory'
 
 export class DimensionConverter {
   public paramNameResolver: Function
   constructor() {}
 
   // 生成类型转换节点代码
-  public generateDimensionConverterCode(
-    node: WorkflowNode,
-    indent: string,
-    branchContext?: any
-  ): string {
+  public generateCode(node: WorkflowNode, _indent: number, branchContext?: any): string {
     let code = ''
 
     // 获取输入参数
@@ -22,12 +18,13 @@ export class DimensionConverter {
       return code
     }
 
-    const resultVar = Json2LuaUtil.getNodeVarName(node.id)
+    const resultVar = CodeFactory.getNodeVarName(node)
     const dataSource = dataParam.source
     const targetVar = this.paramNameResolver(dataSource, branchContext)
     const option = optionParam.source ? optionParam.source : optionParam.defaultValue
     const expression = expressionParam?.source || ''
 
+    let indent = CodeFactory.indent(_indent)
     // 生成升维/降维代码
     code += `${indent}-- 升维/降维操作：${option}\n`
     code += `${indent}${resultVar} = nil\n`
@@ -77,25 +74,25 @@ export class DimensionConverter {
         code += `${indent}\tend\n`
         break
 
-        case 'toString':
-          code += `${indent}\tif type(${targetVar}) == "table" then\n`
-          code += `${indent}\t\t${resultVar} = '' -- 不能将table的值 转成其他基础类型\n`
-          code += `${indent}\telse\n`
-          code += `${indent}\t\t${resultVar} = tostring(${targetVar})\n`
-          code += `${indent}\tend\n`
-          break
+      case 'toString':
+        code += `${indent}\tif type(${targetVar}) == "table" then\n`
+        code += `${indent}\t\t${resultVar} = '' -- 不能将table的值 转成其他基础类型\n`
+        code += `${indent}\telse\n`
+        code += `${indent}\t\t${resultVar} = tostring(${targetVar})\n`
+        code += `${indent}\tend\n`
+        break
 
-        case 'toNumber':
-          code += `${indent}\tif type(${targetVar}) == "table" then\n`
-          code += `${indent}\t\t${resultVar} = 0 -- 不能将table的值 转成其他基础类型\n`
-          code += `${indent}\telse\n`
-          code += `${indent}\t\t${resultVar} = tonumber(${targetVar})\n`
-          code += `${indent}\tend\n`
-          break
+      case 'toNumber':
+        code += `${indent}\tif type(${targetVar}) == "table" then\n`
+        code += `${indent}\t\t${resultVar} = 0 -- 不能将table的值 转成其他基础类型\n`
+        code += `${indent}\telse\n`
+        code += `${indent}\t\t${resultVar} = tonumber(${targetVar})\n`
+        code += `${indent}\tend\n`
+        break
 
-        case 'toBoolean':
-          code += `${indent}\t${resultVar} = ${targetVar} and true or false\n`
-          break
+      case 'toBoolean':
+        code += `${indent}\t${resultVar} = ${targetVar} and true or false\n`
+        break
     }
 
     code += `${indent}end\n`

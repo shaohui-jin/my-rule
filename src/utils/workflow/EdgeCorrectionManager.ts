@@ -150,11 +150,7 @@ export class EdgeCorrectionManager {
     const newTargetPort = edge.getTargetPortId()
     const newTargetNode = this.workflowData.value.nodeList.find((n: any) => n.id === newTarget)
 
-    if (
-      newTargetNode &&
-      newTargetNode.inputData &&
-      !(newTargetNode.funcType === 'logic' && newTargetNode.logicData?.logicType === 'aggregate')
-    ) {
+    if (newTargetNode && newTargetNode.inputData) {
       this.assignTargetNodeParameters(newTargetNode, newTargetPort, newSource)
     }
   }

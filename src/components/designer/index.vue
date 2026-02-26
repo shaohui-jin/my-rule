@@ -185,7 +185,8 @@ const workflowAction = ref([
   { txt: '另存为', comp: SaveAs, fn: () => handleSaveAs() },
   { txt: '导入', comp: Import, fn: () => handleImport(executeImport) },
   { txt: '导出', comp: Export, fn: () => handleExport(workflowData, syncData) },
-  { txt: '测试', comp: Test, fn: () => handleTest(), disabled: () => !props.data.id }
+  { txt: '测试', comp: Test, fn: () => handleTest(), disabled: () => !props.data.id },
+  { txt: '编译', comp: Test, fn: () => code() }
 ])
 
 let resizeHandler: (() => void) | null = null
@@ -821,11 +822,7 @@ function registerGraphFullEvents() {
       })
     }
 
-    if (
-      newTargetNode &&
-      newTargetNode.inputData &&
-      !(newTargetNode.funcType === 'logic' && newTargetNode.logicData?.logicType === 'aggregate')
-    ) {
+    if (newTargetNode && newTargetNode.inputData) {
       // 获取节点配置，确定连接的端口类型
       let targetParams: InputData[] = []
       targetParams = newTargetNode.inputData.filter((inp: any) => inp.sourceType === 'node')
@@ -1098,6 +1095,16 @@ const handleTest = async () => {
   const flowData = await getFlowData()
   if (!flowData) return
   emit('test-lua', flowData.luaCode)
+}
+
+const code = () => {
+  // 验证节点数据完整性
+  if (!checkValidate()) return
+  // 验证工作流是否合法
+  const validRst = validateWorkflow()
+  if (!validRst) return
+  // 获取工作流数据
+  getFlowData()
 }
 
 /**

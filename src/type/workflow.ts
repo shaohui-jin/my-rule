@@ -40,9 +40,7 @@ export interface OutputData {
 
 export enum LogicType {
   IFELSE = 'if_else',
-  AGGREGATE = 'aggregate',
   GLOBAL_PARAM = 'global_param',
-  SUB_PROPERTY_EXTRACTOR = 'sub_property_extractor',
   GLOBAL_VARIABLE = 'global_variable',
   TYPE_CONVERTER = 'type_converter',
   DIMENSION_CONVERTER = 'dimension_converter',

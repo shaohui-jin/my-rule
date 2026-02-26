@@ -8,7 +8,7 @@
         v-model="nodeData.remark"
         class="remark-input"
         placeholder="请输入备注"
-        rows="3"
+        rows="4"
         :disabled="props.disabled"
         @blur="finishEditRemark"
         @keydown.enter.exact.prevent="finishEditRemark"
@@ -20,7 +20,7 @@
     <div class="param-list">
       <div v-for="(item, idx) in allInputOptions" :key="idx" class="param-row">
         <div class="param-label-col">
-          <span class="param-label">{{ item.rstLabel }}</span>
+          <span class="param-label">{{ item.dataLabel }}</span>
         </div>
         <div class="param-input-group">
           <el-input
@@ -81,9 +81,7 @@
 
 <script setup lang="ts">
 import { toRefs, defineEmits, computed, ref } from 'vue'
-import { QuestionFilled } from '@element-plus/icons-vue'
 import { getOutputTargetInfo } from './panelUtils'
-import BaseFunctionExpression from '@/components/BaseFunctionExpression/index.vue'
 import BaseFunctionInput from '@/components/base/BaseFunctionInput.vue'
 
 const props = defineProps<{
@@ -125,9 +123,9 @@ function cancelEditRemark() {
   nodeData.value.remark = originalRemark.value
 }
 
-// 新增：将所有param的options展开为一维数组，并生成rst序号
+// 新增：将所有param的options展开为一维数组，并生成data序号
 const allInputOptions = computed(() => {
-  const arr: { label: string; value: any; rstLabel: string }[] = []
+  const arr: { label: string; value: any; dataLabel: string }[] = []
   let idx = 0
   for (const param of nodeData.value.inputData || []) {
     const options = props.getAvailableSourceOptions(param) || []
@@ -135,7 +133,7 @@ const allInputOptions = computed(() => {
       arr.push({
         label: option.label,
         value: option.value,
-        rstLabel: idx === 0 ? 'rst' : `rst${idx}`
+        dataLabel: idx === 0 ? 'data' : `data${idx}`
       })
       idx++
     }

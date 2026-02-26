@@ -21,8 +21,13 @@
         @blur="handleTrim('funcName')"
       />
     </el-form-item>
-    <el-form-item label="函数类型" prop="funcCategory" >
-      <el-select v-model="form.funcCategory" placeholder="请选择函数类型" style="width: 100%" :disabled="props.operationMode === 'EDIT'">
+    <el-form-item label="函数类型" prop="funcCategory">
+      <el-select
+        v-model="form.funcCategory"
+        placeholder="请选择函数类型"
+        style="width: 100%"
+        :disabled="props.operationMode === 'EDIT'"
+      >
         <el-option
           v-for="item in functionTypeOptions"
           :key="item.value"
@@ -35,13 +40,18 @@
       <el-input
         v-model="form.funcDesc"
         type="textarea"
-        :rows="3"
+        :rows="4"
         placeholder="请输入函数描述"
         @blur="handleTrim('funcDesc')"
       />
     </el-form-item>
     <el-form-item label="函数状态" prop="functionStatus">
-      <el-select v-model="form.functionStatus" placeholder="请选择函数状态" style="width: 100%" :disabled="props.operationMode !== 'EDIT'">
+      <el-select
+        v-model="form.functionStatus"
+        placeholder="请选择函数状态"
+        style="width: 100%"
+        :disabled="props.operationMode !== 'EDIT'"
+      >
         <el-option label="启用(画布可显)" value="ENABLED" />
         <el-option label="下架(画布不显示)" value="OFF_SHELVES" />
         <!-- <el-option label="待发布" value="ENABLED" /> -->
@@ -55,11 +65,10 @@
         :render-after-expand="false"
         style="width: 240px"
         :props="{ label: 'name', value: 'id' }"
-      >
-      </el-tree-select>
+      ></el-tree-select>
     </el-form-item>
     <el-form-item label="是否几何函数" prop="isGeometry">
-      <el-radio-group v-model="form.isGeometry" style="display: flex; flex-direction: row;">
+      <el-radio-group v-model="form.isGeometry" style="display: flex; flex-direction: row">
         <el-radio :label="0">否</el-radio>
         <el-radio :label="1">是</el-radio>
       </el-radio-group>
@@ -128,9 +137,7 @@ const rules = {
       trigger: 'blur'
     }
   ],
-  funcCategory: [
-    { required: true, message: '请选择函数类型', trigger: 'change' }
-  ],
+  funcCategory: [{ required: true, message: '请选择函数类型', trigger: 'change' }],
   funcDesc: [
     { required: true, message: '请输入函数描述', trigger: 'blur' },
     { max: 250, message: '长度不能超过 250 个字符', trigger: 'blur' },
@@ -144,15 +151,9 @@ const rules = {
       trigger: 'blur'
     }
   ],
-  functionStatus: [
-    { required: true, message: '请选择函数状态', trigger: 'change' }
-  ],
-  categoryId: [
-    { required: true, message: '请选择函数分类', trigger: 'change' }
-  ],
-  isGeometry: [
-    { required: true, message: '请选择是否几何函数', trigger: 'change' }
-  ]
+  functionStatus: [{ required: true, message: '请选择函数状态', trigger: 'change' }],
+  categoryId: [{ required: true, message: '请选择函数分类', trigger: 'change' }],
+  isGeometry: [{ required: true, message: '请选择是否几何函数', trigger: 'change' }]
 }
 
 async function fetchDict(): Promise<void> {
@@ -173,7 +174,7 @@ onMounted(() => {
 
 watch(
   () => props.detail,
-  (val) => {
+  val => {
     if (val) {
       form.funcCode = val.funcCode || ''
       form.funcName = val.funcName || ''
@@ -188,7 +189,7 @@ watch(
 )
 
 const validate = (callback: (isValid: boolean) => void) => {
-  formRef.value?.validate((valid) => {
+  formRef.value?.validate(valid => {
     if (valid) {
       // 将表单数据复制到detail对象中，并自动去除首尾空格
       Object.assign(props.detail, {
