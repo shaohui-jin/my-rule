@@ -1,11 +1,11 @@
 import { LogicType, WorkflowData, WorkflowNode } from '@/type/workflow'
 import { WorkflowAnalyzer } from './WorkflowAnalyzer'
 import { GlobalParam } from '../parserFunc/GlobalParam'
+import { Calculator } from '../parserFunc/Calculator'
 import { GlobalVariable } from '../parserFunc/GlobalVariable'
 import { TypeConverter } from './TypeConverter'
 import { DimensionConverter } from './DimensionConverter'
 import { BranchInfo, NodeAnalysis } from './types'
-import { Calculator } from '../parserFunc/Calculator'
 import { CodeFactory } from '../factory/CodeFactory'
 import { isIfElseNode } from '@/utils/type/node'
 
@@ -26,11 +26,14 @@ export class LuaGenerator {
   private nodeAnalysis: Map<string, NodeAnalysis>
   private branchInfoMap: Map<string, BranchInfo>
   private executionOrder: string[]
+
+  // 不同节点类型
+  private calculator: Calculator
   private globalParam: GlobalParam
   private globalVariable: GlobalVariable
+
   private typeConverter: TypeConverter
   private dimensionConverter: DimensionConverter
-  private calculator: Calculator
   private hasDiffMerge: boolean
 
   private isGenerateTestLuaScript: boolean = true
@@ -41,11 +44,12 @@ export class LuaGenerator {
 
     this.globalParam = new GlobalParam()
     this.globalVariable = new GlobalVariable()
+    this.calculator = new Calculator()
+
     this.typeConverter = new TypeConverter()
     this.typeConverter.paramNameResolver = paramNameResolverFunc
     this.dimensionConverter = new DimensionConverter()
     this.dimensionConverter.paramNameResolver = paramNameResolverFunc
-    this.calculator = new Calculator()
     this.modules = new Map()
   }
 
@@ -128,7 +132,6 @@ export class LuaGenerator {
     let code = '// 声明表达式所有变量\n'
     Object.keys(this.codeMap).forEach(key => {
       const nodeId = key.split('_')[0]
-      const node = this.analyzer.getNodeById(nodeId)
 
       const dataArray = this.getNodeIncomingEdges(nodeId)
       // 如果有data 就当做全部都是有前缀的
@@ -212,11 +215,7 @@ export class LuaGenerator {
         // 只生成主流程起点节点
         const node = this.analyzer.getNodeById(nodeId)
         if (node) {
-          if (isIfElseNode(node)) {
-            code += this.generateIfElseBlock(node, 1, new Set())
-          } else {
-            code += this.generateNodeCode(node, 1, new Set())
-          }
+          code += this.generateNodeCode(node, 1, new Set())
         }
       } else if (analysis.level === 1) {
         // 汇合节点特殊处理
@@ -227,11 +226,6 @@ export class LuaGenerator {
       }
     }
     return code
-  }
-
-  // 工具函数：获取节点变量名
-  private getNodeVarName(nodeId: string | number, isIfElseNode = false): string {
-    return isIfElseNode ? `tempResult_${nodeId}` : `result_${nodeId}`
   }
 
   // 获取上有节点输入映射
@@ -250,7 +244,8 @@ export class LuaGenerator {
     sourceIds.forEach(id => {
       const resolvedSourceIds = this.resolveParamSourceAll(id)
       resolvedSourceIds.forEach(sourceId => {
-        resultVars.push(this.getNodeVarName(sourceId))
+        const node = this.analyzer.getNodeById(sourceId)
+        resultVars.push(CodeFactory.getNodeVarName(node))
       })
     })
 
@@ -264,7 +259,12 @@ export class LuaGenerator {
   }
 
   // 生成条件表达式
-  private generateConditionExpression(logicNode: WorkflowNode, outputIndex = 0, logicId): string {
+  private generateConditionExpression(
+    logicNode: WorkflowNode,
+    outputIndex = 0,
+    logicId,
+    dataArray: Array<{ key: string; value: string }>
+  ): string {
     try {
       // 获取指定索引的 outputData
       const output = logicNode.outputData?.[outputIndex]
@@ -272,31 +272,7 @@ export class LuaGenerator {
         return 'true' // 对于 else 分支，返回 true
       }
 
-      const dataArray = this.getNodeIncomingEdges(logicNode.id)
-
-      if (logicNode.version && logicNode.version > '1.0.0') {
-        let resStr = dataArray.map(e => e.value).join(', ')
-        return `expression_${logicId}_${output.portId}(${resStr})`
-      } else {
-        // 替换条件表达式中的 rst/rst1/rst2... 为实际变量（全量替换，从后往前）
-        let conditionExpr = output.functionCode
-
-        // 从后往前替换，避免 rst1 被误替换为 rst
-        for (let i = dataArray.length - 1; i >= 0; i--) {
-          const { key, value } = dataArray[i]
-          const regex = new RegExp(`\\b${key}\\b`, 'g')
-          conditionExpr = conditionExpr.replace(regex, value)
-        }
-
-        // 替换 JavaScript 的逻辑运算符为 Lua 的运算符
-        conditionExpr = conditionExpr
-          .replace(/&&/g, 'and')
-          .replace(/\|\|/g, 'or')
-          .replace(/===/g, '==')
-          .replace(/!==/g, '~=')
-
-        return conditionExpr
-      }
+      return `function_${logicId}_${output.portId}(${dataArray.map(e => e.value).join(', ')})`
     } catch (error) {
       console.error('[LuaGen] 生成条件表达式失败:', error)
       return ''
@@ -308,18 +284,12 @@ export class LuaGenerator {
     node: WorkflowNode,
     indent: number,
     generated: Set<string>,
+    dataArray: Array<{ key: string; value: string }>,
     _branchContext?: any
   ): string {
     try {
       const logicId = node.id
-      let code = `${CodeFactory.indent(indent)}-- 条件分支 ${logicId}\n`
-      // 在测试模式下，为特定逻辑节点添加记录日志
-      if (this.isGenerateTestLuaScript && code && this.shouldRecordLogicNode(node)) {
-        // 记录基础函数执行日志，正式脚本不会有下面这行代
-        code += `${CodeFactory.indent(
-          indent
-        )}exec.logic_and_log(func_step_logs, ${logicId}, '条件分支')\n`
-      }
+      let code = `${CodeFactory.indent(indent)}// 条件分支 ${logicId}\n`
 
       // 获取当前逻辑节点的所有分支
       const branchList = []
@@ -328,23 +298,24 @@ export class LuaGenerator {
           branchList.push({ ...branch, branchId })
         }
       })
+      const _indent = CodeFactory.indent(indent)
       // 生成分支结构
       branchList.forEach((branch, idx) => {
+        let _code = ''
+        const output = node.outputData?.[idx]
+        if (!output?.functionCode) {
+          _code = 'true' // 对于 else 分支，返回 true
+        } else {
+          _code = `function_${logicId}_${output.portId}(${dataArray.map(e => e.value).join(', ')})`
+        }
+
         // 生成条件语句
         if (branch.branchType === 'if') {
-          code += `${CodeFactory.indent(indent)}if ${this.generateConditionExpression(
-            node,
-            idx,
-            logicId
-          )} then\n`
+          code += `${_indent}if (${_code}) {\n`
         } else if (branch.branchType === 'elseif') {
-          code += `${CodeFactory.indent(indent)}elseif ${this.generateConditionExpression(
-            node,
-            idx,
-            logicId
-          )} then\n`
+          code += `${CodeFactory.indent(indent)}} else if (${_code}) {\n`
         } else {
-          code += `${CodeFactory.indent(indent)}else\n`
+          code += `${CodeFactory.indent(indent)}} else {\n`
         }
 
         // 处理分支内的节点（分支感知）
@@ -356,35 +327,33 @@ export class LuaGenerator {
         })
 
         // 分支执行标志赋值
-        if (this.hasDiffMerge) {
-          const flagVar = `flag_${branch.branchId}`
-          code += `${CodeFactory.indent(indent + 1)}${flagVar} = true\n`
-        }
+        // if (this.hasDiffMerge) {
+        //   const flagVar = `flag_${branch.branchId}`
+        //   code += `${CodeFactory.indent(indent + 1)}${flagVar} = true\n`
+        // }
 
         // 分支出口赋值
         if (branch.exitNodes.length > 0) {
           const exitId = branch.exitNodes[0]
           const exitNode = this.analyzer.getNodeById(exitId)
+          const node = this.analyzer.getNodeById(logicId)
           if (exitNode) {
-            const isExitNodeLogic = isIfElseNode(exitNode)
             if (this.analyzer.getNodeOutEdge(exitId).length > 0) {
               // 如果出口节点有后续边，则赋值
-              code += `${CodeFactory.indent(indent + 1)}${this.getNodeVarName(
-                logicId,
-                true
-              )} = ${this.getNodeVarName(exitId, isExitNodeLogic)}\n`
+              code += `${CodeFactory.indent(indent + 1)}${CodeFactory.getNodeVarName(
+                node
+              )} = ${CodeFactory.getNodeVarName(exitNode)}\n`
             } else {
               // 如果出口节点没有后续边，则直接返回
-              code += `${CodeFactory.indent(indent + 1)}return ${this.getNodeVarName(
-                exitId,
-                isExitNodeLogic
+              code += `${CodeFactory.indent(indent + 1)}return ${CodeFactory.getNodeVarName(
+                exitNode
               )}\n`
             }
           }
         }
       })
 
-      code += `${CodeFactory.indent(indent)}end\n`
+      code += `${CodeFactory.indent(indent)}}\n`
       return code
     } catch (error) {
       console.error('[LuaGen] 生成 if-else 结构体失败:', error)
@@ -450,24 +419,24 @@ export class LuaGenerator {
         const argsPart = args ? `, ${args}` : ''
         code += `${CodeFactory.indent(
           indent
-        )}-- 记录抽象函数执行日志，正式脚本会还原为：${this.getNodeVarName(
-          node.id
+        )}-- 记录抽象函数执行日志，正式脚本会还原为：${CodeFactory.getNodeVarName(
+          node
         )} = ${moduleName}.${funcInfo.funcName}(${args})\n`
-        code += `${CodeFactory.indent(indent)}${this.getNodeVarName(
-          node.id
+        code += `${CodeFactory.indent(indent)}${CodeFactory.getNodeVarName(
+          node
         )}, ${errorVarName} = exec.func_and_log(func_step_logs, ${node.id}, ${moduleName}.${
           funcInfo.funcName
         }${argsPart})\n`
 
         // 补充 error信息校验 如果失败则 直接返回
         code += `${CodeFactory.indent(indent)}if ${errorVarName} then\n`
-        code += `${CodeFactory.indent(indent + 1)}return ${this.getNodeVarName(
-          node.id
+        code += `${CodeFactory.indent(indent + 1)}return ${CodeFactory.getNodeVarName(
+          node
         )}, ${errorVarName}\n`
         code += `${CodeFactory.indent(indent)}end\n`
       } else {
         // 正常模式：直接函数调用
-        code += `${CodeFactory.indent(indent)}${this.getNodeVarName(node.id)} = ${moduleName}.${
+        code += `${CodeFactory.indent(indent)}${CodeFactory.getNodeVarName(node)} = ${moduleName}.${
           funcInfo.funcName
         }(${args})\n`
       }
@@ -550,14 +519,16 @@ export class LuaGenerator {
         for (const [_, sourceNodeId] of Object.entries(analysis.branchSourceMap)) {
           if (sourceNodeId === targetSource) {
             const rootBranchId = this.analyzer.findRootIfElseBranchIdByNodeId(targetSource)
-            return this.getNodeVarName(rootBranchId, true)
+            const node = this.analyzer.getNodeById(rootBranchId)
+            return CodeFactory.getNodeVarName(node)
           }
         }
       }
     }
     // 递归追溯：如果参数引用为ifelse节点，递归其参数链路，直到遇到第一个非条件节点
     const resolvedId = this.resolveParamSource(targetSource)
-    return this.getNodeVarName(resolvedId, false)
+    const node = this.analyzer.getNodeById(resolvedId)
+    return CodeFactory.getNodeVarName(node)
   }
 
   // 递归追溯：如果参数引用为ifelse节点，递归其参数链路（inputData配置的source），直到遇到第一个非条件节点
@@ -671,20 +642,20 @@ export class LuaGenerator {
     branchContext?: any
   ): string {
     let code = ''
+    const dataArray = this.getNodeIncomingEdges(node.id)
     if (node.logicData?.logicType === LogicType.GLOBAL_VARIABLE) {
       code = this.globalVariable.generateCode(node, indent, this.analyzer)
     }
     if (node.logicData?.logicType === LogicType.CALCULATOR) {
-      const dataArray = this.getNodeIncomingEdges(node.id)
       code = this.calculator.generateCode(node, indent, dataArray)
     }
     if (node.logicData?.logicType === LogicType.GLOBAL_PARAM) {
       code = this.globalParam.generateCode(node, indent)
     }
-
     if (node.logicData?.logicType === LogicType.IFELSE) {
-      code = this.generateIfElseBlock(node, indent, generated, branchContext)
+      code = this.generateIfElseBlock(node, indent, generated, dataArray, branchContext)
     }
+
     if (node.logicData?.logicType === LogicType.TYPE_CONVERTER) {
       code = this.typeConverter.generateCode(node, indent, branchContext)
     }
@@ -693,12 +664,6 @@ export class LuaGenerator {
     }
 
     return code
-  }
-
-  // 判断逻辑节点是否需要记录日志
-  private shouldRecordLogicNode(node: WorkflowNode): boolean {
-    // 所有逻辑节点都需要记录日志，但不同源分支汇合点中的节点不重复记录
-    return node.funcType === 'logic' && !this.analyzer.isDifferentMerge(node.id)
   }
 
   // 获取主流程最后一个节点
@@ -727,7 +692,7 @@ export class LuaGenerator {
         const mergeVar = mergeDeclarations[i]
         mergeParts.push(mergeVar)
       }
-      const rstVar = this.getNodeVarName(lastNode.id, isIfElseNode(lastNode))
+      const rstVar = CodeFactory.getNodeVarName(lastNode)
       const rstCode = mergeParts.join(' or ')
       return `\n\treturn ${rstCode} or ${rstVar}\n`
     }
@@ -766,11 +731,7 @@ export class LuaGenerator {
     for (const descId of descendants) {
       if (localVisited.has(descId)) continue
       const descNode = this.analyzer.getNodeById(descId)
-      if (isIfElseNode(descNode)) {
-        code += this.generateIfElseBlock(descNode, indent + 1, localVisited)
-      } else {
-        code += this.generateNodeCode(descNode, indent + 1, localVisited)
-      }
+      code += this.generateNodeCode(descNode, indent + 1, localVisited)
       localVisited.add(descId)
     }
     // 5. merge 变量赋值 统一收集不同源汇合点后 按顺序就是匹配的 mergeVar
@@ -778,11 +739,8 @@ export class LuaGenerator {
     if (mergeVar) {
       // 取最后一个子孙节点的变量名
       const lastId = descendants.length > 0 ? descendants[descendants.length - 1] : nodeId
-      const isIfElse = isIfElseNode(this.analyzer.getNodeById(lastId))
-      code += `${CodeFactory.indent(indent + 1)}${mergeVar} = ${this.getNodeVarName(
-        lastId,
-        isIfElse
-      )}\n`
+      const node = this.analyzer.getNodeById(lastId)
+      code += `${CodeFactory.indent(indent + 1)}${mergeVar} = ${CodeFactory.getNodeVarName(node)}\n`
 
       // 在测试模式下，为不同源分支汇合点添加记录日志
       if (this.isGenerateTestLuaScript) {

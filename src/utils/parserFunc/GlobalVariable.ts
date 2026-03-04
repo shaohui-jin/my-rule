@@ -29,7 +29,7 @@ export class GlobalVariable {
     )}\n`
     code += `${CodeFactory.indent(indent)}log("全局变量：获取节点 ${
       node.id
-    } 的结果", ${resultVar})\n\n`
+    } 的结果", ${resultVar})\n`
 
     return code
   }

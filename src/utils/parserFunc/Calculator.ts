@@ -31,9 +31,7 @@ export class Calculator {
     let resStr = dataArray.map(e => e.value).join(', ')
 
     code += `${CodeFactory.indent(indent)}${resultVar} = ${expressionVar}(${resStr}) \n`
-    code += `${CodeFactory.indent(indent)}log("计算器：获取节点 ${
-      node.id
-    } 的结果", ${resultVar})\n\n`
+    code += `${CodeFactory.indent(indent)}log("计算器：获取节点 ${node.id} 的结果", ${resultVar})\n`
 
     return code
   }

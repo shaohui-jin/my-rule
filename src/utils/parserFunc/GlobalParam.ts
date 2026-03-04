@@ -20,7 +20,7 @@ export class GlobalParam {
     code += `${CodeFactory.indent(indent)}${resultVar} = ${globalParamType}\n`
     code += `${CodeFactory.indent(indent)}log("全局参数：获取节点 ${
       node.id
-    } 的结果", ${resultVar})\n\n`
+    } 的结果", ${resultVar})\n`
 
     return code
   }
