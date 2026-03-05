@@ -26,7 +26,6 @@
   - `ifelse`: 条件分支节点
   - `global_param`: 全局参数节点
   - `global_variable`: 全局变量节点
-  - `type_converter`: 类型转换器节点
   - `iterator`: 迭代器节点
 
 #### 节点分析信息

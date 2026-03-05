@@ -51,7 +51,7 @@
 <script setup lang="ts">
 import { nextTick, onMounted, onUnmounted, ref, Ref } from 'vue'
 import { useVModel } from '@vueuse/core'
-import { getDefaultMonacoEditorConfig } from '@/utils/MonacoEditor'
+import { getDefaultMonacoEditorConfig } from '@/utils/config/MonacoEditor'
 import * as monaco from 'monaco-editor'
 import { MonacoInstance, MonacoManager } from '@/utils/manager/MonacoManager'
 import { useDialogDrag } from '@/hooks/useDialogDrag'

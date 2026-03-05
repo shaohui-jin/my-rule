@@ -1,5 +1,5 @@
 import nodeIdFactory from './NodeIdFactory'
-import { type WorkflowNode, LogicType, GroupNodeData } from '@/type/workflow'
+import { type WorkflowNode, LogicType, GroupNodeData } from '@/types/workflow'
 import { CustomNode, getCustomNodeConfig } from '@/utils/manager/CustomNodeManager'
 import { GroupNode } from '../workflow/GroupNode'
 

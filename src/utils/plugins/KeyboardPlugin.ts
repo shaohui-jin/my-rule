@@ -2,7 +2,7 @@ import { Keyboard } from '@antv/x6'
 import type { Graph } from '@antv/x6'
 import { ElMessage } from 'element-plus'
 import { createNewNode } from '@/utils/factory/NodeFactory'
-import { type WorkflowData } from '@/type/workflow'
+import { type WorkflowData } from '@/types/workflow'
 import type { GroupManager } from '@/utils/workflow/GroupManager'
 import { unref, Ref } from 'vue'
 

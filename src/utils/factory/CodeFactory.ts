@@ -1,4 +1,4 @@
-import { WorkflowNode } from '@/type/workflow'
+import { WorkflowNode } from '@/types/workflow'
 import { isIfElseNode } from '@/utils/type/node'
 
 export class CodeFactory {

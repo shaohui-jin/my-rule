@@ -10,9 +10,7 @@
           :data="workflowData"
           @show-attr-panel="onShowAttrPanel"
           @update:workflow="updateWorkflowData"
-          @save-as-data="handleSaveAs"
           @test-lua="handleTestLua"
-          @show-save-modal="handleShowSaveModel"
           :nodeId="nodeId"
           :isTesting="isTesting"
         />
@@ -33,31 +31,6 @@
       @nodeBaseDataUpdate="onNodeBaseDataUpdate"
     />
 
-    <!-- 另存对话框 -->
-    <el-dialog
-      v-model="saveAsDialogVisible"
-      title="另存为"
-      width="50%"
-      :close-on-click-modal="false"
-      :close-on-press-escape="false"
-      append-to-body
-      :destroy-on-close="true"
-      @close="closeSaveAsDialog"
-    >
-      <Detail
-        v-loading="loadingSaveAs"
-        ref="refSaveAsDetail"
-        :detail="saveAsDetail"
-        :operation-mode="'ADD'"
-      />
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="saveAsDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="confirmSaveAs">确定</el-button>
-        </span>
-      </template>
-    </el-dialog>
-
     <!-- 测试抽屉 -->
     <TestDrawer @node-click="handleNodeClick" ref="testDrawerRef" @close="closeTestDrawer" />
   </div>
@@ -68,19 +41,15 @@ import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import Designer from '@/components/designer/index.vue'
 import AttrPanelDrawer from '@/components/panels/AttrPanelDrawer.vue'
 import DndPanel from '@/components/panels/DndPanel.vue'
-import { LogicType, type WorkflowData } from '@/type/workflow'
+import { LogicType, type WorkflowData } from '@/types/workflow'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import nodeIdFactory from '@/utils/factory/NodeIdFactory'
 import { compressParamData, expandParamData } from '@/utils/workflow/DataOptimizer'
-import Detail from '@/views/rule/detail.vue'
+
 import { http } from '@/axios'
 import TestDrawer from '@/components/TestDrawer/index.vue'
 
-import { useDialogDrag } from '@/hooks/useDialogDrag'
-
 import { BaseFunctionNodeType, useFunctionStore } from '@/store/modules/baseFunction'
-
-const { initDialog } = useDialogDrag()
 
 defineOptions({
   name: 'ruleEdit'
@@ -130,47 +99,6 @@ function updateWorkflowData(data: WorkflowData) {
 function syncNodeIdFactoryWithWorkflow(data: WorkflowData) {
   const maxId = Math.max(0, ...data.nodeList.map(n => Number(n.id)).filter(n => !isNaN(n)))
   nodeIdFactory.reset(maxId + 1)
-}
-
-/**
- * 保存相关
- */
-const saveDialogRef = ref(null)
-const saveText = ref('')
-const saveDialogFlowData = ref<{ luaCode: string; allFuncId: string[] }>({
-  luaCode: '',
-  allFuncId: []
-})
-
-const handleShowSaveModel = flowData => {
-  saveDialogFlowData.value = flowData
-  saveText.value = ''
-  saveDialogRef.value.open()
-}
-
-async function saveRuleData(
-  luaCode: string,
-  funcIds: string[],
-  modifyReason?: string
-): Promise<boolean> {
-  if (!workflowData.value.id) {
-    ElMessage.error('规则ID为空, 请先另存规则')
-    return false
-  }
-
-  try {
-    // 保存前压缩，生成新对象
-    const compressedWorkflowData = compressWorkflowData(workflowData.value)
-
-    // 移除自动保存定时器启动
-    // startAutoSaveTimer()
-
-    return true
-  } catch (error) {
-    console.error('保存失败:', error)
-    ElMessage.error('规则保存失败')
-    return false
-  }
 }
 
 // 属性面板相关状态
@@ -250,24 +178,7 @@ function getAvailableTargetOptions() {
   return workflowData.value.nodeList.map(node => ({ label: node.title, value: node.id }))
 }
 
-// 工具函数：压缩整个工作流数据
-function compressWorkflowData(workflowData) {
-  return {
-    ...workflowData,
-    nodeList: (workflowData.nodeList || []).map(node => ({
-      ...node,
-      inputData: (node.inputData || []).map(param => compressParamData(param)),
-      outputData: (node.outputData || []).map(param => compressParamData(param))
-    }))
-  }
-}
-
 // 另存对话框相关状态
-const saveAsDialogVisible = ref(false)
-const loadingSaveAs = ref(false)
-const saveAsDetail = ref<any>({})
-const refSaveAsDetail = ref<any>(null)
-const saveAsData = ref<any>(null) // 存储从WorkflowDesigner传递的数据
 const testDrawerRef = ref<any>(null) // 测试抽屉引用
 
 /**
@@ -288,7 +199,7 @@ const debugLuaScript = async () => {
       return
     }
 
-    const currentLuaScript = currentFlowData.luaCode
+    const currentLuaScript = currentFlowData.jsCode
 
     // 获取存储的Lua脚本
     const storedLuaScript = workflowData.value.lua
@@ -340,96 +251,6 @@ const editorRef = ref()
  */
 function onNodeMouseDown(item: BaseFunctionNodeType, e: MouseEvent) {
   editorRef.value?.startDragPreview(item, e)
-}
-
-// 另存相关方法
-const handleSaveAs = (data: any) => {
-  // 保存从WorkflowDesigner传递的数据
-  saveAsData.value = data
-
-  // 初始化另存对话框数据
-  saveAsDetail.value = {
-    ruleCode: '',
-    ruleName: '',
-    ruleType: 'module',
-    sceneCategory: '',
-    ruleDesc: '',
-    ruleStatus: 'ENABLED'
-  }
-  saveAsDialogVisible.value = true
-  nextTick(() => {
-    initDialog()
-  })
-}
-
-const closeSaveAsDialog = () => {
-  saveAsDialogVisible.value = false
-  saveAsDetail.value = {}
-  saveAsData.value = null
-  if (refSaveAsDetail.value) {
-    refSaveAsDetail.value.resetForm()
-  }
-}
-
-/**
- * 执行另存操作的通用函数
- * @param formData 表单数据
- * @returns Promise<void>
- */
-const performSaveAs = async (formData: any) => {
-  loadingSaveAs.value = true
-  try {
-    const res = await http.post({
-      url: '/rule-config/rule/add',
-      data: formData
-    })
-
-    if (res.data && String(res.data).length > 0) {
-      // 获取新规则ID
-      const newRuleId = String(res.data)
-
-      // 更新工作流数据中的规则ID
-      workflowData.value.id = newRuleId
-      workflowData.value.ruleName = formData.ruleName
-
-      // 使用从WorkflowDesigner传递的数据保存规则
-      if (saveAsData.value) {
-        const saveSuccess = await saveRuleData(saveAsData.value.luaCode, saveAsData.value.allFuncId)
-        if (saveSuccess) {
-          ElMessage.success('另存成功')
-          saveAsDialogVisible.value = false
-        } else {
-          ElMessage.error('另存失败')
-        }
-      } else {
-        ElMessage.success('另存成功')
-        saveAsDialogVisible.value = false
-      }
-    } else {
-      ElMessage.error('另存失败')
-    }
-  } catch (error) {
-    ElMessage.error('另存失败')
-  } finally {
-    loadingSaveAs.value = false
-  }
-}
-
-const confirmSaveAs = () => {
-  refSaveAsDetail.value?.validate(async (isValid: boolean) => {
-    if (!isValid) {
-      return
-    }
-
-    await performSaveAs({
-      ruleCode: saveAsDetail.value.ruleCode,
-      ruleName: saveAsDetail.value.ruleName,
-      ruleType: saveAsDetail.value.ruleType,
-      sceneCategory: saveAsDetail.value.sceneCategory,
-      ruleDesc: saveAsDetail.value.ruleDesc,
-      ruleStatus: saveAsDetail.value.ruleStatus
-    })
-  })
 }
 
 const isTesting = ref(false)

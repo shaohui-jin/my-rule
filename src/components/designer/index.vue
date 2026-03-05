@@ -42,10 +42,9 @@
       </div>
       <div class="workflow-actions">
         <div v-for="w in workflowAction" :key="w.txt" @click="w.fn">
-          <component :is="w.comp" :disabled="w?.disabled ? w.disabled() : false" />
+          <component :is="w.comp" />
           {{ w.txt }}
         </div>
-        <el-button type="primary" :disabled="!props.data.id">保存</el-button>
       </div>
     </div>
   </div>
@@ -60,18 +59,18 @@ import {
   watch,
   defineExpose,
   h,
+  markRaw,
   nextTick,
   computed,
   Ref
 } from 'vue'
 import { Graph, Shape, Dnd } from '@antv/x6'
-import { InputData, LogicType, type WorkflowData, WorkflowNode } from '@/type/workflow'
+import { InputData, LogicType, type WorkflowData, WorkflowNode } from '@/types/workflow'
 import { CustomNodeManager, getCustomNodeConfig } from '@/utils/manager/CustomNodeManager'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import WorkflowValidationModal from '@/components/panels/WorkflowValidationModal.vue'
-import { LuaGenerator } from '@/utils/json2lua/LuaGenerator'
+import { JsCodeParser } from '@/utils/parser/JsCodeParser'
 import { FunctionNode } from '@/api/workflow/WorkFlowApi'
-import { getFunctionCode } from '@/utils/parser/FuncParser'
 
 import { WorkflowValidator, type ValidationError } from '@/utils/workflow/WorkflowValidator'
 import { EdgeCorrectionManager } from '@/utils/workflow/EdgeCorrectionManager'
@@ -130,7 +129,6 @@ const emit = defineEmits([
   'update:workflow',
   'save-as-data',
   'test-lua',
-  'show-save-modal',
   'close-search-modal'
 ])
 
@@ -139,7 +137,7 @@ const emit = defineEmits([
  */
 const container = ref<HTMLElement>()
 const minimapContainer = ref<HTMLElement>()
-const luaGenerator = new LuaGenerator()
+const jsCodeParser = new JsCodeParser()
 let graph: any
 const canUndo = ref(false)
 const canRedo = ref(false)
@@ -161,33 +159,36 @@ let groupManager: GroupManager
 const collapse = ref(false)
 
 // 工具栏
-const canvasAction = ref([
-  {
-    content: '折叠/展开',
-    group: () => {
-      return {
-        content: collapse.value ? '一键展开' : '一键折叠',
-        fn: () => handleCollapse(graph, workflowData, collapse, !collapse.value),
-        comp: collapse.value ? Expand : Collapse
+const canvasAction = ref(
+  markRaw([
+    {
+      content: '折叠/展开',
+      group: () => {
+        return {
+          content: collapse.value ? '一键展开' : '一键折叠',
+          fn: () => handleCollapse(graph, workflowData, collapse, !collapse.value),
+          comp: collapse.value ? Expand : Collapse
+        }
       }
-    }
-  },
-  { content: '适应视图', comp: AdaptView, fn: () => handleFit(graph) },
-  { content: '一键排列', comp: Layout, fn: () => handleLayout(graph, workflowData) },
-  { content: '视图浏览', comp: Browsing, fn: () => handleShowMiniMap(showMiniMap) }
-])
+    },
+    { content: '适应视图', comp: AdaptView, fn: () => handleFit(graph) },
+    { content: '一键排列', comp: Layout, fn: () => handleLayout(graph, workflowData) },
+    { content: '视图浏览', comp: Browsing, fn: () => handleShowMiniMap(showMiniMap) }
+  ])
+)
 
 // 流程工具栏
-const workflowAction = ref([
-  { txt: '撤销', comp: Reset, fn: () => handleUndo(graph) },
-  { txt: '恢复', comp: Recover, fn: () => handleRedo(graph) },
-  { txt: '清空', comp: Clear, fn: () => handleNew(resetWorkflowData) },
-  { txt: '另存为', comp: SaveAs, fn: () => handleSaveAs() },
-  { txt: '导入', comp: Import, fn: () => handleImport(executeImport) },
-  { txt: '导出', comp: Export, fn: () => handleExport(workflowData, syncData) },
-  { txt: '测试', comp: Test, fn: () => handleTest(), disabled: () => !props.data.id },
-  { txt: '编译', comp: Test, fn: () => code() }
-])
+const workflowAction = ref(
+  markRaw([
+    { txt: '撤销', comp: Reset, fn: () => handleUndo(graph) },
+    { txt: '恢复', comp: Recover, fn: () => handleRedo(graph) },
+    { txt: '清空', comp: Clear, fn: () => handleNew(resetWorkflowData) },
+    { txt: '导入', comp: Import, fn: () => handleImport(executeImport) },
+    { txt: '导出', comp: Export, fn: () => handleExport(workflowData, syncData) },
+    { txt: '测试', comp: Test, fn: () => handleTest() },
+    { txt: '编译', comp: Test, fn: () => code() }
+  ])
+)
 
 let resizeHandler: (() => void) | null = null
 
@@ -1069,20 +1070,10 @@ async function getFlowData() {
     console.log('函数配置数据未加载')
   }
 
-  const { codeMap } = await getFunctionCode(workflowData.value.nodeList)
   // 生成lua代码
-  const luaCode = luaGenerator.generate(workflowData.value, functionNodes, codeMap)
-  console.log(luaCode)
-  return { luaCode, allFuncId }
-}
-
-/**
- * 保存工作流
- */
-const handleSave = async () => {
-  const flowData = await doSave()
-  if (!flowData) return
-  emit('show-save-modal', flowData)
+  const jsCode = jsCodeParser.generate(workflowData.value, functionNodes)
+  console.log('jsCode', jsCode)
+  return { jsCode, allFuncId }
 }
 
 const handleTest = async () => {
@@ -1094,7 +1085,7 @@ const handleTest = async () => {
   // 获取工作流数据
   const flowData = await getFlowData()
   if (!flowData) return
-  emit('test-lua', flowData.luaCode)
+  emit('test-lua', flowData.jsCode)
 }
 
 const code = () => {
@@ -1105,17 +1096,6 @@ const code = () => {
   if (!validRst) return
   // 获取工作流数据
   getFlowData()
-}
-
-/**
- * 另存工作流
- */
-const handleSaveAs = async () => {
-  // 验证节点数据完整性
-  const flowData = await doSave()
-  if (!flowData) return
-  // 将数据传递给父组件
-  emit('save-as-data', flowData)
 }
 
 /**
@@ -1700,7 +1680,6 @@ defineExpose({
   selectNodeOnly,
   syncData,
   getFlowData,
-  handleSave,
   getAvailableSourceOptions
 })
 

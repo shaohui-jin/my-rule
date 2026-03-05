@@ -95,7 +95,7 @@ import { toRefs, ref } from 'vue'
 import SimpleFormRenderer from '@/components/funcForm/SimpleFormRenderer.vue'
 import { getOutputTargetInfo } from './panelUtils'
 import { ElTooltip } from 'element-plus'
-import { LogicType } from '@/type/workflow'
+import { LogicType } from '@/types/workflow'
 import { ElMessage } from 'element-plus'
 const props = defineProps<{
   nodeData: any

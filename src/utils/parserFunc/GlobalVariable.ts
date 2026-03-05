@@ -1,6 +1,6 @@
-import { WorkflowNode } from '@/type/workflow'
+import { WorkflowNode } from '@/types/workflow'
 import { CodeFactory } from '../factory/CodeFactory'
-import { NodeAnalysis } from '@/utils/json2lua/types'
+import { NodeAnalysis } from '@/types/JsCodeParser'
 import { WorkflowAnalyzer } from '@/utils/json2lua/WorkflowAnalyzer'
 
 export class GlobalVariable {

@@ -68,7 +68,7 @@
 import { toRefs, defineEmits, computed, ref, PropType } from 'vue'
 import BaseFunctionInput from '@/components/base/BaseFunctionInput.vue'
 import { getOutputTargetInfo } from './panelUtils'
-import type { WorkflowData } from '@/type/workflow'
+import type { WorkflowData } from '@/types/workflow'
 
 const props = defineProps({
   nodeData: { type: Object, default: () => ({}) },

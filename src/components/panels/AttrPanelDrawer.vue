@@ -66,7 +66,7 @@
 
 <script setup lang="ts">
 import { ref, computed, nextTick, PropType } from 'vue'
-import { LogicType, type WorkflowData } from '@/type/workflow'
+import { LogicType, type WorkflowData } from '@/types/workflow'
 import FuncPanel from './FuncPanel.vue'
 import ConditionPanel from './ConditionPanel.vue'
 import CalculatorPanel from './CalculatorPanel.vue'

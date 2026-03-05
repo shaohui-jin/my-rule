@@ -207,7 +207,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { CopyDocument, FullScreen, Search } from '@element-plus/icons-vue'
-import { WorkflowData } from '@/type/workflow'
+import { WorkflowData } from '@/types/workflow'
 import { useVModel } from '@vueuse/core'
 import { ElMessage } from 'element-plus'
 import { operator } from './operator'

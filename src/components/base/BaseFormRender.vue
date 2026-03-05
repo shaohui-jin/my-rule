@@ -143,7 +143,7 @@ import {
 import { Switch as SwitchIcon } from '@element-plus/icons-vue'
 import BaseFunctionExpression from '@/components/BaseFunctionExpression/index.vue'
 import { FromConfig, DEFAULT_FORM_CONFIG } from '@/utils/parser/FormParser'
-import { WorkflowData } from '@/type/workflow'
+import { WorkflowData } from '@/types/workflow'
 
 const props = defineProps({
   formJson: {

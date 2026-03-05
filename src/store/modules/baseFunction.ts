@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { type WorkflowNode, type InputData, LogicType } from '@/type/workflow'
+import { type WorkflowNode, type InputData, LogicType } from '@/types/workflow'
 
 export type BaseFunctionNodeType = {
   funcId: string
@@ -86,7 +86,7 @@ const BaseFunctionNode: BaseFunctionNodeType[] = [
     }
   },
   {
-    funcId: '5',
+    funcId: '2',
     type: LogicType.GLOBAL_VARIABLE,
     title: '全局变量',
     icon: 'V',
@@ -127,7 +127,7 @@ const BaseFunctionNode: BaseFunctionNodeType[] = [
     }
   },
   {
-    funcId: '7',
+    funcId: '3',
     type: LogicType.CALCULATOR,
     title: '计算器',
     icon: 'C',
@@ -171,9 +171,8 @@ const BaseFunctionNode: BaseFunctionNodeType[] = [
       ]
     }
   },
-
   {
-    funcId: '2',
+    funcId: '4',
     type: LogicType.IFELSE,
     title: '条件函数',
     icon: 'if',
@@ -183,7 +182,7 @@ const BaseFunctionNode: BaseFunctionNodeType[] = [
       funcType: 'logic',
       logicData: { logicType: LogicType.IFELSE, source: '', condition: '' },
       title: '条件判断',
-      funcId: '',
+      remark: '填写函数表达式，如 `data === true`，data、data1等为连接当前节点的上游参数',
       inputData: [
         {
           paramName: 'data',
@@ -206,140 +205,6 @@ const BaseFunctionNode: BaseFunctionNodeType[] = [
         { paramName: 'result', type: 'any', subType: 'any', functionCode: '', portId: 'out_2' }
       ],
       version: '1.0.0'
-    }
-  },
-
-  {
-    funcId: '6',
-    type: LogicType.TYPE_CONVERTER,
-    title: '类型转换',
-    icon: 'T',
-    iconColor: '#f5222d',
-    template: {
-      id: '',
-      funcType: 'logic',
-      logicData: { logicType: LogicType.TYPE_CONVERTER },
-      title: '类型转换',
-      remark: '将上游传递的值强制转换成指定类型',
-      ...BASE_NODE_CONFIG,
-      inputData: [
-        {
-          paramName: 'data',
-          type: 'any',
-          subType: 'any',
-          source: '',
-          sourceType: 'node',
-          portId: 'in_1',
-          attributes: {
-            paramType: 'any',
-            inputType: 'text',
-            showLabel: true,
-            label: '上游数据'
-          },
-          defaultValue: ''
-        },
-        {
-          paramName: 'convertType',
-          type: 'string',
-          source: 'toTable',
-          sourceType: 'input',
-          widgetType: 'select',
-          portId: 'in_2',
-          defaultValue: 'toTable',
-          attributes: {
-            paramType: 'string',
-            inputType: 'text',
-            showLabel: true,
-            label: '转换方式'
-          },
-          options: [
-            { label: '转成字符串', value: 'toString' },
-            { label: '转成数值', value: 'toNumber' },
-            { label: '转成table', value: 'toTable' },
-            { label: '转成布尔', value: 'toBoolean' }
-          ]
-        }
-      ],
-      outputData: [
-        {
-          paramName: 'result',
-          type: 'any',
-          subType: 'any',
-          portId: 'out_1'
-        }
-      ]
-    }
-  },
-  {
-    funcId: '9',
-    type: LogicType.DIMENSION_CONVERTER,
-    title: '数据转换',
-    icon: 'D',
-    iconColor: '#2f54eb',
-    template: {
-      id: '',
-      funcType: 'logic',
-      logicData: { logicType: LogicType.DIMENSION_CONVERTER },
-      title: '数据转换',
-      remark:
-        '对数据进行数据转换操作，支持筛选、提取、转成字符串、转成数值、转成table、转成布尔等操作',
-      ...BASE_NODE_CONFIG,
-      inputData: [
-        {
-          paramName: 'data',
-          type: 'any',
-          subType: 'any',
-          source: '',
-          sourceType: 'node',
-          portId: 'in_1',
-          attributes: {
-            paramType: 'any',
-            inputType: 'text',
-            showLabel: true,
-            label: '上游数据'
-          },
-          defaultValue: ''
-        },
-        {
-          paramName: 'option',
-          type: 'string',
-          source: 'upgrade',
-          sourceType: 'input',
-          widgetType: 'select',
-          portId: 'in_2',
-          defaultValue: 'upgrade',
-          attributes: {
-            paramType: 'string',
-            inputType: 'text',
-            showLabel: true,
-            label: '转换方式'
-          },
-          options: [
-            { label: '升维', value: 'upgrade' },
-            { label: '降维(并使用筛选逻辑)', value: 'downgrade_filter' },
-            { label: '降维(并使用提取逻辑)', value: 'downgrade_extract' },
-            { label: '转成字符串', value: 'toString' },
-            { label: '转成数值', value: 'toNumber' },
-            { label: '转成布尔', value: 'toBoolean' }
-          ]
-        },
-        {
-          paramName: 'expression',
-          type: 'function',
-          subType: 'any',
-          source: '',
-          sourceType: 'input',
-          widgetType: 'function',
-          portId: 'in_3',
-          attributes: {
-            paramType: 'function',
-            inputType: 'text',
-            showLabel: true,
-            label: '表达式'
-          },
-          defaultValue: ''
-        }
-      ]
     }
   }
 ]

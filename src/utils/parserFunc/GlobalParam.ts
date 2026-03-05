@@ -1,4 +1,4 @@
-import { WorkflowNode } from '@/type/workflow'
+import { WorkflowNode } from '@/types/workflow'
 import { CodeFactory } from '../factory/CodeFactory'
 
 export class GlobalParam {

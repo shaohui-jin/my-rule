@@ -1,5 +1,5 @@
-import { LogicType, WorkflowData, WorkflowEdge, WorkflowNode } from '@/type/workflow'
-import { AnalysisResult, NodeAnalysis, BranchInfo } from './types'
+import { LogicType, WorkflowData, WorkflowEdge, WorkflowNode } from '@/types/workflow'
+import { AnalysisResult, NodeAnalysis, BranchInfo } from '@/types/JsCodeParser'
 import { isIfElseNode } from '@/utils/type/node'
 
 // 执行顺序结果类型定义

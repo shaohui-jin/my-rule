@@ -1,8 +1,8 @@
-import { LogicType, OutputData, type WorkflowNode } from '@/type/workflow'
+import { LogicType, OutputData, type WorkflowNode } from '@/types/workflow'
 import { COLORS, PORT_ATTRS } from '../workflow/constants/StyleConstants'
 const { VITE_PUBLIC_PATH } = import.meta.env
 import { Graph, Node } from '@antv/x6'
-import { type WorkflowData } from '@/type/workflow'
+import { type WorkflowData } from '@/types/workflow'
 import type { Ref } from 'vue'
 import { NODE_CONFIG_BASE_HEIGHT, NODE_CONFIG_TITLE_HEIGHT, NODE_CONFIG_WIDTH } from '@/config/node'
 

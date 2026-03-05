@@ -484,7 +484,7 @@ import {
   SaveAsExpectedResultRequestParams,
   getSimpleRuleList
 } from '@/api/test'
-import { LuaGenerator } from '@/utils/json2lua/LuaGenerator'
+import { JsCodeParser } from '@/utils/parser/JsCodeParser'
 import { getFunctionListByIds, transformFunctionData } from '@/api/workflow/WorkFlowApi'
 import { formatMilliseconds } from '@/utils'
 import BaseNodeIcon from '@/components/base/BaseNodeIcon.vue'
@@ -520,7 +520,7 @@ const isPreviewMode = ref(false)
 const isFromRuleEdit = ref(false) // 是否从规则编辑页面打开
 const outputExpanded = ref(false) // 最后一个节点输出是否展开
 const expectedResultExpanded = ref(false) // 预期结果是否展开
-const luaGenerator = new LuaGenerator()
+const jsCodeParser = new JsCodeParser()
 const nodeMap = ref<Map<string, any>>(new Map())
 
 // 用例管理相关状态
@@ -594,15 +594,12 @@ const generateLuaFromConfig = async (configData: string): Promise<string> => {
     .filter((n: any) => n.funcType === 'func')
     .map((n: any) => n.funcId)
   if (allFuncId.length === 0) {
-    return luaGenerator.generate(workFlowJson, [], {})
+    return jsCodeParser.generate(workFlowJson, [])
   }
   const functionItems = await getFunctionListByIds(allFuncId)
   const functionNodes = functionItems.map(item => transformFunctionData(item))
 
-  const { codeMap } = await getFunctionCode(workFlowJson.nodeList)
-  if (!codeMap) return
-
-  return luaGenerator.generate(workFlowJson, functionNodes, codeMap)
+  return jsCodeParser.generate(workFlowJson, functionNodes)
 }
 
 // 获取规则数据

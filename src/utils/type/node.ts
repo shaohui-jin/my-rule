@@ -1,5 +1,5 @@
 import { Node } from '@antv/x6'
-import { LogicType, WorkflowNode } from '@/type/workflow'
+import { LogicType, WorkflowNode } from '@/types/workflow'
 
 // 判断是否自定义
 export const isCustom = (node: Node) => {

@@ -2,7 +2,7 @@ import { Ref, h } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getCustomNodeConfig } from '@/utils/manager/CustomNodeManager'
 import { WorkflowValidator } from './WorkflowValidator'
-import { LogicType, type WorkflowData } from '@/type/workflow'
+import { LogicType, type WorkflowData } from '@/types/workflow'
 import { EDGE_STYLES } from './constants/StyleConstants'
 
 // 类型定义
@@ -172,41 +172,6 @@ export class EdgeCorrectionManager {
       this.graph.removeEdge(this.searchTarget.edgeId)
       this.fixEdgeTargetNode(edge2)
       this.fixEdgeTargetNode(edge)
-      if (
-        node.data.funcType === 'logic' &&
-        node.data.logicData?.logicType === LogicType.DIMENSION_CONVERTER
-      ) {
-        // 自动添加升维或降维的逻辑处理
-        const sourceNodeId = edge.getSourceCellId()
-        const sourcePortId = edge.getSourcePortId()
-        const sTyps = this.getNodePortType(sourceNodeId, sourcePortId, true)[0]
-        const tTyps = this.getNodePortType(targetNodeId, targetPortId, false)[0]
-        let sourceSubType = this.getCurType(sTyps)
-        const targetSubType = this.getCurType(tTyps)
-
-        // 如果上游节点的ifelse 则主动获取一下真正的sourceType
-        const realSourceType = this.getRealSourceType(sourceNodeId, targetNodeId, targetPortId)
-        if (realSourceType) {
-          sourceSubType = realSourceType
-        }
-
-        // 找到option 并尝试赋值
-        const optionParam = this.workflowData.value.nodeList
-          .find(n => n.id === node.id)
-          ?.inputData.find(p => p.paramName === 'option')
-        // if(this.autoAddConverCheck(sourceSubType, targetSubType, targetNodeId, targetPortId, sourceNodeId) && optionParam) {
-        if (optionParam) {
-          const sourceCount = sourceSubType.split('[]').length
-          const targetCount = targetSubType.split('[]').length
-          if (sourceCount > targetCount) {
-            // 降维
-            optionParam.source = 'downgrade_extract'
-          } else if (sourceCount < targetCount) {
-            // 升维
-            optionParam.source = 'upgrade'
-          }
-        }
-      }
     }
     this.searchTarget = null
   }
@@ -407,18 +372,6 @@ export class EdgeCorrectionManager {
         edgeId: edge.id
       }
 
-      const nodeData = {
-        type: 'dimension_converter',
-        title: '类型转换',
-        funcId: '12',
-        funcType: 'logic'
-      }
-
-      this.directContectNode(nodeData, {
-        nodeId: sourceNodeId,
-        portId: sourcePortId,
-        fromEdgeAdd: true
-      })
       return true
     }
     return false

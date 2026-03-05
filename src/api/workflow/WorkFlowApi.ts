@@ -1,4 +1,4 @@
-import { WorkflowData } from '@/type/workflow'
+import { WorkflowData } from '@/types/workflow'
 import { http } from '@/axios'
 import { ElMessage } from 'element-plus'
 import { expandFunctionConfig } from '@/utils/workflow/DataOptimizer'

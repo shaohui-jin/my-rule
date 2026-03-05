@@ -1,5 +1,5 @@
 import { Ref } from 'vue'
-import { type WorkflowData } from '@/type/workflow'
+import { type WorkflowData } from '@/types/workflow'
 import { Graph } from '@antv/x6'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import * as dagre from 'dagre'

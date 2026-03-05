@@ -1,4 +1,4 @@
-import { InputData, LogicType, WorkflowNode, type WorkflowData } from '@/type/workflow'
+import { InputData, LogicType, WorkflowNode, type WorkflowData } from '@/types/workflow'
 
 /**
  * 错误信息接口

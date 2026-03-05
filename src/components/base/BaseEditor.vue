@@ -34,7 +34,7 @@
 import { onMounted, ref, defineExpose, watch, onBeforeUnmount } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Download, DocumentCopy, FullScreen, Close } from '@element-plus/icons-vue'
-import { getDefaultMonacoEditorConfig } from '@/utils/MonacoEditor'
+import { getDefaultMonacoEditorConfig } from '@/utils/config/MonacoEditor'
 import * as monaco from 'monaco-editor'
 import { MonacoInstance, MonacoManager } from '@/utils/manager/MonacoManager'
 import { GetPromise } from '@/utils/ts'

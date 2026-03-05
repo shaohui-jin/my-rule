@@ -42,8 +42,6 @@ export enum LogicType {
   IFELSE = 'if_else',
   GLOBAL_PARAM = 'global_param',
   GLOBAL_VARIABLE = 'global_variable',
-  TYPE_CONVERTER = 'type_converter',
-  DIMENSION_CONVERTER = 'dimension_converter',
   CALCULATOR = 'calculator'
 }
 
