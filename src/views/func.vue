@@ -58,7 +58,7 @@
           注解解析
         </h2>
         <div
-          class="bg-gray-900 text-theme-light rounded-lg p-2 overflow-y-auto code-editor h-[300px] max-h-[300px] sm:h-[400px] sm:max-h-[400px] scrollbar-overlay lg:flex-1 lg:h-auto lg:min-h-0 lg:max-h-none"
+          class="text-theme-light rounded-lg p-2 overflow-y-auto code-editor h-[300px] max-h-[300px] sm:h-[400px] sm:max-h-[400px] scrollbar-overlay lg:flex-1 lg:h-auto lg:min-h-0 lg:max-h-none"
         >
           <BasePre :preData="state.js2JsonCode"></BasePre>
         </div>

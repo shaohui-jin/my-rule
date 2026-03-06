@@ -270,7 +270,7 @@ const handleTestLua = (luaScript: string) => {
     })
   }
   console.log('data', data)
-  testDrawerRef.value.openDrawer(data, false, true)
+  testDrawerRef.value.openDrawer(data)
 }
 
 const handleNodeClick = node => {

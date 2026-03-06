@@ -9,10 +9,10 @@ export const getDefaultMonacoEditorConfig = (
   isFull: boolean = false
 ): IStandaloneEditorConstructionOptions => {
   return {
-    language: 'typescript',
+    language: 'javascript',
     // language: 'lua',
     automaticLayout: true, // 自动调整布局
-    theme: 'vs-dark',
+    theme: 'vs',
     lineNumbers: 'off',
     roundedSelection: false,
     minimap: { enabled: false },

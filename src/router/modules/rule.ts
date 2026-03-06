@@ -1,20 +1,20 @@
 export default {
   path: '/',
   name: 'main',
-  redirect: '/func/edit',
+  redirect: '/rule',
   children: [
     {
-      path: '/func/edit',
+      path: '/func',
       name: 'functionEdit',
-      component: () => import('@/views/func/edit.vue'),
+      component: () => import('@/views/func.vue'),
       meta: {
         title: '函数JSDoc解析器'
       }
     },
     {
-      path: '/rule/edit',
+      path: '/rule',
       name: 'ruleEdit',
-      component: () => import('@/views/rule/edit.vue'),
+      component: () => import('@/views/rule.vue'),
       meta: {
         title: '规则编辑'
       }
