@@ -50,6 +50,7 @@ import { http } from '@/axios'
 import TestDrawer from '@/components/TestDrawer/index.vue'
 
 import { BaseFunctionNodeType, useFunctionStore } from '@/store/modules/baseFunction'
+import { ExecutionRecordData } from '@/api/test'
 
 defineOptions({
   name: 'ruleEdit'
@@ -259,16 +260,15 @@ const isTesting = ref(false)
  * 处理测试事件
  * @param data 测试数据
  */
-const handleTestLua = (luaScript: string) => {
+const handleTestLua = (code: string) => {
   if (!testDrawerRef.value) return
   isTesting.value = true
   const data = {
-    ruleId: workflowData.value.id,
-    luaScript: luaScript,
+    code,
     configData: JSON.stringify({
       nodeList: workflowData.value.nodeList
     })
-  }
+  } as ExecutionRecordData
   console.log('data', data)
   testDrawerRef.value.openDrawer(data)
 }

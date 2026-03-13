@@ -62,3 +62,26 @@ body {
   margin: 0;
   padding: 10px 20px;
 }
+
+/* el-drawer 全局样式 - 统一 header 和 body 的 padding，跟随 /func 页面的 padding margin */
+.el-drawer__header {
+  margin: 0 !important;
+  padding: 12px !important;
+  border-bottom: 1px solid var(--el-border-color-lighter, #f0f0f0) !important;
+  background-color: var(--el-bg-color, #ffffff) !important;
+}
+
+.el-drawer__title {
+  font-size: 16px !important;
+  font-weight: 500 !important;
+  color: var(--el-text-color-primary, #303133) !important;
+  line-height: 1.5 !important;
+  margin: 0 !important;
+}
+
+.el-drawer__body {
+  padding: 12px !important;
+  background-color: var(--el-bg-color, #ffffff) !important;
+  overflow-y: auto;
+  overflow-x: hidden;
+}

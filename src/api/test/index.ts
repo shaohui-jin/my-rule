@@ -28,35 +28,18 @@ export interface FormSignResponse {
 
 // 获取云存储表单签名
 export function getFormSign(params: FormSignRequestParams): Promise<FormSignResponse> {
-  return http.post({ url: '/cloudstorage/form-sign', data: params }) as any as Promise<FormSignResponse>
+  return http.post({
+    url: '/cloudstorage/form-sign',
+    data: params
+  }) as any as Promise<FormSignResponse>
 }
 
 // 规则执行记录数据类型定义
 export interface ExecutionRecordData {
-  id: number // 记录ID
-  ruleId: number // 规则ID
-  partId: string // 部件ID
-  executionResult: string // 执行结果
-  executionTime: number // 执行时间
-  remark: string // 备注
-  ossPath: string // OSS路径
-  fileCName: string // 文件中文名
-  status: number // 状态
-  createTime: number // 创建时间
-  modifyTime: number // 修改时间
-  creator: string // 创建者
-  creatorName: string // 创建者姓名
-  modifier: string // 修改者
-  modifierName: string // 修改者姓名
-  ruleName: string // 规则名称
-  ruleDesc: string // 规则描述
-  ruleStatus: string // 规则状态
-  sceneCategory: string // 场景分类
-  ruleType: string // 规则类型
-  luaScript: string // 测试Lua脚本
+  // id: number // 记录ID
+  // ruleId: number // 规则ID
+  code: string // 测试Lua脚本
   configData: string // 配置数据
-  expectedResult: string // 预期结果
-  partName: string // 部件名称
 }
 
 // 规则执行记录分页查询相关类型定义
@@ -81,8 +64,13 @@ export interface ExecutionRecordResponse {
 }
 
 // 获取规则执行记录分页数据
-export function getExecutionRecordPage(params: ExecutionRecordRequestParams): Promise<ExecutionRecordResponse> {
-  return http.post({ url: '/rule-config/execution-record/page', data: params }) as any as Promise<ExecutionRecordResponse>
+export function getExecutionRecordPage(
+  params: ExecutionRecordRequestParams
+): Promise<ExecutionRecordResponse> {
+  return http.post({
+    url: '/rule-config/execution-record/page',
+    data: params
+  }) as any as Promise<ExecutionRecordResponse>
 }
 
 // 新增规则执行记录相关类型定义
@@ -106,8 +94,13 @@ export interface AddExecutionRecordResponse {
 }
 
 // 新增规则执行记录
-export function addExecutionRecord(params: AddExecutionRecordRequestParams): Promise<AddExecutionRecordResponse> {
-  return http.post({ url: '/rule-config/execution-record/add', data: params }) as any as Promise<AddExecutionRecordResponse>
+export function addExecutionRecord(
+  params: AddExecutionRecordRequestParams
+): Promise<AddExecutionRecordResponse> {
+  return http.post({
+    url: '/rule-config/execution-record/add',
+    data: params
+  }) as any as Promise<AddExecutionRecordResponse>
 }
 
 // 规则调试相关类型定义
@@ -155,7 +148,6 @@ export interface FuncStepLog {
   remark: string // 备注
 }
 
-
 export interface RuleDebugResponseResult {
   duration: number // 执行时间
   funcStepLogs: FuncStepLog[] // 执行日志
@@ -175,7 +167,10 @@ export interface RuleDebugResponse {
 
 // 规则调试
 export function debugRule(params: RuleDebugRequestParams): Promise<RuleDebugResponse> {
-  return http.post({ url: '/rule-config/rule/debug', data: params }) as any as Promise<RuleDebugResponse>
+  return http.post({
+    url: '/rule-config/rule/debug',
+    data: params
+  }) as any as Promise<RuleDebugResponse>
 }
 
 // 字典数据类型定义
@@ -257,7 +252,10 @@ export interface RuleDetailResponse {
 }
 
 export function getSimpleRuleById(id: number | string): Promise<RuleDetailResponse> {
-  return http.post({ url: '/rule-config/rule/getSimpleRuleById', data: { id } }) as any as Promise<RuleDetailResponse>
+  return http.post({
+    url: '/rule-config/rule/getSimpleRuleById',
+    data: { id }
+  }) as any as Promise<RuleDetailResponse>
 }
 
 export interface DeleteExecutionRecordRequestParams {
@@ -270,10 +268,14 @@ export interface DeleteExecutionRecordResponse {
 }
 
 // 删除规则执行记录
-export function deleteExecutionRecord(params: DeleteExecutionRecordRequestParams): Promise<DeleteExecutionRecordResponse> {
-  return http.post({ url: '/rule-config/execution-record/delete', data: params }) as any as Promise<DeleteExecutionRecordResponse>
+export function deleteExecutionRecord(
+  params: DeleteExecutionRecordRequestParams
+): Promise<DeleteExecutionRecordResponse> {
+  return http.post({
+    url: '/rule-config/execution-record/delete',
+    data: params
+  }) as any as Promise<DeleteExecutionRecordResponse>
 }
-
 
 export interface TestCaseListRequestParams {
   ruleId: number // 规则ID
@@ -291,12 +293,20 @@ export interface DeleteTestCaseResponse {
 
 // 获取用例列表
 export function getTestCaseList(params: TestCaseListRequestParams): Promise<TestCaseResponse> {
-  return http.post({ url: '/rule-config/execution-record/get-test-case', data: params }) as any as Promise<TestCaseResponse>
+  return http.post({
+    url: '/rule-config/execution-record/get-test-case',
+    data: params
+  }) as any as Promise<TestCaseResponse>
 }
 
 // 删除用例
-export function deleteTestCaseApi(params: DeleteExecutionRecordRequestParams): Promise<DeleteTestCaseResponse> {
-  return http.post({ url: '/rule-config/execution-record/delete', data: params }) as any as Promise<DeleteTestCaseResponse>
+export function deleteTestCaseApi(
+  params: DeleteExecutionRecordRequestParams
+): Promise<DeleteTestCaseResponse> {
+  return http.post({
+    url: '/rule-config/execution-record/delete',
+    data: params
+  }) as any as Promise<DeleteTestCaseResponse>
 }
 
 // 保存为预期结果相关类型定义
@@ -312,6 +322,11 @@ export interface SaveAsExpectedResultResponse {
 }
 
 // 保存为预期结果
-export function saveAsExpectedResult(params: SaveAsExpectedResultRequestParams): Promise<SaveAsExpectedResultResponse> {
-  return http.post({ url: '/rule-config/execution-record/save-expected-result', data: params }) as any as Promise<SaveAsExpectedResultResponse>
+export function saveAsExpectedResult(
+  params: SaveAsExpectedResultRequestParams
+): Promise<SaveAsExpectedResultResponse> {
+  return http.post({
+    url: '/rule-config/execution-record/save-expected-result',
+    data: params
+  }) as any as Promise<SaveAsExpectedResultResponse>
 }
