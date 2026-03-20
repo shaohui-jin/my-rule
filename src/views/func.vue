@@ -160,7 +160,6 @@ import { ElMessage, ElNotification } from 'element-plus'
 import { ElMessageBox } from 'element-plus'
 import { useFunctionStore } from '@/store/modules/ruleCache'
 import { http } from '@/axios'
-import { compressFunctionConfig, expandFunctionConfig } from '@/utils/workflow/DataOptimizer'
 
 defineOptions({
   name: 'functionEdit'
@@ -306,10 +305,6 @@ const saveFuncData = () => {
     path: state.path,
     funcLuaName: state.funcLuaName
   }
-  // 压缩函数配置数据以减少存储空间
-  const compressedConfigData = compressFunctionConfig(configData)
-  // 函数列表数据
-
   http
     .post({
       url: '/rule-config/func/update',
@@ -320,7 +315,7 @@ const saveFuncData = () => {
         functionStatus: state.functionStatus,
         funcDesc: state.funcDesc,
         jsCode: state.jsCode,
-        configData: JSON.stringify(compressedConfigData)
+        configData: JSON.stringify(configData)
       }
     })
     .then(res => {
@@ -458,12 +453,11 @@ onActivated(() => {
 
     try {
       const configData = JSON.parse(functionData.configData)
-      const expandedConfigData = expandFunctionConfig(configData)
-      state.formJson.input = expandedConfigData.input || {}
-      state.formJson.output = expandedConfigData.output || {}
-      state.className = expandedConfigData.className || ''
-      state.path = expandedConfigData.path || ''
-      state.funcLuaName = expandedConfigData.funcLuaName || ''
+      state.formJson.input = configData.input || {}
+      state.formJson.output = configData.output || {}
+      state.className = configData.className || ''
+      state.path = configData.path || ''
+      state.funcLuaName = configData.funcLuaName || ''
     } catch {
       console.log('configData parse error')
     }

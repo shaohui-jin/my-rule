@@ -1,5 +1,5 @@
 import { InputData, WorkflowNode } from '@/types/workflow'
-import { isCalculatorNode, isIfElseNode } from '@/utils/type/node'
+import { isCalculatorNode, isIfElseNode } from '@/utils/common/NodeType'
 
 /**
  *  从工作流节点列表中提取和组织功能代码。

@@ -1,5 +1,5 @@
 import { WorkflowNode } from '@/types/workflow'
-import { isIfElseNode } from '@/utils/type/node'
+import { isIfElseNode } from '@/utils/common/NodeType'
 
 export class CodeFactory {
   // 创建代码模板类

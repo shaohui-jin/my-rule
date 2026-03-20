@@ -5,6 +5,7 @@ import { Graph, Node } from '@antv/x6'
 import { type WorkflowData } from '@/types/workflow'
 import type { Ref } from 'vue'
 import { NODE_CONFIG_BASE_HEIGHT, NODE_CONFIG_TITLE_HEIGHT, NODE_CONFIG_WIDTH } from '@/config/node'
+import { truncateText } from '@/utils/common/TextTruncate'
 
 // 端口属性配置 - 使用导入的常量
 
@@ -23,15 +24,6 @@ function createPortConfig(
   desc = '',
   typeText = ''
 ) {
-  let text = portTitle
-  if (portTitle.length > 13) {
-    text =
-      portTitle.substring(0, 13) +
-      '...\n' +
-      (typeText.length > 13 ? typeText.substring(0, 13) + '...' : typeText)
-  } else {
-    text = portTitle + '\n' + (typeText.length > 13 ? typeText.substring(0, 13) + '...' : typeText)
-  }
   return {
     id,
     group,
@@ -40,10 +32,10 @@ function createPortConfig(
     attrs: {
       ...PORT_ATTRS,
       text: {
-        text,
-        fontSize: 13,
+        text: truncateText(portTitle, NODE_CONFIG_WIDTH / 2, 14) + '\n' + typeText,
+        fontSize: 14,
         textWrap: {
-          width: 95,
+          width: NODE_CONFIG_WIDTH / 2,
           height: 80,
           overflow: 'hidden',
           ellipsis: true
@@ -60,20 +52,14 @@ function createPortConfig(
 /**
  * 自定义port分布函数，让port在边上均匀分布
  */
-function getPortPosition(
-  side: 'left' | 'right',
-  total: number,
-  idx: number,
-  nodeHeight: number,
-  titleHeight: number
-) {
-  const available = nodeHeight - titleHeight
+function getPortPosition(side: 'left' | 'right', total: number, idx: number, nodeHeight: number) {
+  const available = nodeHeight - NODE_CONFIG_TITLE_HEIGHT
   let y
   if (total == 1) {
-    y = titleHeight + available / 2
+    y = NODE_CONFIG_TITLE_HEIGHT + available / 2
   } else {
     const step = available / (total + 1)
-    y = titleHeight + step * (idx + 1)
+    y = NODE_CONFIG_TITLE_HEIGHT + step * (idx + 1)
   }
   return {
     x: side === 'left' ? 0 : NODE_CONFIG_WIDTH,
@@ -86,74 +72,36 @@ function generatePorts(node: WorkflowNode, nodeHeight: number) {
   let inputPorts = []
   let outputPorts = []
 
-  if (node.funcType === 'logic' && node.logicData?.logicType === LogicType.IFELSE) {
-    // 条件节点：左侧1个port，右侧多个port
-    const inPos = getPortPosition('left', 1, 0, nodeHeight, NODE_CONFIG_TITLE_HEIGHT)
-    const { label, paramType } = node.inputData[0].attributes
-    inputPorts = [createPortConfig('in_1', 'in', inPos, label, '', paramType)]
-    outputPorts = (node.outputData || []).map((item: OutputData, idx: number, arr: any[]) => {
-      const pos = getPortPosition('right', arr.length, idx, nodeHeight, NODE_CONFIG_TITLE_HEIGHT)
-      let portTitle = idx === 0 ? 'if' : idx === arr.length - 1 ? 'else' : 'elseif'
-      return createPortConfig(item.portId, 'out', pos, portTitle, '', item.type || 'any')
-    })
-  } else {
-    // 函数节点：根据 paramGroup 数量生成入参端口
-    let inputPortCount = 1
-    let tempinputPortCount = 0
+  const inputData = node.inputData.filter(e => e.sourceType == 'node')
+  let inputPortCount = inputData.length || 1
 
-    const paramGroups = new Set<string>()
-    const paramDescGroups = new Set<string>()
-    const paramPortIdGroups = new Set<string>()
-    const paramTypeGroups = []
-    if (node.inputData && Array.isArray(node.inputData)) {
-      node.inputData.forEach((input: any) => {
-        if (input.sourceType == 'node') {
-          tempinputPortCount++
-          // nodeHeightTotal += 20
-          paramGroups.add(input.attributes.label)
-          paramDescGroups.add(input.attributes.desc)
-          paramPortIdGroups.add(input.portId)
-          paramTypeGroups.push(input.subType || input.type)
-        }
-      })
-      // 必须有一个入参桩点
-      inputPortCount = tempinputPortCount || 1
-    }
-    const inputTitleList = [...Array.from(paramGroups)]
-    const inputDescList = [...Array.from(paramDescGroups)]
-    const inputPortIdList = [...Array.from(paramPortIdGroups)]
-    const inputTypeTextList = [...Array.from(paramTypeGroups)]
-    if (inputPortIdList.length == 0) {
-      // 没有入参桩点 则默认生成一个 否则边的连接会找不到绑定的桩点
-      inputPortIdList.push('in_1')
-    }
-    for (let i = 0; i < inputPortCount; i++) {
-      const inPos = getPortPosition('left', inputPortCount, i, nodeHeight, NODE_CONFIG_TITLE_HEIGHT)
-      // 这个in_1是按顺序生成的，所以生成的数据是按顺序塞入进去的需要修改成原数据的portId,如果没有原数据则使用默认的循环
-      inputPorts.push(
-        createPortConfig(
-          inputPortIdList[i],
-          'in',
-          inPos,
-          inputTitleList[i],
-          inputDescList[i],
-          inputTypeTextList[i]
-        )
-      )
-    }
-
-    // 出参端口：默认1个
-    const outPos = getPortPosition('right', 1, 0, nodeHeight, NODE_CONFIG_TITLE_HEIGHT)
-    outputPorts = [
+  for (let i = 0; i < inputPortCount; i++) {
+    const inPos = getPortPosition('left', inputPortCount, i, nodeHeight)
+    inputPorts.push(
       createPortConfig(
-        'out_1',
+        inputData[i].portId,
+        'in',
+        inPos,
+        inputData[i].attributes.label,
+        inputData[i].attributes.desc,
+        inputData[i].attributes.paramType
+      )
+    )
+  }
+  const outputData = node.outputData
+  let outputPortCount = outputData.length || 1
+  for (let i = 0; i < outputPortCount; i++) {
+    const outPos = getPortPosition('right', outputPortCount, i, nodeHeight)
+    outputPorts.push(
+      createPortConfig(
+        outputData[i].portId,
         'out',
         outPos,
-        node.outputData[0].attributes?.label || '',
-        node.outputData[0].attributes?.desc || '',
-        node.outputData[0].subType || node.outputData[0].type || ''
+        outputData[i].attributes.label,
+        outputData[i].attributes.desc,
+        outputData[i].attributes.paramType
       )
-    ]
+    )
   }
 
   return { inputPorts, outputPorts }
@@ -404,12 +352,8 @@ export class CustomNode extends Node {
   public oldPortXY: Array<any>[] = []
   private graph: Graph
   private workflowData: Ref<WorkflowData>
-  // constructor(options: any, graph: Graph, workflowData: Ref<WorkflowData>) {
   constructor(options: any) {
     super(options)
-    // this.graph = graph
-    // this.workflowData = workflowData
-    // console.log('11111')
   }
 
   private timer: TimeoutHandle

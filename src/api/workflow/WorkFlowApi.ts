@@ -1,7 +1,5 @@
-import { WorkflowData } from '@/types/workflow'
 import { http } from '@/axios'
 import { ElMessage } from 'element-plus'
-import { expandFunctionConfig } from '@/utils/workflow/DataOptimizer'
 
 // 函数配置数据类型
 export interface FunctionConfigData {
@@ -889,12 +887,9 @@ export function transformFunctionData(item: FunctionItem): FunctionNode {
     funcName: ''
   }
 
-  let jsonData: FunctionConfigData
   try {
     // 先解析JSON
-    const parsedData = JSON.parse(item.configData)
-    // 展开函数配置数据以恢复完整结构
-    jsonData = expandFunctionConfig(parsedData)
+    let jsonData: FunctionConfigData = JSON.parse(item.configData)
     temp.inputData = jsonData?.input || []
     temp.outputData = jsonData?.output || []
     temp.logicData = jsonData?.logicData || {}

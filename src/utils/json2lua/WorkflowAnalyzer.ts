@@ -1,6 +1,6 @@
 import { LogicType, WorkflowData, WorkflowEdge, WorkflowNode } from '@/types/workflow'
 import { AnalysisResult, NodeAnalysis, BranchInfo } from '@/types/JsCodeParser'
-import { isIfElseNode } from '@/utils/type/node'
+import { isIfElseNode } from '@/utils/common/NodeType'
 
 // 执行顺序结果类型定义
 interface ExecutionOrderResult {

@@ -44,9 +44,7 @@ import DndPanel from '@/components/panels/DndPanel.vue'
 import { LogicType, type WorkflowData } from '@/types/workflow'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import nodeIdFactory from '@/utils/factory/NodeIdFactory'
-import { compressParamData, expandParamData } from '@/utils/workflow/DataOptimizer'
 
-import { http } from '@/axios'
 import TestDrawer from '@/components/TestDrawer/index.vue'
 
 import { BaseFunctionNodeType, useFunctionStore } from '@/store/modules/baseFunction'

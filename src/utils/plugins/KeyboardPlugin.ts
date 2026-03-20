@@ -3,7 +3,7 @@ import type { Graph } from '@antv/x6'
 import { ElMessage } from 'element-plus'
 import { createNewNode } from '@/utils/factory/NodeFactory'
 import { type WorkflowData } from '@/types/workflow'
-import type { GroupManager } from '@/utils/workflow/GroupManager'
+import type { GroupManager } from '@/utils/manager/GroupManager'
 import { unref, Ref } from 'vue'
 
 // 全局变量保存复制的原始数据

@@ -23,14 +23,17 @@
     destroy-on-close
   >
     <el-tabs v-model="activeTab" class="test-tabs" :stretch="true" @tab-change="tabChange">
+      <el-tab-pane label="数据检测" name="json" lazy>
+        <div class="tab-content">
+          <span>全场景数据</span>
+          <div ref="inputParamRootRef" class="monaco-editor-container"></div>
+          <span>指定上下文</span>
+          <div ref="inputParamContentRef" class="monaco-editor-container"></div>
+        </div>
+      </el-tab-pane>
       <el-tab-pane label="脚本展示" name="script">
         <div class="tab-content">
           <div class="script-header">
-            <span>全场景数据</span>
-            <div ref="inputParamRootRef" class="input-param-root-editor"></div>
-            <span>制定上下文</span>
-            <div ref="inputParamContentRef" class="input-param-content-editor"></div>
-            <!--                <el-input type="textarea" v-model="inputParam.root" />-->
             <el-button type="primary" :loading="isExecuting" @click.stop="executeTest">
               {{ isExecuting ? '执行中...' : '执行测试' }}
             </el-button>
@@ -114,7 +117,7 @@ const LIGHT_THEME = 'vs'
 const emit = defineEmits(['close', 'node-click'])
 
 // 状态变量
-const activeTab = ref('script')
+const activeTab = ref('json')
 const scriptContent = ref('')
 const isExecuting = ref(false) // 执行测试状态
 const testResult = ref<RuleDebugResponseResult>({
@@ -344,39 +347,30 @@ defineExpose({
 
 .tab-content {
   height: 100%;
-  padding: 5px 0;
-  /* 确保内容可以正确滚动 */
   overflow: hidden;
   display: flex;
   flex-direction: column;
-}
 
-.script-header {
-  display: flex;
-  margin-bottom: 16px;
-  gap: 10px;
-  flex-shrink: 0;
-  flex-direction: column;
-}
+  .no-content-tip {
+    padding: 0;
+    background-color: var(--el-bg-color, #ffffff);
+  }
 
-.input-param-root-editor {
-  width: 100%;
-  height: 100px;
-  border: 1px solid var(--el-border-color, #dcdfe6);
-  border-radius: var(--el-border-radius-base, 4px);
-}
+  .script-header {
+    display: flex;
+    margin-bottom: 16px;
+    gap: 10px;
+    flex-shrink: 0;
+    flex-direction: column;
+  }
 
-.input-param-content-editor {
-  width: 100%;
-  height: 100px;
-  border: 1px solid var(--el-border-color, #dcdfe6);
-  border-radius: var(--el-border-radius-base, 4px);
-}
-
-.monaco-editor-container {
-  width: 100%;
-  flex: 1 1 0;
-  //height: 100px;
+  .monaco-editor-container {
+    width: 100%;
+    //height: 100px;
+    flex: 1 1 0;
+    border: 1px solid var(--el-border-color, #dcdfe6);
+    border-radius: var(--el-border-radius-base, 4px);
+  }
 }
 
 .editor-container {
@@ -388,22 +382,16 @@ defineExpose({
   display: flex;
   flex: 1;
   min-height: 0;
-}
-
-.editor-toolbar {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  z-index: 100;
-  display: flex;
-  gap: 0px;
-  border-radius: 4px;
-  padding: 2px;
-}
-
-.no-content-tip {
-  padding: 0;
-  background-color: var(--el-bg-color, #ffffff);
+  .editor-toolbar {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    z-index: 100;
+    display: flex;
+    gap: 0px;
+    border-radius: 4px;
+    padding: 2px;
+  }
 }
 
 /* 全屏编辑器样式 */
@@ -417,26 +405,25 @@ defineExpose({
   z-index: 99999;
   display: flex;
   flex-direction: column;
-}
-
-.fullscreen-editor-container {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  .editor-toolbar {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    z-index: 100000;
-    display: flex;
-    gap: 0px;
-  }
-  .monaco-editor-container {
+  .fullscreen-editor-container {
     width: 100%;
     height: 100%;
-    flex: 1;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    .editor-toolbar {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      z-index: 100000;
+      display: flex;
+      gap: 0px;
+    }
+    .monaco-editor-container {
+      width: 100%;
+      height: 100%;
+      flex: 1;
+    }
   }
 }
 </style>

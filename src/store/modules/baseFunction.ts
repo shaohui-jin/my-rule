@@ -55,15 +55,15 @@ const BaseFunctionNode: BaseFunctionNodeType[] = [
           type: 'any',
           subType: 'any',
           source: 'root',
-          sourceType: 'input',
+          sourceType: 'node',
           portId: 'in_1',
           defaultValue: 'root',
           widgetType: 'select',
           attributes: {
             paramType: 'string',
             inputType: 'text',
-            showLabel: true,
-            label: '参数类型'
+            label: '参数类型',
+            desc: '这是参数类型的描述'
           },
           options: [
             {
@@ -80,7 +80,12 @@ const BaseFunctionNode: BaseFunctionNodeType[] = [
           paramName: 'result',
           type: 'any',
           subType: 'any',
-          portId: 'out_1'
+          portId: 'out_1',
+          attributes: {
+            paramType: 'any',
+            inputType: 'text',
+            label: '返回结果'
+          }
         }
       ]
     }
@@ -103,14 +108,13 @@ const BaseFunctionNode: BaseFunctionNodeType[] = [
           paramName: 'nodeId',
           type: 'string',
           source: '',
-          sourceType: 'input',
+          sourceType: 'node',
           widgetType: 'select',
           portId: 'in_1',
           defaultValue: '',
           attributes: {
             paramType: 'string',
             inputType: 'text',
-            showLabel: true,
             label: '节点Id'
           },
           options: []
@@ -121,7 +125,12 @@ const BaseFunctionNode: BaseFunctionNodeType[] = [
           paramName: 'result',
           type: 'any',
           subType: 'any',
-          portId: 'out_1'
+          portId: 'out_1',
+          attributes: {
+            paramType: 'any',
+            inputType: 'text',
+            label: '返回结果'
+          }
         }
       ]
     }
@@ -154,7 +163,6 @@ const BaseFunctionNode: BaseFunctionNodeType[] = [
           attributes: {
             paramType: 'any',
             inputType: 'text',
-            showLabel: true,
             label: '上游数据'
           }
         }
@@ -166,7 +174,12 @@ const BaseFunctionNode: BaseFunctionNodeType[] = [
           subType: 'any',
           functionCode:
             'function demo(data, data1, data2) {\n' + '    return { data, data1, data2 }\n' + '}',
-          portId: 'out_1'
+          portId: 'out_1',
+          attributes: {
+            paramType: 'any',
+            inputType: 'text',
+            label: '返回结果'
+          }
         }
       ]
     }
@@ -195,16 +208,36 @@ const BaseFunctionNode: BaseFunctionNodeType[] = [
           attributes: {
             paramType: 'any',
             inputType: 'text',
-            showLabel: true,
             label: '上游数据'
           }
         }
       ],
       outputData: [
-        { paramName: 'result', type: 'any', subType: 'any', functionCode: '', portId: 'out_1' },
-        { paramName: 'result', type: 'any', subType: 'any', functionCode: '', portId: 'out_2' }
-      ],
-      version: '1.0.0'
+        {
+          paramName: 'result',
+          type: 'any',
+          subType: 'any',
+          functionCode: '',
+          portId: 'out_1',
+          attributes: {
+            paramType: 'any',
+            inputType: 'text',
+            label: 'if'
+          }
+        },
+        {
+          paramName: 'result',
+          type: 'any',
+          subType: 'any',
+          functionCode: '',
+          portId: 'out_2',
+          attributes: {
+            paramType: 'any',
+            inputType: 'text',
+            label: 'else'
+          }
+        }
+      ]
     }
   }
 ]
@@ -220,9 +253,7 @@ export const useFunctionStore = defineStore({
     getFuncNode() {
       if (this.baseFunctionNode.length === 0) {
         this.baseFunctionNode = BaseFunctionNode
-        console.log('baseFunctionNodeMap', this.baseFunctionNodeMap)
         this.baseFunctionNode.forEach(item => {
-          console.log('baseFunctionNodeMap', this.baseFunctionNodeMap)
           this.baseFunctionNodeMap.set(item.funcId, item)
         })
       }

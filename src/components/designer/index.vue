@@ -73,9 +73,9 @@ import { JsCodeParser } from '@/utils/parser/JsCodeParser'
 import { FunctionNode } from '@/api/workflow/WorkFlowApi'
 
 import { WorkflowValidator, type ValidationError } from '@/utils/workflow/WorkflowValidator'
-import { EdgeCorrectionManager } from '@/utils/workflow/EdgeCorrectionManager'
-import { createInfoPanelNode } from '@/utils/workflow/InfoPanelNode'
-import { GroupManager } from '@/utils/workflow/GroupManager'
+import { EdgeCorrectionManager } from '@/utils/manager/EdgeCorrectionManager'
+import { createInfoPanelNode, InfoPanelNodeManager } from '@/utils/manager/InfoPanelNodeManager'
+import { GroupManager } from '@/utils/manager/GroupManager'
 
 import { createNewNode, createX6Node } from '@/utils/factory/NodeFactory'
 import nodeIdFactory from '@/utils/factory/NodeIdFactory'
@@ -110,7 +110,7 @@ import Layout from '@/assets/ruleEditToolSvg/layout.svg'
 import { BaseFunctionNodeType } from '@/store/modules/baseFunction'
 
 import { MAX_DEVICE_PIXEL_RATIO, MIN_DEVICE_PIXEL_RATIO } from '@/config/workflow'
-import { isCustom } from '@/utils/type/node'
+import { isCustom } from '@/utils/common/NodeType'
 
 /**
  * 组件属性定义
@@ -241,6 +241,9 @@ onUnmounted(() => {
 const initGraph = () => {
   const customNodeManager = new CustomNodeManager()
   customNodeManager.initRegister()
+
+  const infoPanelNodeManager = new InfoPanelNodeManager()
+  infoPanelNodeManager.initRegister()
 
   if (!container.value) return
 

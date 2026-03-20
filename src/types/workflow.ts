@@ -6,6 +6,13 @@ export interface Position {
   y: number // Y坐标
 }
 
+export interface Attributes {
+  paramType: string // 字段类型
+  inputType: string //
+  label: string // 字段文案
+  desc?: string // 字段描述
+  // [key: string]: any
+}
 /**
  * 节点输入参数数据
  */
@@ -19,7 +26,7 @@ export interface InputData {
   sourceIndex?: string // 来源索引
   portId?: string // 唯一端口ID
   widgetType?: string // 控件类型
-  attributes?: any // 控件属性
+  attributes?: Attributes // 控件属性
   options?: Array<{ label: string; value: string; desc?: string }> // 下拉选择选项
   dynamicOptions?: Record<string, Array<{ label: string; value: string }>> // 动态选项配置
   linkedParams?: string[] // 联动参数列表，当此参数变化时会影响哪些其他参数
@@ -36,6 +43,7 @@ export interface OutputData {
   value?: any // 参数值
   functionCode?: string // 条件检查
   portId?: string // 唯一端口ID
+  attributes?: Attributes // 控件属性
 }
 
 export enum LogicType {

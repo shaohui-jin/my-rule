@@ -1,8 +1,11 @@
 import { Graph, Node } from '@antv/x6'
+import { CustomNode } from '@/utils/manager/CustomNodeManager'
+import { wrapTextByWidth } from '@/utils/common/TextTruncate'
 
 const MAX_WIDTH = 300 // 气泡最大宽度
 const TOOLTIP_DOUBLE_PADDING = 16 // 提示框内文字左右内边距(双倍的)，原因见X6文档
 const BASE_FONT_SIZE = 14
+const BASE_LINE_HEIGHT = 16
 
 export class InfoPanelNode extends Node {
   constructor(options: any) {
@@ -16,27 +19,17 @@ export class InfoPanelNode extends Node {
     const { node, refX, refX2, refY: offsetY } = content
 
     // 根据canvas算宽度截取文案换行
-    let desc = this.setLineBreaks(content.desc, MAX_WIDTH - TOOLTIP_DOUBLE_PADDING)
+    let desc = wrapTextByWidth(content.desc, MAX_WIDTH - TOOLTIP_DOUBLE_PADDING)
 
     // 计算行数, 防止部分行存在过多的符号
-    const lineCount = desc
-      .split('\n')
-      .filter(Boolean)
-      .reduce((acc, cur) => {
-        if (cur.length > 0 && cur.length < Math.ceil(MAX_WIDTH / BASE_FONT_SIZE) + 2) {
-          acc += 1
-        } else if (cur.length >= Math.ceil(MAX_WIDTH / BASE_FONT_SIZE) + 2) {
-          acc += 2
-        }
-        return acc
-      }, 0)
+    const lineCount = desc.split('\n').filter(Boolean).length
 
     // 设置位置（相对于触发节点）
     const sourcePosition = node.getPosition()
     const sourceSize = node.getSize()
 
-    const height = lineCount * BASE_FONT_SIZE + 16
-    const width = lineCount > 1 ? MAX_WIDTH : desc.length * BASE_FONT_SIZE
+    const height = lineCount * BASE_LINE_HEIGHT + TOOLTIP_DOUBLE_PADDING
+    const width = lineCount > 1 ? MAX_WIDTH : desc.length * BASE_FONT_SIZE + TOOLTIP_DOUBLE_PADDING
 
     const offsetX = refX === '100%' ? sourceSize.width + refX2 : refX
     // 计算信息面板位置（默认显示在节点右侧）
@@ -45,8 +38,6 @@ export class InfoPanelNode extends Node {
     this.setPosition(x, y, { ignoreHistory: true })
 
     // 更新描述文本
-    this.attr('description/textWrap/width', width, { ignoreHistory: true })
-    this.attr('description/textWrap/height', height, { ignoreHistory: true })
     this.attr('description/text', desc || '', { ignoreHistory: true })
     // 修改尺寸
     this.setSize(width, height, { ignoreHistory: true })
@@ -57,45 +48,13 @@ export class InfoPanelNode extends Node {
 
     return true
   }
-
-  // 处理字符串，增加换行
-  public setLineBreaks(
-    str: string,
-    maxWidth: number,
-    font: string = `${BASE_FONT_SIZE}px "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "微软雅黑", Arial, sans-serif`
-  ) {
-    const canvas = document.createElement('canvas')
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return str
-    ctx.font = font
-    let result = ''
-    const _breakText = (str: string, maxWidth: number) => {
-      let _result = ''
-      let _currentLine = ''
-      for (let i = 0; i < str.length; i++) {
-        const char = str[i]
-        const testLine = _currentLine + char
-        const metrics = ctx.measureText(testLine)
-        if (metrics.width > maxWidth && _currentLine !== '') {
-          _result += _currentLine + '\n'
-          _currentLine = char
-        } else {
-          _currentLine = testLine
-        }
-      }
-      _result += _currentLine
-      return _result
-    }
-    const arr = str.split('\n')
-    arr.forEach(e => {
-      result += _breakText(e, maxWidth) + '\n'
-    })
-    return result
-  }
 }
 
-// 注册信息面板节点
-Graph.registerNode('infoPanelNode', InfoPanelNode, true)
+export class InfoPanelNodeManager extends Node {
+  public initRegister(): void {
+    Graph.registerNode('infoPanelNode', InfoPanelNode, true)
+  }
+}
 
 // 创建信息面板节点的工厂函数
 export function createInfoPanelNode(options: any = {}) {
@@ -141,17 +100,18 @@ export function createInfoPanelNode(options: any = {}) {
       description: {
         text: '',
         fontSize: BASE_FONT_SIZE,
-        lineHeight: 16,
+        height: BASE_LINE_HEIGHT,
+        lineHeight: BASE_LINE_HEIGHT,
         fill: '#ffffff',
-        refX: 8,
-        refY: 8,
+        refX: TOOLTIP_DOUBLE_PADDING / 2,
+        refY: TOOLTIP_DOUBLE_PADDING / 2,
         textAnchor: 'start',
         textVerticalAnchor: 'top',
-        textWrap: {
-          width: '100%',
-          height: '100%',
-          breakWord: 'break-all'
-        },
+        // textWrap: {
+        //   width: '100%',
+        //   height: '100%',
+        //   breakWord: 'break-all'
+        // },
         zIndex: 1002
       }
     },
@@ -163,16 +123,3 @@ export function createInfoPanelNode(options: any = {}) {
     }
   })
 }
-
-// export class InfoPanelManager extends Node {
-//   constructor() {}
-//
-//   private initRegister(): void {
-//     const that = this
-//
-//     Graph.registerNode('infoPanelNode', {
-//
-//       onClick({ view }) { ... },
-//     }, true)
-//   }
-// }

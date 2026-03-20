@@ -245,7 +245,9 @@ function analyzeTableSubType(param) {
  * @param configString - 配置字符串，包含默认值、选项、描述等信息
  */
 function parseParamConfig(paramObject, configString) {
-  const parts = configString.split(/\s+(?=default:|options:|componentType:|multiple:|paramGroup:|desc:|defaultOptions:|min:|max:)/)
+  const parts = configString.split(
+    /\s+(?=default:|options:|componentType:|multiple:|paramGroup:|desc:|defaultOptions:|min:|max:)/
+  )
 
   parts.forEach(part => {
     part = part.trim()
@@ -420,7 +422,6 @@ function createWidget(param) {
     width: '',
     labelWidth: '',
     labelPosition: '',
-    showLabel: true,
     disabled: false,
     size: '',
     cssClass: [],
@@ -439,11 +440,7 @@ function createWidget(param) {
       disabled: param.type === 'table' && !param.multiple ? true : baseAttributes.disabled,
       // 根据类型设置特殊属性
       inputType:
-        param.type === 'textarea'
-          ? 'textarea'
-          : param.type === 'inputNumber'
-          ? 'number'
-          : 'text',
+        param.type === 'textarea' ? 'textarea' : param.type === 'inputNumber' ? 'number' : 'text',
       // 数组类型的placeholder提示
       placeholder: param.type.endsWith('[]')
         ? `请输入${param.label || param.name}（$${
@@ -493,7 +490,14 @@ function createWidget(param) {
  */
 
 // 支持的组件类型列表
-const SUPPORTED_COMPONENT_TYPES = ['input', 'select', 'switch', 'inputNumber', 'textarea', 'function']
+const SUPPORTED_COMPONENT_TYPES = [
+  'input',
+  'select',
+  'switch',
+  'inputNumber',
+  'textarea',
+  'function'
+]
 
 /**
  * 过滤不支持的组件
@@ -592,7 +596,14 @@ export const adaptFormGeneratorData = formConfig => {
  */
 export const parseLuaToFormConfig = (comments, type = 'input') => {
   // 支持的组件类型列表
-  const SUPPORTED_COMPONENT_TYPES = ['input', 'select', 'switch', 'inputNumber', 'textarea', 'function']
+  const SUPPORTED_COMPONENT_TYPES = [
+    'input',
+    'select',
+    'switch',
+    'inputNumber',
+    'textarea',
+    'function'
+  ]
   // 解析注释为JSON
   const codeJson = parseCommentsToJSON(comments)
   // 创建基础表单配置
@@ -655,7 +666,6 @@ function createOptimizedWidget(param, supportedTypes) {
     width: '',
     labelWidth: '',
     labelPosition: '',
-    showLabel: true,
     disabled: false,
     size: '',
     cssClass: [],
@@ -664,7 +674,7 @@ function createOptimizedWidget(param, supportedTypes) {
     paramGroup: param.paramGroup || null,
     defaultOptions: param.defaultOptions || null,
     min: param.min,
-    max: param.max,
+    max: param.max
   }
 
   // 处理默认值

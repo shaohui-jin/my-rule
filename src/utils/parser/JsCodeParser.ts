@@ -5,7 +5,7 @@ import { Calculator } from '../parserFunc/Calculator'
 import { GlobalVariable } from '../parserFunc/GlobalVariable'
 import { BranchInfo, NodeAnalysis } from '@/types/JsCodeParser'
 import { CodeFactory } from '../factory/CodeFactory'
-import { isIfElseNode } from '@/utils/type/node'
+import { isIfElseNode } from '@/utils/common/NodeType'
 import { getFunctionCode } from '@/utils/parser/FuncParser'
 
 // 模块信息接口

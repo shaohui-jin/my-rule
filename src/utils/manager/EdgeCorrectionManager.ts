@@ -1,9 +1,9 @@
 import { Ref, h } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getCustomNodeConfig } from '@/utils/manager/CustomNodeManager'
-import { WorkflowValidator } from './WorkflowValidator'
+import { WorkflowValidator } from '../workflow/WorkflowValidator'
 import { LogicType, type WorkflowData } from '@/types/workflow'
-import { EDGE_STYLES } from './constants/StyleConstants'
+import { EDGE_STYLES } from '../workflow/constants/StyleConstants'
 
 // 类型定义
 interface SearchTarget {
