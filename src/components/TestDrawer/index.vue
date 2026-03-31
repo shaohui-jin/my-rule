@@ -22,7 +22,7 @@
     :close-on-click-modal="true"
     destroy-on-close
   >
-    <el-tabs v-model="activeTab" class="test-tabs" :stretch="true" @tab-change="tabChange">
+    <el-tabs v-model="activeTab" class="test-tabs" :stretch="true">
       <el-tab-pane label="数据检测" name="json" lazy>
         <div class="tab-content">
           <span>全场景数据</span>
@@ -49,8 +49,9 @@
         </div>
       </el-tab-pane>
 
-      <el-tab-pane label="执行结果" name="result" :disabled="true" lazy>
+      <el-tab-pane label="执行结果" name="result" :disabled="testDisabled" lazy>
         <div class="tab-content">
+          <div ref="testContentRef" class="monaco-editor-container"></div>
           <div class="no-content-tip">
             <el-empty description="暂无执行结果"></el-empty>
           </div>
@@ -118,7 +119,6 @@ const emit = defineEmits(['close', 'node-click'])
 
 // 状态变量
 const activeTab = ref('json')
-const scriptContent = ref('')
 const isExecuting = ref(false) // 执行测试状态
 const testResult = ref<RuleDebugResponseResult>({
   duration: 0,
@@ -134,83 +134,52 @@ const visible = ref(false)
 const isFullscreen = ref(false)
 
 const manager = MonacoManager.getInstance()
+
 // 编辑器容器引用
 const editorRef = ref<HTMLElement | null>(null)
 const fullEditorRef = ref<HTMLElement | null>(null)
 const inputParamRootRef = ref<HTMLElement | null>(null)
 const inputParamContentRef = ref<HTMLElement | null>(null)
+const outputContentRef = ref<HTMLElement | null>(null)
 
 // 编辑器实例
 let editor: MonacoInstance['editor'] = null
 let fullEditor: MonacoInstance['editor'] = null
 let inputParamRoot: MonacoInstance['editor'] = null
 let inputParamContent: MonacoInstance['editor'] = null
+let outputContent: MonacoInstance['editor'] = null
 
+const scriptContent = ref('')
 const inputParam = ref({
   root: '{}',
   content: '{}'
 })
-
+const testContent = ref('')
+const testDisabled = ref(true)
 // 执行测试
 const executeTest = async () => {
   if (!scriptContent.value) {
     ElMessage.warning('请输入脚本内容')
     return
   }
-
   // 设置执行状态
   isExecuting.value = true
-
   try {
-    const _debug = () => {}
-    const response = await _debug()
-    if (response.success) {
-      const result = JSON.parse(response.data.result)
-      result.funcStepLogs = (result?.funcStepLogs || []).map((log: any) => {
-        const node = nodeMap.value.get(log.nodeId.toString())
-        if (node) {
-          log = {
-            ...log,
-            logicData: node.logicData,
-            title: node.title,
-            funcType: node.funcType,
-            funcId: node.funcId,
-            remark: node.remark,
-            pos: node.pos
-          }
-        }
-        return log
-      })
-      testResult.value = result
-
-      // 切换到执行结果标签页
-      activeTab.value = 'result'
-    }
+    testDisabled.value = true
+    activeTab.value = 'result'
+    ;(() => {
+      console.log('箭头函数立即执行')
+    })()
+    const fn = new Function(scriptContent.value)
+    // const { doWork } = fn()
+    console.log('doWork', fn())
+    testContent.value = JSON.stringify(doWork(inputParam.value.root, inputParam.value.content))
   } catch (error) {
     console.error('测试执行失败:', error)
   } finally {
     // 重置执行状态
     isExecuting.value = false
   }
-}
-
-const tabChange = val => {
-  // if (val === 'script') {
-  //   // 切换到脚本标签页时，确保使用深色主题
-  //   if (!editor && editorRef.value) {
-  //   } else if (editor) {
-  //     // 如果编辑器已存在，重新布局
-  //     editor.layout()
-  //   }
-  // } else if (val === 'result') {
-  //   // 切换到结果标签页时，确保使用浅色主题
-  //   if (testResult.value.message) {
-  //     setTimeout(() => {
-  //       initLastNodeOutputEditor()
-  //       // 总是初始化预期结果编辑器
-  //     }, 500)
-  //   }
-  // }
 }
 
 // 打开抽屉
@@ -251,7 +220,7 @@ const openDrawer = (data: ExecutionRecordData) => {
     manager
       .createInstance(inputParamContentRef.value, {
         ...getDefaultMonacoEditorConfig(),
-        value: inputParam.value.root,
+        value: inputParam.value.content,
         language: 'json'
       })
       .then(({ id, editor: _editor }: MonacoInstance) => {
@@ -259,6 +228,19 @@ const openDrawer = (data: ExecutionRecordData) => {
         // 设置监听事件
         inputParamContent.onDidChangeModelContent(() => {
           inputParam.value.content = inputParamContent?.getValue() || ''
+        })
+      })
+    manager
+      .createInstance(outputContentRef.value, {
+        ...getDefaultMonacoEditorConfig(),
+        value: testContent.value,
+        language: 'text'
+      })
+      .then(({ id, editor: _editor }: MonacoInstance) => {
+        outputContent = _editor
+        // 设置监听事件
+        outputContent.onDidChangeModelContent(() => {
+          testContent.value = outputContent?.getValue() || ''
         })
       })
   })
