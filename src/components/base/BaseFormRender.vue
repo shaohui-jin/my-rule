@@ -133,7 +133,6 @@ import {
   ElTooltip
 } from 'element-plus'
 import { Switch as SwitchIcon } from '@element-plus/icons-vue'
-import BaseFunctionExpression from '@/components/BaseFunctionExpression/index.vue'
 import { FromConfig, DEFAULT_FORM_CONFIG } from '@/utils/parser/FormParser'
 import { WorkflowData } from '@/types/workflow'
 
@@ -172,8 +171,7 @@ const componentMap = {
   select: ElSelect,
   switch: ElSwitch,
   inputNumber: ElInputNumber,
-  textarea: ElInput, // textarea 也用 ElInput
-  function: BaseFunctionExpression // function 用自定义组件，支持不同的类型
+  textarea: ElInput // textarea 也用 ElInput
 }
 
 // 获取组件
