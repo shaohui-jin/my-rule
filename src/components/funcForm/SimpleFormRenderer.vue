@@ -1,22 +1,16 @@
 <template>
   <el-form
     :model="formData"
-    :disabled="disabled"
     :label-width="labelWidth"
     class="simple-form-renderer"
     ref="formRef"
     @submit.prevent
   >
-    <el-form-item
-      v-for="(field, index) in fields"
-      :key="field.id"
-      :prop="field.id"
-      :rules="field.rules"
-    >
+    <el-form-item v-for="(field, index) in fields" :key="field.id" :prop="field.id">
       <!-- 自定义标签插槽 -->
       <template #label>
         <el-tooltip
-          v-if="field.attributes?.paramSubType"
+          :disabled="!field.attributes?.paramSubType"
           :content="field.attributes.paramSubType"
           placement="top"
         >
@@ -25,91 +19,15 @@
             <span class="param-type-under">({{ field.attributes?.paramType }})</span>
           </div>
         </el-tooltip>
-        <template v-else>
-          <div class="param-label-col">
-            <span class="param-label">{{ field.label }}</span>
-            <span class="param-type-under">({{ field.attributes?.paramType }})</span>
-          </div>
-        </template>
       </template>
 
       <div class="form-field-container">
         <div class="main-control">
-          <!-- 手动输入模式 -->
-          <template v-if="inputMode === 'manual'">
-            <!-- select 类型特殊处理，自动渲染下拉选项 -->
-            <el-select
-              v-if="field.type === 'select'"
-              v-model="formData[field.id]"
-              :placeholder="field.placeholder"
-              :disabled="field.disabled || disabled"
-              filterable
-              clearable
-              allow-create
-              default-first-option
-              :multiple="field.attributes.multiple"
-              @change="handleFieldChange(field.id, $event)"
-            >
-              <el-option
-                v-for="opt in field.attributes.defaultOptions
-                  ? [
-                      ...paramList.filter(item => item.type === field.attributes.paramType),
-                      ...field.options
-                    ]
-                  : field.options || []"
-                :key="opt.value"
-                :label="opt.label"
-                :value="opt.value"
-              >
-                <el-tooltip
-                  v-if="opt.desc"
-                  :content="opt.desc"
-                  :disabled="!opt.desc"
-                  placement="top"
-                  :show-after="500"
-                  popper-class="field-desc-tooltip"
-                  :popper-style="{
-                    maxWidth: '300px',
-                    wordWrap: 'break-word',
-                    wordBreak: 'break-all'
-                  }"
-                >
-                  <div>
-                    <span style="float: left">
-                      {{ opt.name }}
-                      <span>{{ opt.label }}</span>
-                    </span>
-                    <span style="float: right">
-                      {{ opt.type }}
-                    </span>
-                  </div>
-                </el-tooltip>
-              </el-option>
-            </el-select>
-            <!-- 其他类型 -->
-            <component
-              v-else
-              :is="getComponent(field.type)"
-              v-model="formData[field.id]"
-              v-bind="field.attributes"
-              :placeholder="field.placeholder"
-              :disabled="field.disabled || disabled"
-              :type="
-                ['textarea', 'function'].includes(field.type)
-                  ? 'textarea'
-                  : field.attributes?.inputType || 'text'
-              "
-              :nodeData="nodeData"
-              :workflowData="workflowData"
-              @change="handleFieldChange(field.id, $event)"
-            />
-          </template>
           <!-- 节点选择模式 -->
-          <template v-else-if="inputMode === 'node'">
+          <template v-if="field.sourceType === 'node'">
             <el-select
               v-model="formData[field.id]"
               placeholder="请选择节点"
-              :disabled="disabled"
               filterable
               clearable
               @change="handleFieldChange(field.id, $event)"
@@ -121,6 +39,55 @@
                 :value="opt.value"
               />
             </el-select>
+          </template>
+          <!-- 手动输入模式 -->
+          <template v-else>
+            <!-- select 类型特殊处理，自动渲染下拉选项 -->
+            <el-select
+              v-if="field.type === 'select'"
+              v-model="formData[field.id]"
+              :placeholder="field.placeholder"
+              :disabled="field.disabled"
+              filterable
+              clearable
+              allow-create
+              default-first-option
+              :multiple="field.attributes.multiple"
+              @change="handleFieldChange(field.id, $event)"
+            >
+              <el-option
+                v-for="opt in field.attributes.defaultOptions ? field.options : field.options || []"
+                :key="opt.value"
+                :label="opt.label"
+                :value="opt.value"
+              >
+                <div>
+                  <span style="float: left">
+                    {{ opt.name }}
+                    <span>{{ opt.label }}</span>
+                  </span>
+                  <span style="float: right">
+                    {{ opt.type }}
+                  </span>
+                </div>
+              </el-option>
+            </el-select>
+            <!-- 其他类型 -->
+            <component
+              v-else
+              :is="getComponent(field.type)"
+              v-model="formData[field.id]"
+              v-bind="field.attributes"
+              :placeholder="field.placeholder"
+              :disabled="field.disabled"
+              :type="
+                ['textarea', 'function'].includes(field.type)
+                  ? 'textarea'
+                  : field.attributes?.inputType || 'text'
+              "
+              :nodeData="nodeData"
+              @change="handleFieldChange(field.id, $event)"
+            />
           </template>
           <el-tooltip
             v-if="field.attributes?.desc"
@@ -136,44 +103,17 @@
           </el-tooltip>
         </div>
         <!-- 模式切换按钮 -->
-        <!--showModeToggle为true是入参-->
-        <template v-if="showModeToggle">
-          <div v-if="field.attributes?.paramType === 'table'">
-            <el-button class="mode-toggle-btn" :disabled="true" @click="$emit('mode-change')">
-              <el-icon><SwitchIcon /></el-icon>
-            </el-button>
-          </div>
-          <div v-else>
-            <el-tooltip
-              content="数据类型切换"
-              placement="top"
-              :show-after="500"
-              popper-class="field-desc-tooltip"
-              :popper-style="{ maxWidth: '300px', wordWrap: 'break-word', wordBreak: 'break-all' }"
-            >
-              <el-button class="mode-toggle-btn" @click="$emit('mode-change')">
-                <el-icon><SwitchIcon /></el-icon>
-              </el-button>
-            </el-tooltip>
-          </div>
-        </template>
-        <template v-else>
-          <el-button
-            class="mode-toggle-btn"
-            :disabled="inputMode === 'node'"
-            @click="$emit('mode-change')"
-          >
-            <el-icon><SwitchIcon /></el-icon>
-          </el-button>
-        </template>
+        <el-button class="mode-toggle-btn" @click="$emit('mode-change')" title="数据类型切换">
+          <el-icon><SwitchIcon /></el-icon>
+        </el-button>
       </div>
     </el-form-item>
     <div v-if="fields.length === 0" class="form-desc">-</div>
   </el-form>
 </template>
 
-<script setup>
-import { ref, watch, computed, onMounted } from 'vue'
+<script setup lang="ts">
+import { ref, watch, computed, PropType, inject } from 'vue'
 import {
   ElForm,
   ElFormItem,
@@ -187,31 +127,18 @@ import {
   ElTooltip
 } from 'element-plus'
 import { Switch as SwitchIcon } from '@element-plus/icons-vue'
-import BaseFunctionExpression from '@/components/BaseFunctionExpression/index.vue'
+import {Attributes, InputData, LogicType} from '@/types/workflow'
+import { getAllAvailableOptionsKey } from '@/injectKeys'
 
+const getAllAvailableOptions = inject(getAllAvailableOptionsKey)
 const props = defineProps({
-  formJson: {
-    type: Object,
-    default: () => ({
-      formConfig: {},
-      widgetList: []
-    })
-  },
-  disabled: {
-    type: Boolean,
-    default: false
+  data: {
+    type: Array<InputData>,
+    required: true
   },
   labelWidth: {
     type: String,
     default: '70px'
-  },
-  showModeToggle: {
-    type: Boolean,
-    default: false
-  },
-  inputMode: {
-    type: String,
-    default: 'manual'
   },
   nodeOptions: {
     type: Array,
@@ -220,9 +147,6 @@ const props = defineProps({
   nodeData: {
     type: Object
   },
-  workflowData: {
-    type: Object
-  }
 })
 
 const emit = defineEmits(['update:modelValue', 'change', 'mode-change'])
@@ -240,7 +164,6 @@ const componentMap = {
   switch: ElSwitch,
   inputNumber: ElInputNumber,
   textarea: ElInput, // textarea 也用 ElInput
-  function: BaseFunctionExpression // function 用自定义组件，支持不同的类型
 }
 
 // 获取组件
@@ -248,60 +171,63 @@ const getComponent = type => {
   return componentMap[type] || ElInput
 }
 
-const paramList = ref([])
+type FieldItem = {
+  id: string
+  type: string
+  attributes: Attributes
+  label: string
+  placeholder: string
+  disabled: boolean
+  defaultValue: string
+  options?: Array<{ label: string; value: string; desc?: string }>
+}
 
-// 处理字段配置
-const fields = computed(() => {
-  // console.log('props.formJson', props.formJson)
-  // eslint-disable-next-line vue/no-side-effects-in-computed-properties
-  // console.log('props.formJson.widgetList',props.nodeOptions,props.formJson.widgetList)
-  // console.log('fields====', fields.value)
-  props.formJson.widgetList.forEach((item, index) => {
-    item.options = item.options?.map(e => ({ ...e, type: item.attributes.paramType }))
-  })
-  // console.log('portSelects.value====', portSelects)
-  return (
-    props.formJson.widgetList?.map((widget, index) => ({
-      id: widget.id || `field_${index}`, // 为没有id的字段生成唯一id
-      type: widget.type,
-      label: widget.attributes?.label || widget.label,
-      placeholder: widget.attributes?.placeholder,
-      disabled: widget.attributes?.disabled,
-      rules: widget.rules || [],
-      attributes: widget.attributes || {},
-      defaultValue: props.inputMode === 'node' && !widget.defaultValue ? '' : widget.defaultValue,
-      options: widget.options || []
-    })) || []
-  )
-})
-
-// 自动填充默认值
+const fields = ref<Array<FieldItem>>()
 watch(
-  fields,
-  newFields => {
-    // console.log('field==watch==', newFields, portSelects)
-    newFields.forEach((field, index) => {
-      // console.log('field====', field)
-      if (
-        formData.value[field.id] === undefined &&
-        field.defaultValue !== undefined &&
-        field.defaultValue !== null &&
-        field.defaultValue !== ''
-      ) {
-        formData.value[field.id] = field.defaultValue
-        // console.log('field.defaultValue', field.defaultValue)
+  () => props.data,
+  val => {
+    if (!val || val.length === 0) {
+      formData.value = {}
+      return
+    }
+    fields.value = val.map((e, i) => {
+      const item = {} as FieldItem
+      item.id = `${e.paramName}_${i}`
+      item.type = e.widgetType
+      item.attributes = {
+        ...e.attributes,
+        placeholder: `请输入值`
       }
-      // 在ifelse的情况下需要判断是否有下拉列表如果没有则不能赋值
+      item.label = item.attributes?.label || e.paramName
+      item.placeholder = item.attributes?.placeholder
+      item.disabled = item.attributes?.disabled
+      // item.parentSource = val.source
+      // item.sourceType = val.sourceType
+      item.defaultValue = e.sourceType === 'node' && !e.source
+            ? ''
+            : e.source || e.defaultValue
+      item.options = (
+        props.nodeData.funcType === 'logic' &&
+        props.nodeData.logicData?.logicType === LogicType.GLOBAL_VARIABLE
+          ? getAllAvailableOptions(e)
+          : e.options
+      )?.map(e => ({ ...e, type: item.attributes.paramType }))
 
-      // console.log("====11=====")
-      // console.log('formData.value[field.id]===', formData.value[field.id])
-      // 20250826修复在迭代器连接的两个节点删除一个后，抽屉面板的下拉框无法自动选中的问题
-      // if(!formData.value[field.id] && props.inputMode === 'node') {
-      //   formData.value[field.id] = field.defaultValue = (portSelects[index][0] && portSelects[index][0].value)
-      // }
+      if (
+        formData.value[item.id] === undefined &&
+        item.defaultValue !== undefined &&
+        item.defaultValue !== null &&
+        item.defaultValue !== ''
+      ) {
+        formData.value[item.id] = item.defaultValue
+      }
+      return item
     })
   },
-  { immediate: true }
+  {
+    immediate: true,
+    deep: true
+  }
 )
 
 // 处理字段变化
@@ -319,16 +245,6 @@ watch(
       // console.log("=====formDaga====")
       emit('change', { fieldId: key, value: newData[key], formData: formData.value })
     }
-  },
-  { deep: true }
-)
-
-// 监听外部数据变化
-watch(
-  () => props.formJson,
-  () => {
-    // 重置表单数据
-    formData.value = {}
   },
   { deep: true }
 )

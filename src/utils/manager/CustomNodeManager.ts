@@ -72,37 +72,56 @@ function generatePorts(node: WorkflowNode, nodeHeight: number) {
   let inputPorts = []
   let outputPorts = []
 
-  const inputData = node.inputData.filter(e => e.sourceType == 'node')
+  const inputNodeList = node.inputData.filter(e => e.sourceType == 'node')
+  const isOnlyGlobal =
+    node.inputData.length === 1 && node.inputData.find(e => e.sourceType === 'global')
+  const inputData = inputNodeList.length
+    ? inputNodeList
+    : isOnlyGlobal
+    ? []
+    : [
+        {
+          portId: 'in_1',
+          attributes: {
+            paramType: 'string',
+            inputType: 'text',
+            label: '节点Id',
+            desc: ''
+          },
+          options: []
+        }
+      ]
   let inputPortCount = inputData.length || 1
 
-  for (let i = 0; i < inputPortCount; i++) {
+  inputData.forEach((item, i) => {
     const inPos = getPortPosition('left', inputPortCount, i, nodeHeight)
     inputPorts.push(
       createPortConfig(
-        inputData[i].portId,
+        item.portId,
         'in',
         inPos,
-        inputData[i].attributes.label,
-        inputData[i].attributes.desc,
-        inputData[i].attributes.paramType
+        item.attributes.label,
+        item.attributes.desc,
+        item.attributes.paramType
       )
     )
-  }
+  })
+
   const outputData = node.outputData
   let outputPortCount = outputData.length || 1
-  for (let i = 0; i < outputPortCount; i++) {
+  outputData.forEach((item, i) => {
     const outPos = getPortPosition('right', outputPortCount, i, nodeHeight)
     outputPorts.push(
       createPortConfig(
-        outputData[i].portId,
+        item.portId,
         'out',
         outPos,
-        outputData[i].attributes.label,
-        outputData[i].attributes.desc,
-        outputData[i].attributes.paramType
+        item.attributes.label,
+        item.attributes.desc,
+        item.attributes.paramType
       )
     )
-  }
+  })
 
   return { inputPorts, outputPorts }
 }

@@ -21,10 +21,6 @@
     <AttrPanelDrawer
       :visible="showAttrPanel"
       :nodeData="selectedNodeData"
-      :workflowData="workflowData"
-      :getAvailableSourceOptions="getAvailableSourceOptions"
-      :getAvailableTargetOptions="getAvailableTargetOptions"
-      :getAllAvailableOptions="getAllAvailableOptions"
       @close="onCloseAttrPanel"
       @addPortData="addPortData"
       @removePortData="removePortData"
@@ -37,11 +33,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick, provide, InjectionKey } from 'vue'
 import Designer from '@/components/designer/index.vue'
 import AttrPanelDrawer from '@/components/panels/AttrPanelDrawer.vue'
 import DndPanel from '@/components/panels/DndPanel.vue'
-import { LogicType, type WorkflowData } from '@/types/workflow'
+import { LogicType, OutputData, type WorkflowData, WorkflowNode } from '@/types/workflow'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import nodeIdFactory from '@/utils/factory/NodeIdFactory'
 
@@ -49,6 +45,13 @@ import TestDrawer from '@/components/TestDrawer/index.vue'
 
 import { BaseFunctionNodeType, useFunctionStore } from '@/store/modules/baseFunction'
 import { ExecutionRecordData } from '@/api/test'
+import {
+  getAllAvailableOptionsKey,
+  getAvailableSourceOptionsKey,
+  getAvailableTargetOptionsKey,
+  getOutputTargetInfoKey
+} from '@/injectKeys'
+import { WorkflowValidator } from '@/utils/workflow/WorkflowValidator'
 
 defineOptions({
   name: 'ruleEdit'
@@ -105,7 +108,7 @@ const showAttrPanel = ref(false)
 const selectedNodeData = ref<any>(null)
 
 // 属性面板事件处理
-function onShowAttrPanel({ nodeData }: any) {
+function onShowAttrPanel(nodeData: WorkflowNode) {
   selectedNodeData.value = nodeData
   // 如果抽屉已经打开，只是切换节点数据，不关闭抽屉
   if (!showAttrPanel.value && nodeData) {
@@ -147,96 +150,17 @@ function onNodeBaseDataUpdate(nodeId: string) {
   editorRef.value?.onNodeBaseDataUpdate(nodeId)
 }
 
-// 获取可用的上游节点列表
-function getAvailableSourceOptions(param: any) {
-  return editorRef.value?.getAvailableSourceOptions(selectedNodeData.value, param)
-}
-
-function getAllAvailableOptions(param: any) {
-  const node = selectedNodeData.value
-  if (!node || !param) return []
-  // 上游是条件的话 会继续往前找 直到找到第一个非条件的节点
-  const nodeList = workflowData.value.nodeList
-  const options = []
-  nodeList.forEach(node => {
-    if (
-      node.funcType === 'logic' &&
-      (node.logicData?.logicType === LogicType.GLOBAL_VARIABLE ||
-        node.logicData?.logicType === LogicType.GLOBAL_PARAM ||
-        node.logicData?.logicType === LogicType.IFELSE)
-    ) {
-      return
-    }
-    options.push({ label: node.id + ':' + node.title, value: node.id })
-  })
-  return options
-}
-
-function getAvailableTargetOptions() {
-  // console.log('222',workflowData)
-  return workflowData.value.nodeList.map(node => ({ label: node.title, value: node.id }))
-}
-
 // 另存对话框相关状态
 const testDrawerRef = ref<any>(null) // 测试抽屉引用
-
-/**
- * 调试功能：对比当前画布生成的Lua脚本与存储的Lua脚本
- * 通过 window.debugLuaScript 调用
- */
-const debugLuaScript = async () => {
-  try {
-    // 获取当前画布生成的Lua脚本
-    if (!editorRef.value) {
-      console.error('编辑器引用不存在')
-      return
-    }
-
-    const currentFlowData = await editorRef.value.getFlowData()
-    if (!currentFlowData) {
-      console.error('无法生成当前画布的Lua脚本')
-      return
-    }
-
-    const currentLuaScript = currentFlowData.jsCode
-
-    // 获取存储的Lua脚本
-    const storedLuaScript = workflowData.value.lua
-
-    if (!storedLuaScript) {
-      console.error('存储的Lua脚本为空')
-      return
-    }
-
-    // 进行字符串对比
-    if (currentLuaScript === storedLuaScript) {
-      console.log('✅ Lua数据一致')
-    } else {
-      console.log('❌ Lua数据不一致')
-      console.log('当前画布生成的Lua脚本:')
-      console.warn(currentLuaScript)
-      console.log('存储的Lua脚本:')
-      console.log(storedLuaScript)
-    }
-  } catch (error) {
-    console.error('调试Lua脚本对比失败:', error)
-    ElMessage.error('调试失败')
-  }
-}
 
 onMounted(async () => {
   // 添加浏览器事件监听
   window.addEventListener('beforeunload', handleBeforeUnload)
-
-  // 将调试函数挂载到window对象
-  ;(window as any).debugLuaScript = debugLuaScript
 })
 
 onUnmounted(() => {
   // 清理浏览器事件监听
   window.removeEventListener('beforeunload', handleBeforeUnload)
-  // 清理window对象上的调试函数
-  delete (window as any).debugLuaScript
 })
 
 // 工作流设计器组件引用
@@ -285,6 +209,141 @@ const closeTestDrawer = () => {
 
 // 定位位置
 let nodeId = ref(null)
+
+// 在方法体外部声明递归函数
+const findUpstreamNodes = (nodeId, isFromCondition, workflowData, visited) => {
+  if (visited.has(nodeId)) return []
+  visited.add(nodeId)
+  const nodeList = workflowData.value.nodeList || []
+  const edges = workflowData.value.edges || []
+  const node = nodeList.find(n => n.id === nodeId)
+  if (!node) {
+    console.error('findUpstreamNodes 未找到节点', nodeId)
+    return []
+  }
+  if (node.funcType === 'logic' && node.logicData?.logicType === 'ifelse') {
+    // 递归查找所有连到该条件节点的上游节点
+    const upstreamEdges = edges.filter(edge => edge.target === nodeId)
+    let result = []
+    for (const edge of upstreamEdges) {
+      result = result.concat(findUpstreamNodes(edge.source, true, workflowData, visited))
+    }
+    return result
+  } else {
+    // 普通节点，终止递归
+    return [{ node, isFromCondition }]
+  }
+}
+
+// 子孙组件使用 -------------------------------------------
+
+// 获取输出参数指向的目标节点信息
+const getOutputTargetInfo = (nodeData: WorkflowNode, outputParam: OutputData) => {
+  if (!nodeData || !workflowData.value) return '未连接'
+  const portId = outputParam.portId
+  const nodeId = nodeData.id
+  const edges = workflowData.value.edges || []
+  const nodeList = workflowData.value.nodeList || []
+
+  // 只精确匹配 source 和 sourcePort
+  const edge = edges.find((e: any) => e.source === nodeId && e.sourcePort === portId)
+  if (!edge) return '未连接'
+  const targetNode = nodeList.find((n: any) => n.id === edge.target)
+  if (!targetNode) return `节点${edge.target}`
+  return targetNode.title || targetNode.id
+}
+
+// 获取可用的上游节点列表
+const getAvailableSourceOptions = (param: any) => {
+  const node = selectedNodeData.value
+  if (!node || !param) return []
+
+  const edges = workflowData.value.edges.filter(e => e.target === node.id)
+  // console.log('edges===', edges, param)
+  const options = []
+  edges.map(e => {
+    const curEdgeSourceId = e.source
+    const sourceNode = workflowData.value.nodeList.find(n => n.id === curEdgeSourceId)
+    // console.log('sourceNode===', sourceNode)
+    if (!sourceNode) {
+      // 如果上游是迭代器的开始节点 则按迭代器的上游算
+      // 默认找不到就直接返回
+      return
+    }
+    // 如果source 或 target 任意一个是logic节点  则继续往前找
+    if (
+      (sourceNode.funcType === 'logic' && sourceNode.logicData.logicType == LogicType.IFELSE) ||
+      (node.funcType === 'logic' && node.logicData.logicType == LogicType.IFELSE)
+    ) {
+      // 递归查找所有上游节点
+      const visited = new Set()
+      const upstreamNodes = findUpstreamNodes(e.source, true, workflowData, visited)
+      for (const { node: upNode, isFromCondition } of upstreamNodes) {
+        options.push({
+          label: isFromCondition
+            ? `[条件]${upNode?.title || upNode.id}`
+            : upNode?.title || upNode.id,
+          value: upNode.id,
+          currentLabel: e.targetPort === param.portId ? param.attributes?.label : '',
+          currentPort: e.targetPort,
+          currentId: node.id,
+          currentSource: e.source
+        })
+      }
+      return
+    }
+    // 强制校验 类型
+    const outPort = sourceNode.outputData[0]
+    // console.log('outPort====', e, param)
+    if (outPort) {
+      //table 类型 需要校验subType
+      const sourceType = [param.type, param.subType]
+      const targetType = [[outPort.type, outPort.subType]]
+      if (WorkflowValidator.validateTypeCompatibility(sourceType, targetType)) {
+        options.push({
+          label: sourceNode?.title || e.source,
+          value: e.source,
+
+          currentId: e.targetPort === param.portId ? e.id : '',
+          currentLabel: e.targetPort === param.portId ? param.attributes?.label : '',
+          currentPort: e.targetPort,
+          currentSource: e.source
+        })
+        // paramName可能是为空值的
+      }
+    }
+  })
+  return options
+}
+
+const getAvailableTargetOptions = () => {
+  return workflowData.value.nodeList.map(node => ({ label: node.title, value: node.id }))
+}
+
+const getAllAvailableOptions = (param: any) => {
+  const node = selectedNodeData.value
+  if (!node || !param) return []
+  // 上游是条件的话 会继续往前找 直到找到第一个非条件的节点
+  const nodeList = workflowData.value.nodeList
+  const options = []
+  nodeList.forEach(node => {
+    if (
+      node.funcType === 'logic' &&
+      (node.logicData?.logicType === LogicType.GLOBAL_VARIABLE ||
+        node.logicData?.logicType === LogicType.GLOBAL_PARAM ||
+        node.logicData?.logicType === LogicType.IFELSE)
+    ) {
+      return
+    }
+    options.push({ label: node.id + ':' + node.title, value: node.id })
+  })
+  return options
+}
+
+provide(getOutputTargetInfoKey, getOutputTargetInfo)
+provide(getAvailableSourceOptionsKey, getAvailableSourceOptions)
+provide(getAvailableTargetOptionsKey, getAvailableTargetOptions)
+provide(getAllAvailableOptionsKey, getAllAvailableOptions)
 </script>
 
 <style scoped lang="scss">
@@ -295,7 +354,6 @@ let nodeId = ref(null)
   height: 100%;
   align-items: center;
   justify-content: center;
-
   position: relative;
 }
 

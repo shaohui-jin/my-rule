@@ -10,7 +10,6 @@
           class="remark-input"
           placeholder="请输入备注"
           rows="4"
-          :disabled="props.disabled"
           @blur="finishEditRemark"
           @input="finishEditRemark"
           @keydown.enter.exact.prevent="finishEditRemark"
@@ -24,38 +23,10 @@
           <div class="param-input-group">
             <!-- 手动输入模式 - 使用 SimpleFormRenderer -->
             <SimpleFormRenderer
-              :formJson="{
-                formConfig: {},
-                widgetList: [
-                  {
-                    id: `${param.paramName}_${idx}`,
-                    type: param.widgetType,
-                    label: param.paramName,
-                    parentSource: param.source,
-                    sourceType: param.sourceType,
-                    defaultValue:
-                      param.sourceType === 'node' && !param.source
-                        ? ''
-                        : param.source || param.defaultValue,
-                    options:
-                      nodeData.funcType === 'logic' &&
-                      nodeData.logicData?.logicType === LogicType.GLOBAL_VARIABLE
-                        ? getAllAvailableOptions(param)
-                        : param.options,
-                    rules: param.rules,
-                    attributes: {
-                      ...param.attributes,
-                      placeholder: `请输入值`
-                    }
-                  }
-                ]
-              }"
-              :showModeToggle="true"
+              :data="[param]"
               :nodeData="nodeData"
-              :disabled="props.disabled"
-              :workflowData="workflowData"
-              :input-mode="param.sourceType === 'node' ? 'node' : 'manual'"
               :node-options="getOptions(param, idx)"
+              :getAllAvailableOptions="getAllAvailableOptions"
               @change="e => onParamInputChange(param, e.value)"
               @mode-change="toggleInputMode(param)"
             />
@@ -66,22 +37,22 @@
       <div class="param-group-title">输出参数</div>
       <div class="param-list">
         <div v-for="(param, idx) in nodeData.outputData" :key="idx" class="param-row">
-          <el-tooltip :content="param.attributes?.paramSubType" placement="top">
-            <div class="param-label-col">
-              <span class="param-label">{{ param.paramName }}</span>
-              <span class="param-type-under">({{ param.type }})</span>
-            </div>
-          </el-tooltip>
           <div class="param-input-group">
+            <el-tooltip
+              :disabled="!param.attributes?.paramSubType"
+              :content="param.attributes?.paramSubType"
+              placement="top"
+            >
+              <div class="param-label-col">
+                <span class="param-label">{{ param.paramName }}</span>
+                <span class="param-type-under">({{ param.type }})</span>
+              </div>
+            </el-tooltip>
             <el-input
-              :model-value="
-                getOutputTargetInfo(nodeData, param, props.workflowData) === '未连接'
-                  ? '无'
-                  : getOutputTargetInfo(nodeData, param, props.workflowData)
-              "
+              :model-value="getOutputTargetInfo(nodeData, param)"
               disabled
               placeholder="目标节点"
-              style="width: 180px"
+              style="width: 180px; padding-left: 14px"
             />
           </div>
         </div>
@@ -91,19 +62,25 @@
 </template>
 
 <script setup lang="ts">
-import { toRefs, ref } from 'vue'
+import { toRefs, ref, inject } from 'vue'
 import SimpleFormRenderer from '@/components/funcForm/SimpleFormRenderer.vue'
-import { getOutputTargetInfo } from './panelUtils'
 import { ElTooltip } from 'element-plus'
-import { LogicType } from '@/types/workflow'
 import { ElMessage } from 'element-plus'
-const props = defineProps<{
-  nodeData: any
-  workflowData: any
-  disabled: boolean
-  getAvailableSourceOptions: (param: any) => any[]
-  getAllAvailableOptions: (param: any) => any[]
-}>()
+import {
+  getAllAvailableOptionsKey,
+  getAvailableSourceOptionsKey,
+  getOutputTargetInfoKey
+} from '@/injectKeys'
+
+const getOutputTargetInfo = inject(getOutputTargetInfoKey)!
+const getAvailableSourceOptions = inject(getAvailableSourceOptionsKey)!
+const getAllAvailableOptions = inject(getAllAvailableOptionsKey)!
+
+const props = defineProps({
+  nodeData: {
+    type: Object
+  }
+})
 
 const emit = defineEmits(['update:nodeBaseData', 'update:removePortData', 'update:addPortData'])
 
@@ -214,7 +191,7 @@ const updateLinkedParams = (sourceParam: any, sourceValue: string) => {
 const portSelects = []
 function getOptions(param, idx) {
   portSelects[idx] = []
-  let options = props.getAvailableSourceOptions(param)
+  let options = getAvailableSourceOptions(param)
   if (param.sourceType === 'node') {
     options.forEach(opt => {
       if (opt.label.includes('[条件]')) {
@@ -333,9 +310,9 @@ function getOptions(param, idx) {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  width: 60px;
-  min-width: 60px;
-  margin-right: 2px;
+  width: 70px;
+  min-width: 70px;
+  //margin-left: 10px;
   user-select: none;
   pointer-events: auto;
 }
@@ -361,11 +338,10 @@ function getOptions(param, idx) {
 }
 
 .param-input-group {
-  flex: 1;
+  flex: 1 1 0;
   display: flex;
   align-items: center;
   margin-left: 10px;
-  gap: 8px;
 }
 
 /* 确保 SimpleFormRenderer 内的表单控件宽度合适 */

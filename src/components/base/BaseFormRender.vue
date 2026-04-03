@@ -103,23 +103,15 @@
           </el-tooltip>
         </div>
         <!-- 模式切换按钮 -->
-        <!--showModeToggle为true是入参-->
-        <el-tooltip
-          :disabled="!field.attributes.paramTypeRecord"
-          content="数据类型切换"
-          placement="top"
-          :show-after="500"
-          popper-class="field-desc-tooltip"
-          :popper-style="{ maxWidth: '300px', wordWrap: 'break-word', wordBreak: 'break-all' }"
+        <el-button
+          class="mode-toggle-btn"
+          :disabled="!field.attributes.paramTypeRecord || inputMode === 'node'"
+          @click="$emit('mode-change')"
+          title="数据类型切换"
         >
-          <el-button
-            class="mode-toggle-btn"
-            :disabled="!field.attributes.paramTypeRecord || inputMode === 'node'"
-            @click="$emit('mode-change')"
           >
-            <el-icon><SwitchIcon /></el-icon>
-          </el-button>
-        </el-tooltip>
+          <el-icon><SwitchIcon /></el-icon>
+        </el-button>
       </div>
     </el-form-item>
     <div v-if="fields.length === 0" class="form-desc">-</div>
@@ -150,13 +142,9 @@ const props = defineProps({
     type: Object as PropType<FromConfig>,
     default: DEFAULT_FORM_CONFIG
   },
-  showModeToggle: {
-    type: Boolean,
-    default: true
-  },
   inputMode: {
     type: String,
-    default: 'manual'
+    default: 'input'
   },
   nodeOptions: {
     type: Array,

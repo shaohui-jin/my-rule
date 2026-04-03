@@ -51,7 +51,7 @@
               <span class="param-type-under">({{ param.type }})</span>
             </span>
             <el-input
-              :model-value="getOutputTargetInfo(nodeData, param, props.workflowData)"
+              :model-value="getOutputTargetInfo(nodeData, param)"
               disabled
               placeholder="目标"
               class="branch-target-input"
@@ -65,17 +65,16 @@
 </template>
 
 <script setup lang="ts">
-import { toRefs, defineEmits, computed, ref, PropType } from 'vue'
+import { toRefs, defineEmits, computed, ref, PropType, inject } from 'vue'
 import BaseFunctionInput from '@/components/base/BaseFunctionInput.vue'
-import { getOutputTargetInfo } from './panelUtils'
-import type { WorkflowData } from '@/types/workflow'
+import { getAvailableSourceOptionsKey, getOutputTargetInfoKey } from '@/injectKeys'
+
+const getOutputTargetInfo = inject(getOutputTargetInfoKey)
+const getAvailableSourceOptions = inject(getAvailableSourceOptionsKey)!
 
 const props = defineProps({
   nodeData: { type: Object, default: () => ({}) },
-  workflowData: { type: Object as PropType<WorkflowData>, default: () => ({}) },
   disabled: { type: Boolean, default: false },
-  getAvailableSourceOptions: { type: Function as PropType<(param: any) => any[]> },
-  getAvailableTargetOptions: { type: Function as PropType<() => any[]> },
   onParamSourceChange: { type: Function as PropType<(param: any) => any[]> },
   onParamInputChange: { type: Function as PropType<(param: any) => any[]> }
 })
@@ -115,7 +114,7 @@ const allInputOptions = computed(() => {
   const arr: { label: string; value: any; dataLabel: string }[] = []
   let idx = 0
   for (const param of nodeData.value.inputData || []) {
-    const options = props.getAvailableSourceOptions(param) || []
+    const options = getAvailableSourceOptions(param) || []
     for (const option of options) {
       arr.push({
         label: option.label,

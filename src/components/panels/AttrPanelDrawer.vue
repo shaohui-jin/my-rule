@@ -51,14 +51,10 @@
         :is="currentPanelComponent"
         :key="nodeData?.id"
         :nodeData="nodeData"
-        :workflowData="workflowData"
         :disabled="props.disabled"
         @update:addPortData="handleAddPortData"
         @update:removePortData="handleRemovePortData"
         @update:nodeBaseData="handleNodeBaseDataUpdate"
-        :getAvailableSourceOptions="getAvailableSourceOptions"
-        :getAvailableTargetOptions="getAvailableTargetOptions"
-        :getAllAvailableOptions="getAllAvailableOptions"
       />
     </div>
   </div>
@@ -66,7 +62,7 @@
 
 <script setup lang="ts">
 import { ref, computed, nextTick, PropType } from 'vue'
-import { LogicType, type WorkflowData } from '@/types/workflow'
+import { LogicType, WorkflowNode } from '@/types/workflow'
 import FuncPanel from './FuncPanel.vue'
 import ConditionPanel from './ConditionPanel.vue'
 import CalculatorPanel from './CalculatorPanel.vue'
@@ -76,11 +72,7 @@ import BaseNodeIcon from '@/components/base/BaseNodeIcon.vue'
 const props = defineProps({
   visible: { type: Boolean, default: false },
   disabled: { type: Boolean, default: false },
-  nodeData: { type: Object, default: () => ({}) },
-  workflowData: { type: Object as PropType<WorkflowData>, default: () => ({}) },
-  getAvailableSourceOptions: { type: Function as PropType<(param: any) => any[]> },
-  getAvailableTargetOptions: { type: Function as PropType<() => any[]> },
-  getAllAvailableOptions: { type: Function as PropType<(param: any) => any[]> }
+  nodeData: { type: Object as PropType<WorkflowNode>, default: () => ({}) }
 })
 
 /**

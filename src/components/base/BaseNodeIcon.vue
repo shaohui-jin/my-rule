@@ -19,17 +19,17 @@ const props = withDefaults(defineProps<Props>(), {
   size: 24
 })
 
+const colors = ['#722ed1', '#eb2f96', '#faad14', '#1890ff']
 const iconColor = ref()
 const iconText = ref()
 watchEffect(() => {
-  iconColor.value =
-    useFunctionStore()
-      .getFuncNode()
-      .find(e => e.type === props.type)?.iconColor || '#faad14'
-  iconText.value =
-    useFunctionStore()
-      .getFuncNode()
-      .find(e => e.type === props.type)?.icon || 'Fn'
+  iconColor.value = colors[Math.floor(Math.random() * colors.length)]
+
+  iconText.value = props.type
+    ?.split('_')
+    .map(e => e.substr(0, 1))
+    .join('')
+    .toLocaleUpperCase()
 })
 </script>
 

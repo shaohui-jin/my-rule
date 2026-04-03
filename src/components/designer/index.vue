@@ -1410,10 +1410,10 @@ function directContectNode(node: BaseFunctionNodeType, data: any) {
 }
 
 /**
- * 替换节点选中逻辑，选中节点时 emit('show-attr-panel', { nodeData })
+ * 替换节点选中逻辑，选中节点时 emit('show-attr-panel',  nodeData )
  */
-function onNodeSelected(nodeData: any) {
-  emit('show-attr-panel', { nodeData })
+function onNodeSelected(nodeData: WorkflowNode) {
+  emit('show-attr-panel', nodeData)
 }
 
 /**
@@ -1466,95 +1466,6 @@ function syncData() {
     const _node = graph.getCellById(node.id) as any
     node.isCollapsed = _node.isCollapsed
   })
-}
-
-function getAvailableSourceOptions(node: any, param: any) {
-  // console.log('getAvailableSourceOptions=====', node, param)
-  if (!node || !param) return []
-
-  const edges = workflowData.value.edges.filter(e => e.target === node.id)
-  // console.log('edges===', edges, param)
-  const options = []
-  edges.map(e => {
-    const curEdgeSourceId = e.source
-    const sourceNode = workflowData.value.nodeList.find(n => n.id === curEdgeSourceId)
-    // console.log('sourceNode===', sourceNode)
-    if (!sourceNode) {
-      // 如果上游是迭代器的开始节点 则按迭代器的上游算
-      // 默认找不到就直接返回
-      return
-    }
-    // 如果source 或 target 任意一个是logic节点  则继续往前找
-    if (
-      (sourceNode.funcType === 'logic' && sourceNode.logicData.logicType == LogicType.IFELSE) ||
-      (node.funcType === 'logic' && node.logicData.logicType == LogicType.IFELSE)
-    ) {
-      // 递归查找所有上游节点
-      const visited = new Set()
-      const upstreamNodes = findUpstreamNodes(e.source, true, workflowData, visited)
-      for (const { node: upNode, isFromCondition } of upstreamNodes) {
-        options.push({
-          label: isFromCondition
-            ? `[条件]${upNode?.title || upNode.id}`
-            : upNode?.title || upNode.id,
-          value: upNode.id,
-          currentLabel: e.targetPort === param.portId ? param.attributes?.label : '',
-          currentPort: e.targetPort,
-          currentId: node.id,
-          currentSource: e.source
-        })
-      }
-      return
-    }
-    // 强制校验 类型
-    const outPort = sourceNode.outputData[0]
-    // console.log('outPort====', e, param)
-    if (outPort) {
-      //table 类型 需要校验subType
-      const sourceType = [param.type, param.subType]
-      const targetType = [[outPort.type, outPort.subType]]
-      if (WorkflowValidator.validateTypeCompatibility(sourceType, targetType)) {
-        options.push({
-          label: sourceNode?.title || e.source,
-          value: e.source,
-          // currentPort: e.targetPort,currentId:node.id,
-          // currentSource: e.source === param.portId ? param.paramName : '',
-          // currentSource: e.targetPort === param.portId ? e.source : '',
-          currentId: e.targetPort === param.portId ? e.id : '',
-          currentLabel: e.targetPort === param.portId ? param.attributes?.label : '',
-          currentPort: e.targetPort,
-          currentSource: e.source
-        })
-        // paramName可能是为空值的
-      }
-    }
-  })
-  return options
-}
-
-// 在方法体外部声明递归函数
-function findUpstreamNodes(nodeId, isFromCondition, workflowData, visited) {
-  if (visited.has(nodeId)) return []
-  visited.add(nodeId)
-  const nodeList = workflowData.value.nodeList || []
-  const edges = workflowData.value.edges || []
-  const node = nodeList.find(n => n.id === nodeId)
-  if (!node) {
-    console.error('findUpstreamNodes 未找到节点', nodeId)
-    return []
-  }
-  if (node.funcType === 'logic' && node.logicData?.logicType === 'ifelse') {
-    // 递归查找所有连到该条件节点的上游节点
-    const upstreamEdges = edges.filter(edge => edge.target === nodeId)
-    let result = []
-    for (const edge of upstreamEdges) {
-      result = result.concat(findUpstreamNodes(edge.source, true, workflowData, visited))
-    }
-    return result
-  } else {
-    // 普通节点，终止递归
-    return [{ node, isFromCondition }]
-  }
 }
 
 const handlerEventListener = (node, view) => {
@@ -1682,8 +1593,7 @@ defineExpose({
   forceNode,
   selectNodeOnly,
   syncData,
-  getFlowData,
-  getAvailableSourceOptions
+  getFlowData
 })
 
 function validateWorkflow() {

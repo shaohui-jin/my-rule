@@ -58,7 +58,7 @@
         <div class="branch-row">
           <span class="branch-label">目标</span>
           <el-input
-            :model-value="getOutputTargetInfo(nodeData, param, props.workflowData)"
+            :model-value="getOutputTargetInfo(nodeData, param)"
             disabled
             placeholder="目标"
             class="branch-target-input"
@@ -80,19 +80,20 @@
 </template>
 
 <script setup lang="ts">
-import { toRefs, defineEmits, computed, ref } from 'vue'
-import { getOutputTargetInfo } from './panelUtils'
+import { toRefs, defineEmits, computed, ref, inject } from 'vue'
 import BaseFunctionInput from '@/components/base/BaseFunctionInput.vue'
+import { getAvailableSourceOptionsKey, getOutputTargetInfoKey } from '@/injectKeys'
+
+const getOutputTargetInfo = inject(getOutputTargetInfoKey)
+const getAvailableSourceOptions = inject(getAvailableSourceOptionsKey)
 
 const props = defineProps<{
   nodeData: any
-  workflowData: any
   disabled: boolean
-  getAvailableSourceOptions: (param: any) => any[]
   onParamSourceChange: (param: any, value: any) => void
   onParamInputChange: (param: any, value: any) => void
-  getAvailableTargetOptions: () => any[]
 }>()
+
 const emit = defineEmits(['update:nodeBaseData', 'update:addPortData', 'update:removePortData'])
 const { nodeData } = toRefs(props)
 
@@ -128,7 +129,7 @@ const allInputOptions = computed(() => {
   const arr: { label: string; value: any; dataLabel: string }[] = []
   let idx = 0
   for (const param of nodeData.value.inputData || []) {
-    const options = props.getAvailableSourceOptions(param) || []
+    const options = getAvailableSourceOptions(param) || []
     for (const option of options) {
       arr.push({
         label: option.label,

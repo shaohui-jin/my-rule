@@ -11,6 +11,8 @@ export interface Attributes {
   inputType: string //
   label: string // 字段文案
   desc?: string // 字段描述
+  placeholder?: string
+  disabled?: boolean
   // [key: string]: any
 }
 /**
@@ -22,7 +24,7 @@ export interface InputData {
   subType?: string // 参数子类型
   defaultValue?: any // 默认值
   source: string // 来源节点ID 或者输入框的字符串
-  sourceType?: 'input' | 'node' // 来源类型
+  sourceType?: 'input' | 'node' | 'global' // 来源类型 global: 全局 node: 联线可选节点， input: 文本输入节点，
   sourceIndex?: string // 来源索引
   portId?: string // 唯一端口ID
   widgetType?: string // 控件类型
@@ -84,7 +86,6 @@ export interface WorkflowNode {
   height?: number
   children?: string[]
   isCollapsed?: boolean
-  version?: string
 }
 
 export interface GroupNodeData {
