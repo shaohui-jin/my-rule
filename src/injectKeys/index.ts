@@ -12,7 +12,9 @@ export const getOutputTargetInfoKey: InjectionKey<GetOutputTargetInfo> =
   Symbol('getOutputTargetInfo')
 
 // 获取可用的上游节点列表
-export type GetAvailableSourceOptions = (outputParam: OutputData) => string
+export type GetAvailableSourceOptions = (
+  outputParam: OutputData
+) => Array<{ label: string; value: string }>
 export const getAvailableSourceOptionsKey: InjectionKey<GetAvailableSourceOptions> = Symbol(
   'getAvailableSourceOptions'
 )
