@@ -52,14 +52,14 @@ function onNodeMouseLeave(funcId: string) {
   position: absolute;
   top: 10px;
   left: 10px;
-  height: calc(100% - 50px);
-  width: 100px;
+  height: calc(100% - 20px);
+  //width: 100px;
   display: flex;
   flex-direction: column;
+  //border: 1px solid red;
   //justify-content: space-between;
   gap: 10px;
   min-height: 0;
-  padding-right: 10px;
   z-index: 2000;
   .dnd-panel-item {
     width: 80px;

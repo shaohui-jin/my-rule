@@ -1,17 +1,6 @@
 <template>
   <div class="workflow-editor-outer" id="workflowEditorOuter">
     <div class="workflow-editor">
-      <!-- 规则名展示区：左下角，始终显示 -->
-      <div class="rule-name-indicator">
-        当前编辑规则：{{
-          props.data.ruleName &&
-          (props.data.ruleName.trim() !== '' ? props.data.ruleName : '空') +
-            '( id:' +
-            props.data.id +
-            ' )'
-        }}
-      </div>
-      <div class="x6-tooltip common-tip" v-show="visible">{{ content }}</div>
       <!-- 画布容器 -->
       <div ref="container" class="graph-container" tabindex="0" />
 
@@ -68,6 +57,7 @@ import { Graph, Shape, Dnd } from '@antv/x6'
 import { InputData, LogicType, type WorkflowData, WorkflowNode } from '@/types/workflow'
 import { CustomNodeManager, getCustomNodeConfig } from '@/utils/manager/CustomNodeManager'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useRouter } from 'vue-router'
 import WorkflowValidationModal from '@/components/panels/WorkflowValidationModal.vue'
 import { JsCodeParser } from '@/utils/parser/JsCodeParser'
 import { FunctionNode } from '@/api/workflow/WorkFlowApi'
@@ -249,6 +239,7 @@ const initGraph = () => {
 
   graph = new Graph({
     container: container.value,
+    background: { color: '#F2F7FA' },
     panning: true, // 允许“拖拽空白区域平移画布”（手抓移动视图）。
     grid: false, // 是否显示网格背景。false 表示不显示网格（也通常不启用吸附到网格）
     autoResize: true, // 容器尺寸变化时自动调整画布尺寸（等价于监听容器 resize 并调用 graph.resize，你代码里也额外手动做了 resize，更稳）。
@@ -931,8 +922,6 @@ function updateEdgeConnectorBasedOnDistance(edge: any) {
     // 获取源节点和目标节点的位置及尺寸
     const sourceBBox = sourceCell.getBBox()
     const targetBBox = targetCell.getBBox()
-    // console.log(sourceCell.size(), 'size')
-    // console.log(targetCell.size(), 'size')
     // 计算两个节点中心点之间的距离
     const sourceCenterX = sourceBBox.center.x
     const sourceCenterY = sourceBBox.center.y
@@ -942,21 +931,13 @@ function updateEdgeConnectorBasedOnDistance(edge: any) {
     const distance = Math.sqrt(
       Math.pow(targetCenterX - sourceCenterX, 2) + Math.pow(targetCenterY - sourceCenterY, 2)
     )
-    // if (distance < 400) {
-    //   edge.setRouter('normal')
-    //   edge.setConnector('normal');
-    // } else {
-    //   edge.setRouter('manhattan')
-    //   edge.setConnector('rounded', { radius: 30 });
-    // }
+
     const sourceHeight = sourceCell.size().height
     const targetHeight = targetCell.size().height
     // 如果距离小于阈值（例如150像素），使用直线连接；否则使用曲线连接
     // 当前是水平有重叠
     if (targetCenterX - sourceCenterX < 400) {
       // 同时垂直有重叠
-      // console.log('水平重叠距离小于300，使用直线连接', targetCenterY - sourceCenterY, (targetHeight / 2 + sourceHeight / 2))
-      // console.log('===', targetBBox.height / 2 + sourceBBox.height / 2)
       if (Math.abs(targetCenterY - sourceCenterY) < targetHeight / 2 + sourceHeight / 2) {
         // console.log('垂直重叠距离小于300，使用直线连接')
         edge.setRouter('normal')
@@ -978,13 +959,6 @@ function validateEdgeTypeAndSetColor(edge: any, isDecode: boolean = false) {
     edgeCorrectionManager.validateEdgeTypeAndSetColor(edge, isDecode)
   }
 }
-
-/**
- * 添加提示
- */
-const visible = ref(false)
-
-const content = ref('')
 
 const resetWorkflowData = (showMessage = true) => {
   workflowData.value = {
@@ -1054,17 +1028,6 @@ function checkValidate() {
   return true
 }
 
-async function doSave() {
-  if (!checkValidate()) return null
-  // 验证工作流是否合法
-  const validRst = validateWorkflow()
-  if (!validRst) return null
-  // 获取工作流数据
-  const flowData = await getFlowData()
-  if (!flowData) return null
-  return flowData
-}
-
 async function getFlowData() {
   const workFlowJson = workflowData.value
   const allFuncId = getFuncIdList(workFlowJson)
@@ -1129,13 +1092,24 @@ const executeImport = (importData: any) => {
   }
 }
 
+const router = useRouter()
 /**
  * 开始拖拽预览
  * @param type 节点类型
  * @param item 节点数据
  * @param e 鼠标事件
  */
-const startDragPreview = (item: BaseFunctionNodeType, e: MouseEvent) => {
+const startDragPreview = async (item: BaseFunctionNodeType, e: MouseEvent) => {
+  if (item.type === LogicType.ADD) {
+    const res = await ElMessageBox.confirm('是否跳转新增函数?', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning',
+      draggable: true
+    })
+    router.push({ name: 'functionEdit' })
+    return
+  }
   if (!graph || !dnd) return
   let nodeData = {
     ...JSON.parse(JSON.stringify(item.template)),
@@ -1663,251 +1637,101 @@ function findUpstreamNonConditionNodes(nodeId: string, workflowData: any): strin
   width: 100%;
   height: 100%;
   position: relative;
-}
+  /* 工作流编辑器主体 */
+  .workflow-editor {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    background: var(--el-bg-color, #fff);
+    overflow: hidden;
 
-/* 工作流编辑器主体 */
-.workflow-editor {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  background: var(--el-bg-color, #fff);
-  overflow: hidden;
-}
-
-/* 画布容器 */
-.graph-container {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  :deep(.snapline) {
-    border-color: var(--el-color-primary, #1890ff);
-    border-style: dashed;
-    .x6-widget-snapline-vertical,
-    .x6-widget-snapline-horizontal {
-      stroke: var(--el-color-primary, #1890ff);
-      stroke-width: 1px;
-      stroke-dasharray: 3, 3;
+    /* 画布容器 */
+    .graph-container {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      :deep(.snapline) {
+        border-color: var(--el-color-primary, #1890ff);
+        border-style: dashed;
+        .x6-widget-snapline-vertical,
+        .x6-widget-snapline-horizontal {
+          stroke: var(--el-color-primary, #1890ff);
+          stroke-width: 1px;
+          stroke-dasharray: 3, 3;
+        }
+      }
+      :deep(.x6-port-in) {
+        .v-line:last-child {
+          font-size: 13px;
+          fill: var(--el-color-warning, #e8c38e);
+        }
+      }
+      :deep(.x6-port-out) {
+        .v-line:last-child {
+          font-size: 13px;
+          fill: var(--el-color-warning, #e8c38e);
+        }
+      }
     }
-  }
-  :deep(.x6-port-in) {
-    .v-line:last-child {
-      font-size: 13px;
-      fill: var(--el-color-warning, #e8c38e);
+
+    /* 小地图容器 */
+    .minimap-container {
+      position: absolute;
+      right: 20px;
+      bottom: 20px;
+      width: 200px;
+      height: 150px;
+      background: var(--el-bg-color-overlay, var(--el-bg-color, #fff));
+      border-radius: 8px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+      z-index: 100;
     }
-  }
-  :deep(.x6-port-out) {
-    .v-line:last-child {
-      font-size: 13px;
-      fill: var(--el-color-warning, #e8c38e);
+
+    /* 工具栏 */
+    .canvas-actions {
+      position: absolute;
+      left: 50%;
+      bottom: 10px;
+      transform: translateX(-50%);
+      z-index: 100;
+      background: none;
+      box-shadow: none;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      padding: 4px;
+      border-radius: 4px;
+      //border: 1px solid gray;
+      //background: var(--el-bg-color-overlay, var(--el-bg-color, #fff));
+      svg {
+        cursor: pointer;
+      }
     }
-  }
-}
 
-/* 小地图容器 */
-.minimap-container {
-  position: absolute;
-  right: 20px;
-  bottom: 20px;
-  width: 200px;
-  height: 150px;
-  background: var(--el-bg-color-overlay, var(--el-bg-color, #fff));
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  z-index: 100;
-}
+    .workflow-actions {
+      position: absolute;
+      right: 10px;
+      top: 10px;
+      display: flex;
+      gap: 10px;
+      z-index: 100;
+      //height: 64px;
+      //line-height: 64px;
+      padding: 4px;
+      border-radius: 4px;
+      //border: 1px solid gray;
+      //background: var(--el-bg-color-overlay, var(--el-bg-color, #fff));
+      div {
+        user-select: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
 
-/* 工具栏 */
-.canvas-actions {
-  position: absolute;
-  left: 50%;
-  bottom: 10px;
-  transform: translateX(-50%);
-  z-index: 100;
-  background: none;
-  border: none;
-  box-shadow: none;
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  padding: 4px;
-  border-radius: 4px;
-  background: var(--el-bg-color-overlay, var(--el-bg-color, #fff));
-  svg {
-    cursor: pointer;
-  }
-}
-
-.workflow-actions {
-  position: absolute;
-  right: 10px;
-  top: 10px;
-  display: flex;
-  gap: 10px;
-  z-index: 100;
-  //height: 64px;
-  //line-height: 64px;
-  padding: 4px;
-  border-radius: 4px;
-  background: var(--el-bg-color-overlay, var(--el-bg-color, #fff));
-  div {
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-  }
-}
-
-/* 属性面板抽屉 */
-.custom-drawer-panel {
-  position: absolute;
-  right: 0;
-  top: 0;
-  width: 300px;
-  height: 100%;
-  background: var(--el-bg-color-overlay, var(--el-bg-color, #fff));
-  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-  padding: 20px;
-  box-sizing: border-box;
-}
-
-/* 属性面板标题 */
-.drawer-title {
-  font-size: 18px;
-  font-weight: 500;
-  margin-bottom: 20px;
-  color: var(--el-text-color-primary, #333);
-}
-
-.toolbar {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  z-index: 100;
-  display: flex;
-  gap: 10px;
-  background: var(--el-bg-color-overlay, var(--el-bg-color, #fff));
-  padding: 10px;
-  border-radius: 4px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-}
-
-/* 规则名展示区：左下角绝对定位，风格与工具栏协调 */
-.rule-name-indicator {
-  position: absolute;
-  left: 20px;
-  bottom: 8px;
-  z-index: 110;
-  background: none;
-  border-radius: 0;
-  box-shadow: none;
-  padding: 0;
-  font-size: 12px;
-  color: var(--el-text-color-secondary, #999);
-  font-weight: 500;
-  pointer-events: none;
-  user-select: none;
-}
-
-.rule-status {
-  position: absolute;
-  left: 20px;
-  bottom: 28px;
-  z-index: 110;
-  background: none;
-  border-radius: 0;
-  box-shadow: none;
-  padding: 0;
-  font-size: 24px;
-  color: var(--el-text-color-secondary, #999);
-  font-weight: 500;
-  pointer-events: none;
-  user-select: none;
-}
-
-.ungroup-btn {
-  width: 20px !important;
-  height: 20px !important;
-  padding: 0 !important;
-  border: 1px solid var(--el-border-color, #d9d9d9) !important;
-  background: rgba(255, 255, 255, 0.9) !important;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  transition: all 0.3s ease !important;
-}
-
-.ungroup-btn:hover {
-  border-color: var(--el-color-danger, #ff4d4f) !important;
-  color: var(--el-color-danger, #ff4d4f) !important;
-  transform: scale(1.1) !important;
-}
-
-.ungroup-btn-inner {
-  font-size: 14px;
-  line-height: 1;
-  color: inherit;
-}
-
-/* 滚动条样式  */
-.table-container::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-.table-container::-webkit-scrollbar-track {
-  background: var(--el-fill-color-light, #f1f1f1);
-  border-radius: 4px;
-}
-.table-container::-webkit-scrollbar-thumb {
-  background: var(--el-border-color, #c1c1c1);
-  border-radius: 4px;
-}
-.table-container::-webkit-scrollbar-thumb:hover {
-  background: var(--el-border-color-dark, #a8a8a8);
-}
-
-/* 确认框样式 */
-:global(.decision-table-confirm-dialog) {
-  z-index: 10000 !important;
-}
-:global(.decision-table-confirm-dialog .el-message-box) {
-  z-index: 10000 !important;
-}
-
-/* 创建节点样式 */
-.common-tip {
-  max-width: 300px;
-  color: #fff;
-  border: 1px solid #303133;
-  background: #303133;
-  border-radius: 4px;
-  padding: 5px 11px;
-  z-index: 100;
-  position: absolute;
-  left: -1000px;
-  top: -1000px;
-  font-size: 13px;
-  &:before {
-    content: '';
-    position: absolute;
-    bottom: -5px;
-    width: 10px;
-    height: 10px;
-    background: #303133;
-    transform: rotate(45deg);
-  }
-}
-
-.x6-tiptip {
-  &:before {
-    content: '';
-    position: absolute;
-    left: -5px;
-    top: 10px;
-    width: 10px;
-    height: 10px;
-    background: #303133;
-    transform: rotate(45deg);
+        &:hover {
+          color: red;
+        }
+      }
+    }
   }
 }
 </style>

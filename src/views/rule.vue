@@ -33,12 +33,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick, provide, InjectionKey } from 'vue'
+import { ref, onMounted, onUnmounted, provide } from 'vue'
 import Designer from '@/components/designer/index.vue'
 import AttrPanelDrawer from '@/components/panels/AttrPanelDrawer.vue'
 import DndPanel from '@/components/panels/DndPanel.vue'
 import { LogicType, OutputData, type WorkflowData, WorkflowNode } from '@/types/workflow'
-import { ElMessage, ElMessageBox } from 'element-plus'
 import nodeIdFactory from '@/utils/factory/NodeIdFactory'
 
 import TestDrawer from '@/components/TestDrawer/index.vue'

@@ -52,7 +52,8 @@ export enum LogicType {
   IFELSE = 'if_else',
   GLOBAL_PARAM = 'global_param',
   GLOBAL_VARIABLE = 'global_variable',
-  CALCULATOR = 'calculator'
+  CALCULATOR = 'calculator',
+  ADD = '+'
 }
 
 /**

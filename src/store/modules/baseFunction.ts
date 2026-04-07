@@ -7,7 +7,7 @@ export type BaseFunctionNodeType = {
   title: string // 面板展示名称（DndPanel 标题）
   show?: boolean // DndPanel 悬停时会写入，外部可用于控制气泡/提示显隐
   text?: string //  预留的辅助描述字段（未实际使用）【暂未使用】
-  template: Partial<WorkflowNode> // 拖拽到画布时克隆的节点模板（由 Designer/DnD 使用）
+  template: Partial<WorkflowNode> | null // 拖拽到画布时克隆的节点模板（由 Designer/DnD 使用）
 }
 
 const BaseFunctionNode: BaseFunctionNodeType[] = [
@@ -208,6 +208,12 @@ const BaseFunctionNode: BaseFunctionNodeType[] = [
         }
       ]
     }
+  },
+  {
+    funcId: '999',
+    type: LogicType.ADD,
+    title: '添加函数',
+    template: null
   }
 ]
 
