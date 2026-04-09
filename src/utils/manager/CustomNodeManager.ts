@@ -251,30 +251,6 @@ export function getCustomNodeConfig(node: WorkflowNode) {
         'xlink:href': VITE_PUBLIC_PATH + '/rsvg/InfoCircleOutlined.svg',
         zIndex: 10,
         event: 'node:info_mouseenter'
-      },
-      copyButton: {
-        width: 1,
-        height: 28,
-        refX: '100%',
-        refX2: -60,
-        refY: -28,
-        cursor: 'pointer',
-        'xlink:href': VITE_PUBLIC_PATH + '/rsvg/copy.svg',
-        zIndex: 10,
-        strokeOpacity: 0,
-        event: 'node:copy_mouseenter'
-      },
-      delButton: {
-        width: 1,
-        height: 28,
-        refX: '100%',
-        refX2: -40,
-        refY: -28,
-        cursor: 'pointer',
-        'xlink:href': VITE_PUBLIC_PATH + '/rsvg/DeleteOutlined.svg',
-        zIndex: 10,
-        strokeOpacity: 0,
-        event: 'node:del_mouseenter'
       }
     },
     ports: {
@@ -351,14 +327,6 @@ export function getCustomNodeConfig(node: WorkflowNode) {
       {
         tagName: 'image',
         selector: 'infoButton'
-      },
-      {
-        tagName: 'image',
-        selector: 'copyButton'
-      },
-      {
-        tagName: 'image',
-        selector: 'delButton'
       }
     ]
   }

@@ -13,12 +13,6 @@ export type WorkflowFunction = {
   handleFit: () => void
   // 一键布局功能
   handleLayout: () => void
-  // 撤销操作
-  handleUndo: () => void
-  // 重做操作
-  handleRedo: () => void
-  // 清空画布
-  handleNew: (after: () => void) => void
   // 导入工作流数据
   handleImport: (after: (any) => void) => void
   // 导出工作流数据
@@ -30,9 +24,6 @@ export const defaultWorkflowFunction: WorkflowFunction = {
   handleShowMiniMap: () => undefined,
   handleFit: () => undefined,
   handleLayout: () => undefined,
-  handleUndo: () => undefined,
-  handleRedo: () => undefined,
-  handleNew: (after: () => void) => undefined,
   handleImport: (after: (any) => void) => undefined,
   handleExport: (before: () => void) => undefined
 }
@@ -151,27 +142,6 @@ export const layout = (graph: Graph) => {
   // 布局后自动居中画布内容
   graph.centerContent()
   graph.stopBatch('layout')
-}
-
-// 撤销操作
-export const handleUndo = (graph: Graph) => {
-  graph.canUndo() && graph.undo()
-}
-
-// 重做操作
-export const handleRedo = (graph: Graph) => {
-  graph.canRedo() && graph.redo()
-}
-
-// 清空画布
-export const handleNew = (after: () => void) => {
-  ElMessageBox.confirm('新建将清空画布，是否继续？', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    typeof after === 'function' ? after() : null
-  })
 }
 
 // 导入工作流数据

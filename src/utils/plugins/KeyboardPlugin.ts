@@ -1,18 +1,57 @@
 import { Keyboard } from '@antv/x6'
 import type { Graph } from '@antv/x6'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { createNewNode } from '@/utils/factory/NodeFactory'
 import { type WorkflowData } from '@/types/workflow'
 import type { GroupManager } from '@/utils/manager/GroupManager'
 import { unref, Ref } from 'vue'
+import nodeIdFactory from '@/utils/factory/NodeIdFactory'
+import { EmitFn } from '@vue/runtime-core'
 
 // 全局变量保存复制的原始数据
 let copiedNodeData: any[] = []
 
+/** 画布键盘操作标识（batch、日志、配置等） */
+export const KEYBOARD = {
+  UNDO: 'undo',
+  REDO: 'redo',
+  DELETE: 'delete',
+  COPY: 'copy',
+  PASTE: 'paste',
+  GROUP: 'group',
+  UNGROUP: 'ungroup',
+  CLEAR: 'clear'
+} as const
+
+export type KeyboardAction = (typeof KEYBOARD)[keyof typeof KEYBOARD]
+
+/** 单键或多键（Win ctrl / Mac cmd） */
+export type KeyboardBinding = string | readonly string[]
+
+/** 以操作 id（KEYBOARD 的值）为键，供 bindKey / triggerKey 使用：KeyboardKey[KEYBOARD.UNDO] */
+export const KeyboardKey = {
+  [KEYBOARD.UNDO]: 'ctrl+z',
+  [KEYBOARD.REDO]: 'ctrl+y',
+  [KEYBOARD.DELETE]: 'delete',
+  [KEYBOARD.COPY]: ['ctrl+c', 'cmd+c'] as const,
+  [KEYBOARD.PASTE]: ['ctrl+v', 'cmd+v'] as const,
+  [KEYBOARD.GROUP]: 'g',
+  [KEYBOARD.UNGROUP]: 'ctrl+g',
+  [KEYBOARD.CLEAR]: 'ctrl+delete'
+} as const satisfies Record<KeyboardAction, KeyboardBinding>
+
+export type KeyboardKeyId = keyof typeof KeyboardKey
+
+function toBindKey(binding: KeyboardBinding): string | string[] {
+  return typeof binding === 'string' ? binding : [...binding]
+}
+
 export function registerKeyboardPlugins(
   graph: Graph,
-  groupManager?: GroupManager,
-  workflowData?: Ref<WorkflowData>
+  groupManager: GroupManager,
+  workflowData: Ref<WorkflowData>,
+  selectedNodeData: Ref<any>,
+  emit: EmitFn
 ) {
   const keyboard = new Keyboard({
     enabled: true,
@@ -20,19 +59,15 @@ export function registerKeyboardPlugins(
   })
   graph.use(keyboard)
   // 撤销操作
-  graph.bindKey('ctrl+z', () => {
-    if (graph.canUndo()) {
-      graph.undo()
-    }
+  graph.bindKey(toBindKey(KeyboardKey[KEYBOARD.UNDO]), () => {
+    graph.canUndo() && graph.undo()
   })
   // 重做操作
-  graph.bindKey('ctrl+y', () => {
-    if (graph.canRedo()) {
-      graph.redo()
-    }
+  graph.bindKey(toBindKey(KeyboardKey[KEYBOARD.REDO]), () => {
+    graph.canRedo() &&   graph.redo()
   })
   // 删除操作
-  graph.bindKey('delete', () => {
+  graph.bindKey(toBindKey(KeyboardKey[KEYBOARD.DELETE]), () => {
     const selectedCells = graph.getSelectedCells()
     if (selectedCells.length > 0) {
       graph.removeCells(selectedCells)
@@ -40,7 +75,7 @@ export function registerKeyboardPlugins(
     }
   })
   // 复制操作
-  graph.bindKey(['ctrl+c', 'cmd+c'], () => {
+  graph.bindKey(toBindKey(KeyboardKey[KEYBOARD.COPY]), () => {
     const selectedCells = graph.getSelectedCells()
     if (selectedCells.length === 0) {
       ElMessage.warning('请先选择要复制的节点')
@@ -74,7 +109,7 @@ export function registerKeyboardPlugins(
     }
   })
   // 粘贴操作
-  graph.bindKey(['ctrl+v', 'cmd+v'], () => {
+  graph.bindKey(toBindKey(KeyboardKey[KEYBOARD.PASTE]), () => {
     try {
       if (copiedNodeData.length === 0) {
         ElMessage.warning('剪贴板为空')
@@ -100,27 +135,49 @@ export function registerKeyboardPlugins(
   })
 
   // 分组操作
-  if (groupManager) {
-    graph.bindKey('g', () => {
-      const selectedCells = graph.getSelectedCells()
-      const selectedNodes = selectedCells.filter(
-        (cell: any) => cell.isNode && cell.isNode()
-      ) as any[]
-      groupManager.createGroup(selectedNodes)
-    })
-    graph.bindKey('ctrl+g', e => {
-      e.preventDefault()
-      const selectedCells = graph.getSelectedCells()
-      const selectedNodes = selectedCells.find((cell: any) => cell.isNode && cell.isNode()) as any
-      const _workflowData = unref(workflowData)
-      const has = _workflowData.groupList.find(e => e.id === selectedNodes.id)
-      if (has) {
-        groupManager.ungroup(selectedNodes)
-      } else {
-        ElMessage.warning('无法取消非分组对象')
-      }
-    })
-  }
+  graph.bindKey(toBindKey(KeyboardKey[KEYBOARD.GROUP]), () => {
+    const selectedCells = graph.getSelectedCells()
+    const selectedNodes = selectedCells.filter((cell: any) => cell.isNode && cell.isNode()) as any[]
+    groupManager.createGroup(selectedNodes)
+  })
+  graph.bindKey(toBindKey(KeyboardKey[KEYBOARD.UNGROUP]), e => {
+    e.preventDefault()
+    const selectedCells = graph.getSelectedCells()
+    const selectedNodes = selectedCells.find((cell: any) => cell.isNode && cell.isNode()) as any
+    const _workflowData = unref(workflowData)
+    const has = _workflowData.groupList.find(e => e.id === selectedNodes.id)
+    if (has) {
+      groupManager.ungroup(selectedNodes)
+    } else {
+      ElMessage.warning('无法取消非分组对象')
+    }
+  })
 
+  // 清空画布
+  graph.bindKey(toBindKey(KeyboardKey[KEYBOARD.CLEAR]), () => {
+    ElMessageBox.confirm('画布将清空，是否继续？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    }).then(() => {
+      workflowData.value = {
+        id: workflowData.value.id,
+        ruleName: workflowData.value.ruleName,
+        nodeList: [],
+        edges: [],
+        groupList: [],
+        lua: ''
+      }
+      graph.clearCells()
+      graph.cleanHistory()
+      selectedNodeData.value = null
+      if (typeof nodeIdFactory !== 'undefined' && nodeIdFactory.reset) {
+        nodeIdFactory.reset(1)
+      }
+      ElMessage.success('画布已清空')
+      // 通知父组件数据已更新
+      emit('update:workflow', workflowData.value)
+    })
+  })
   return keyboard
 }

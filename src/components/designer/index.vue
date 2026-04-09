@@ -30,6 +30,13 @@
         </el-tooltip>
       </div>
       <div class="workflow-actions">
+        <span>ctrl + z 撤销</span>
+        <span>ctrl + y 重做</span>
+        <span>ctrl + delete 清空</span>
+        <!--                <span>ctrl + 导入</span>-->
+        <!--                <span>ctrl + 导出</span>-->
+        <!--                <span>ctrl + 测试</span>-->
+        <!--                <span>ctrl + 编译</span>-->
         <div v-for="w in workflowAction" :key="w.txt" @click="w.fn">
           <component :is="w.comp" />
           {{ w.txt }}
@@ -70,7 +77,7 @@ import { GroupManager } from '@/utils/manager/GroupManager'
 import { createNewNode, createX6Node } from '@/utils/factory/NodeFactory'
 import nodeIdFactory from '@/utils/factory/NodeIdFactory'
 
-import { registerKeyboardPlugins } from '@/utils/plugins/KeyboardPlugin'
+import { KEYBOARD, KeyboardKey, registerKeyboardPlugins } from '@/utils/plugins/KeyboardPlugin'
 import { registerX6Plugins } from '@/utils/plugins/X6Plugin'
 import {
   handleCollapse,
@@ -78,10 +85,7 @@ import {
   handleFit,
   handleImport,
   handleLayout,
-  handleNew,
-  handleRedo,
-  handleShowMiniMap,
-  handleUndo
+  handleShowMiniMap
 } from '@/utils/plugins/WorkflowPlugin'
 
 // 引入工具栏图片
@@ -170,9 +174,6 @@ const canvasAction = ref(
 // 流程工具栏
 const workflowAction = ref(
   markRaw([
-    { txt: '撤销', comp: Reset, fn: () => handleUndo(graph) },
-    { txt: '恢复', comp: Recover, fn: () => handleRedo(graph) },
-    { txt: '清空', comp: Clear, fn: () => handleNew(resetWorkflowData) },
     { txt: '导入', comp: Import, fn: () => handleImport(executeImport) },
     { txt: '导出', comp: Export, fn: () => handleExport(workflowData, syncData) },
     { txt: '测试', comp: Test, fn: () => handleTest() },
@@ -354,7 +355,7 @@ const initGraph = () => {
   registerX6Plugins(graph, container.value, minimapContainer.value)
 
   // 注册键盘插件
-  registerKeyboardPlugins(graph, groupManager, workflowData)
+  registerKeyboardPlugins(graph, groupManager, workflowData, selectedNodeData, emit)
 
   // 注册画布事件(预览模式下的基础功能)
   registerGraphBaseEvents()
@@ -728,73 +729,6 @@ function registerGraphFullEvents() {
   // 监听空白区域双击事件
   graph.on('blank:dblclick', ({ e, x, y }) => {})
 
-  // 复制节点事件
-  graph.on('node:copy_mouseenter', ({ node, e }) => {
-    let copiedNodeData: any[] = []
-    e.stopPropagation()
-    const selectedCells = [node]
-    if (selectedCells.length === 0) {
-      ElMessage.warning('请先选择要复制的节点')
-      return
-    }
-
-    // 只复制节点，过滤掉边
-    const selectedNodes = selectedCells.filter((cell: any) => cell.isNode && cell.isNode())
-
-    if (selectedNodes.length === 0) {
-      ElMessage.warning('请选择节点进行复制')
-      return
-    }
-
-    try {
-      // 保存原始节点数据
-      copiedNodeData = selectedNodes.map((node: any) => {
-        let nodeData = node.data || {}
-
-        return {
-          ...nodeData,
-          pos: {
-            x: node.getPosition().x,
-            y: node.getPosition().y
-          }
-        }
-      })
-
-      // ElMessage.success(`成功复制 ${selectedNodes.length} 个节点`)
-    } catch (error) {
-      ElMessage.error('复制失败')
-    }
-    // 粘贴
-    try {
-      if (copiedNodeData.length === 0) {
-        ElMessage.warning('剪贴板为空')
-        return
-      }
-      graph.startBatch('keyboard-paste')
-      // 根据原始数据重新生成节点
-      copiedNodeData.forEach((nodeData: any) => {
-        try {
-          const x6Node = createNewNode(nodeData)
-          // 添加到画布
-          graph.addNode(x6Node)
-        } catch (error) {
-          console.warn('重新生成节点失败:', error)
-        }
-      })
-
-      graph.stopBatch('keyboard-paste')
-      ElMessage.success(`复制成功`)
-    } catch (error) {
-      ElMessage.error('复制失败')
-    }
-  })
-
-  // 删除节点事件
-  graph.on('node:del_mouseenter', ({ node }) => {
-    graph.removeCells([node])
-    ElMessage.success(`已删除 1 个元素`)
-  })
-
   graph.on('edge:connected', ({ edge }: { edge: any }) => {
     const edgeId = edge.id
     const newSource = edge.getSourceCellId()
@@ -960,28 +894,6 @@ function validateEdgeTypeAndSetColor(edge: any, isDecode: boolean = false) {
   }
 }
 
-const resetWorkflowData = (showMessage = true) => {
-  workflowData.value = {
-    id: workflowData.value.id,
-    ruleName: workflowData.value.ruleName,
-    nodeList: [],
-    edges: [],
-    groupList: [],
-    lua: ''
-  }
-  selectedNodeData.value = null
-  graph.clearCells()
-  graph.cleanHistory()
-  if (typeof nodeIdFactory !== 'undefined' && nodeIdFactory.reset) {
-    nodeIdFactory.reset(1)
-  }
-  // 清理错误跟踪（已迁移到 EdgeCorrectionManager）
-  showMessage && ElMessage.success('画布已清空')
-
-  // 通知父组件数据已更新
-  emit('update:workflow', workflowData.value)
-}
-
 /**
  * 获取函数ID列表
  * @param workflowData 工作流数据
@@ -1071,7 +983,7 @@ const code = () => {
 const executeImport = (importData: any) => {
   try {
     // 先清空当前画布
-    resetWorkflowData()
+    graph.triggerKey(KeyboardKey[KEYBOARD.CLEAR])
 
     // 更新工作流数据
     workflowData.value = {
@@ -1459,12 +1371,6 @@ const handlerEventListener = (node, view) => {
 
     const eventName = el.getAttribute('event')
     switch (eventName) {
-      case 'node:copy_mouseenter':
-        showInfoPanel(node, 'copyButton', '复制节点')
-        break
-      case 'node:del_mouseenter':
-        showInfoPanel(node, 'delButton', '删除节点')
-        break
       case 'node:customer_collapse': {
         const href = el.getAttribute('xlink:href') || ''
         showInfoPanel(node, 'foldButton', href.includes('UnFold') ? '展开' : '折叠')
@@ -1557,7 +1463,6 @@ function handleValidationNodeSelect(nodeId: string) {
 }
 
 defineExpose({
-  resetWorkflowData,
   startDragPreview,
   addPortData,
   removePortData,
@@ -1713,23 +1618,25 @@ function findUpstreamNonConditionNodes(nodeId: string, workflowData: any): strin
       right: 10px;
       top: 10px;
       display: flex;
-      gap: 10px;
+      gap: 4px;
       z-index: 100;
-      //height: 64px;
-      //line-height: 64px;
       padding: 4px;
       border-radius: 4px;
-      //border: 1px solid gray;
-      //background: var(--el-bg-color-overlay, var(--el-bg-color, #fff));
+      flex-direction: column;
+      align-items: end;
+      color: dimgray;
+      span {
+        user-select: none;
+      }
       div {
         user-select: none;
         cursor: pointer;
         display: flex;
         align-items: center;
 
-        &:hover {
-          color: red;
-        }
+        //&:hover {
+        //  color: red;
+        //}
       }
     }
   }
