@@ -100,7 +100,7 @@ export function registerKeyboardPlugins({
   })
   graph.use(keyboard)
 
-  // 折叠/展开
+  // 1 — 一键折叠/展开
   graph.bindKey(toBindKey(KeyboardKey[KEYBOARD.COLLAPSE]), () => {
     let nodeList = workflowData.value.nodeList
     graph.startBatch('collapse-nodes-and-edges')
@@ -117,11 +117,11 @@ export function registerKeyboardPlugins({
     graph.stopBatch('collapse-nodes-and-edges')
     collapse = !collapse
   })
-  // 适应视图
+  // 2 — 适应视图
   graph.bindKey(toBindKey(KeyboardKey[KEYBOARD.FIT]), () => {
     graph.zoomToFit({ maxScale: 1 })
   })
-  // 一键排列
+  // 3 — 一键排列
   graph.bindKey(toBindKey(KeyboardKey[KEYBOARD.LAYOUT]), () => {
     layout(graph)
     // 布局后同步所有节点位置到全局数据
@@ -136,20 +136,20 @@ export function registerKeyboardPlugins({
       })
     }, 100)
   })
-  // 视图浏览
+  // 4 — 视图浏览（小地图开关）
   graph.bindKey(toBindKey(KeyboardKey[KEYBOARD.BROWSING]), () => {
     showMiniMap.value = !showMiniMap.value
   })
 
-  // 撤销操作
+  // ctrl+z — 撤销
   graph.bindKey(toBindKey(KeyboardKey[KEYBOARD.UNDO]), () => {
     graph.canUndo() && graph.undo()
   })
-  // 重做操作
+  // ctrl+y — 重做
   graph.bindKey(toBindKey(KeyboardKey[KEYBOARD.REDO]), () => {
     graph.canRedo() &&   graph.redo()
   })
-  // 删除操作
+  // delete — 删除选中
   graph.bindKey(toBindKey(KeyboardKey[KEYBOARD.DELETE]), () => {
     const selectedCells = graph.getSelectedCells()
     if (selectedCells.length > 0) {
@@ -157,7 +157,7 @@ export function registerKeyboardPlugins({
       ElMessage.success(`已删除 ${selectedCells.length} 个元素`)
     }
   })
-  // 复制操作
+  // ctrl+c / cmd+c — 复制节点
   graph.bindKey(toBindKey(KeyboardKey[KEYBOARD.COPY]), () => {
     const selectedCells = graph.getSelectedCells()
     if (selectedCells.length === 0) {
@@ -191,7 +191,7 @@ export function registerKeyboardPlugins({
       ElMessage.error('复制失败')
     }
   })
-  // 粘贴操作
+  // ctrl+v / cmd+v — 粘贴节点
   graph.bindKey(toBindKey(KeyboardKey[KEYBOARD.PASTE]), () => {
     try {
       if (copiedNodeData.length === 0) {
@@ -217,12 +217,13 @@ export function registerKeyboardPlugins({
     }
   })
 
-  // 分组操作
+  // g — 分组
   graph.bindKey(toBindKey(KeyboardKey[KEYBOARD.GROUP]), () => {
     const selectedCells = graph.getSelectedCells()
     const selectedNodes = selectedCells.filter((cell: any) => cell.isNode && cell.isNode()) as any[]
     groupManager.createGroup(selectedNodes)
   })
+  // ctrl+g — 取消分组
   graph.bindKey(toBindKey(KeyboardKey[KEYBOARD.UNGROUP]), e => {
     e.preventDefault()
     const selectedCells = graph.getSelectedCells()
@@ -236,7 +237,7 @@ export function registerKeyboardPlugins({
     }
   })
 
-  // 清空画布
+  // ctrl+delete — 清空画布
   graph.bindKey(toBindKey(KeyboardKey[KEYBOARD.CLEAR]), () => {
     ElMessageBox.confirm('画布将清空，是否继续？', '提示', {
       confirmButtonText: '确定',
@@ -263,7 +264,7 @@ export function registerKeyboardPlugins({
     })
   })
 
-  // 清空导入操作
+  // i — 导入工作流
   graph.bindKey(toBindKey(KeyboardKey[KEYBOARD.IMPORT]), e => {
     e.preventDefault()
     // 创建文件输入元素
@@ -332,7 +333,7 @@ export function registerKeyboardPlugins({
     input.click()
   })
 
-  // 导出工作流数据
+  // o — 导出工作流
   graph.bindKey(toBindKey(KeyboardKey[KEYBOARD.EXPORT]), e => {
     e.preventDefault()
     try {
@@ -380,7 +381,7 @@ export function registerKeyboardPlugins({
     }
   })
 
-  // 重做操作
+  // t — 测试
   graph.bindKey(toBindKey(KeyboardKey[KEYBOARD.TEST]), e => {
     e.preventDefault()
     handleTest()
