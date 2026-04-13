@@ -15,32 +15,16 @@
       <!-- 小地图容器 -->
       <div v-show="showMiniMap" class="minimap-container" ref="minimapContainer" />
 
-      <!-- 工具栏 -->
-      <div class="canvas-actions">
-        <el-tooltip
-          v-for="action in canvasAction"
-          :content="action.content"
-          :key="action.content"
-          placement="top"
-        >
-          <template v-if="action?.group">
-            <component :is="action.group().comp" @click="action.group().fn" />
-          </template>
-          <component v-else :is="action.comp" @click="action.fn" />
-        </el-tooltip>
-      </div>
       <div class="workflow-actions">
-        <span>ctrl + z 撤销</span>
+        <span>1 折叠/展开</span>
+        <span>2 适应视图</span>
+        <span>3 一键排列</span>
+        <span>4 一键排列</span>
         <span>ctrl + y 重做</span>
         <span>ctrl + delete 清空</span>
-        <!--                <span>ctrl + 导入</span>-->
-        <!--                <span>ctrl + 导出</span>-->
-        <!--                <span>ctrl + 测试</span>-->
-        <!--                <span>ctrl + 编译</span>-->
-        <div v-for="w in workflowAction" :key="w.txt" @click="w.fn">
-          <component :is="w.comp" />
-          {{ w.txt }}
-        </div>
+        <span>ctrl + i 导入</span>
+        <span>ctrl + o 导出</span>
+        <span>t 测试</span>
       </div>
     </div>
   </div>
@@ -79,28 +63,8 @@ import nodeIdFactory from '@/utils/factory/NodeIdFactory'
 
 import { KEYBOARD, KeyboardKey, registerKeyboardPlugins } from '@/utils/plugins/KeyboardPlugin'
 import { registerX6Plugins } from '@/utils/plugins/X6Plugin'
-import {
-  handleCollapse,
-  handleExport,
-  handleFit,
-  handleImport,
-  handleLayout,
-  handleShowMiniMap
-} from '@/utils/plugins/WorkflowPlugin'
 
 // 引入工具栏图片
-import Reset from '@/assets/ruleEditToolSvg/reset.svg'
-import Clear from '@/assets/ruleEditToolSvg/clear.svg'
-import SaveAs from '@/assets/ruleEditToolSvg/saveAs.svg'
-import Test from '@/assets/ruleEditToolSvg/test.svg'
-import Import from '@/assets/ruleEditToolSvg/import.svg'
-import Export from '@/assets/ruleEditToolSvg/export.svg'
-import Recover from '@/assets/ruleEditToolSvg/recover.svg'
-import AdaptView from '@/assets/ruleEditToolSvg/adaptView.svg'
-import Browsing from '@/assets/ruleEditToolSvg/browsing.svg'
-import Collapse from '@/assets/ruleEditToolSvg/collapse.svg'
-import Expand from '@/assets/ruleEditToolSvg/expand.svg'
-import Layout from '@/assets/ruleEditToolSvg/layout.svg'
 import { BaseFunctionNodeType } from '@/store/modules/baseFunction'
 
 import { MAX_DEVICE_PIXEL_RATIO, MIN_DEVICE_PIXEL_RATIO } from '@/config/workflow'
@@ -151,35 +115,6 @@ let groupManager: GroupManager
 
 // 折叠状态
 const collapse = ref(false)
-
-// 工具栏
-const canvasAction = ref(
-  markRaw([
-    {
-      content: '折叠/展开',
-      group: () => {
-        return {
-          content: collapse.value ? '一键展开' : '一键折叠',
-          fn: () => handleCollapse(graph, workflowData, collapse, !collapse.value),
-          comp: collapse.value ? Expand : Collapse
-        }
-      }
-    },
-    { content: '适应视图', comp: AdaptView, fn: () => handleFit(graph) },
-    { content: '一键排列', comp: Layout, fn: () => handleLayout(graph, workflowData) },
-    { content: '视图浏览', comp: Browsing, fn: () => handleShowMiniMap(showMiniMap) }
-  ])
-)
-
-// 流程工具栏
-const workflowAction = ref(
-  markRaw([
-    { txt: '导入', comp: Import, fn: () => handleImport(executeImport) },
-    { txt: '导出', comp: Export, fn: () => handleExport(workflowData, syncData) },
-    { txt: '测试', comp: Test, fn: () => handleTest() },
-    { txt: '编译', comp: Test, fn: () => code() }
-  ])
-)
 
 let resizeHandler: (() => void) | null = null
 
@@ -355,7 +290,21 @@ const initGraph = () => {
   registerX6Plugins(graph, container.value, minimapContainer.value)
 
   // 注册键盘插件
-  registerKeyboardPlugins(graph, groupManager, workflowData, selectedNodeData, emit)
+  registerKeyboardPlugins({
+    graphData: {
+      graph,
+      groupManager
+    },
+    workflowData: {
+      workflowData,
+      selectedNodeData,
+      showMiniMap
+    },
+    workflowFn: {
+      handleTest
+    },
+    emit
+  })
 
   // 注册画布事件(预览模式下的基础功能)
   registerGraphBaseEvents()
@@ -364,7 +313,7 @@ const initGraph = () => {
   registerGraphFullEvents()
 
   setTimeout(() => {
-    handleFit(graph)
+    graph.triggerKey(KeyboardKey[KEYBOARD.FIT])
   }, 100)
 }
 
@@ -530,6 +479,9 @@ function registerGraphBaseEvents() {
     e.preventDefault()
     // console.log('node', node)
     node.toggleCollapse(workflowData.value)
+    nextTick(() => {
+      refreshConnectedEdges(node)
+    })
   })
 
   // 监听节点变化
@@ -541,6 +493,7 @@ function registerGraphBaseEvents() {
         node.data.pos = { x: node.getPosition().x, y: node.getPosition().y }
         workflowData.value.nodeList.push(node.data)
       }
+      refreshConnectedEdges(node)
     }
   })
 
@@ -569,6 +522,12 @@ function registerGraphBaseEvents() {
       connectedEdges.forEach((edge: any) => {
         updateEdgeConnectorBasedOnDistance(edge)
       })
+    }
+  })
+
+  graph.on('node:change:size', ({ node }: { node: any }) => {
+    if (isCustom(node)) {
+      refreshConnectedEdges(node)
     }
   })
 
@@ -887,6 +846,18 @@ function updateEdgeConnectorBasedOnDistance(edge: any) {
   }
 }
 
+/** 折叠/改尺寸/改连接桩后刷新与该节点相连的边（位置事件里已有逻辑，尺寸与桩变化需单独处理） */
+function refreshConnectedEdges(node: any) {
+  if (!graph) return
+  const apply = () => {
+    graph.getConnectedEdges(node).forEach((edge: any) => {
+      updateEdgeConnectorBasedOnDistance(edge)
+    })
+  }
+  apply()
+  requestAnimationFrame(apply)
+}
+
 // 验证边的类型兼容性并设置颜色, 初始化是 isDecode 为 true 不增加数据转换节点
 function validateEdgeTypeAndSetColor(edge: any, isDecode: boolean = false) {
   if (edgeCorrectionManager) {
@@ -964,44 +935,6 @@ const handleTest = async () => {
   const flowData = await getFlowData()
   if (!flowData) return
   emit('test-lua', flowData.jsCode)
-}
-
-const code = () => {
-  // 验证节点数据完整性
-  if (!checkValidate()) return
-  // 验证工作流是否合法
-  const validRst = validateWorkflow()
-  if (!validRst) return
-  // 获取工作流数据
-  getFlowData()
-}
-
-/**
- * 执行导入操作
- * @param importData 导入的数据
- */
-const executeImport = (importData: any) => {
-  try {
-    // 先清空当前画布
-    graph.triggerKey(KeyboardKey[KEYBOARD.CLEAR])
-
-    // 更新工作流数据
-    workflowData.value = {
-      ...workflowData.value,
-      nodeList: importData.nodeList || [],
-      edges: importData.edges || [],
-      groupList: importData.groupList || []
-    }
-
-    // 通知父组件数据已更新
-    console.log('workflowData.value====', importData)
-    emit('update:workflow', workflowData.value)
-
-    ElMessage.success('工作流数据导入成功')
-  } catch (error) {
-    console.error('导入失败:', error)
-    ElMessage.error('导入失败，请重试')
-  }
 }
 
 const router = useRouter()
@@ -1343,17 +1276,6 @@ function forceNode(nodeId: string) {
   }
 }
 
-function syncData() {
-  if (groupManager) {
-    groupManager.syncGroupData()
-  }
-  // console.log('this.workflowData.value===', )
-  workflowData.value.nodeList.forEach(node => {
-    const _node = graph.getCellById(node.id) as any
-    node.isCollapsed = _node.isCollapsed
-  })
-}
-
 const handlerEventListener = (node, view) => {
   // 用事件委托替代逐个 add/remove：mouseenter/leave 不冒泡，委托时改用 mouseover/mouseout
   const root = view.container?.querySelector('.x6-graph-pannable') || view.container
@@ -1471,13 +1393,19 @@ defineExpose({
   clearSelection,
   forceNode,
   selectNodeOnly,
-  syncData,
   getFlowData
 })
 
 function validateWorkflow() {
   // 同步一次组合 迭代的数据 确保数据完整性
-  syncData()
+  if (groupManager) {
+    groupManager.syncGroupData()
+  }
+  // console.log('this.workflowData.value===', )
+  workflowData.value.nodeList.forEach(node => {
+    const _node = graph.getCellById(node.id) as any
+    node.isCollapsed = _node.isCollapsed
+  })
 
   const validator = new WorkflowValidator(workflowData.value)
   const result = validator.validate()
