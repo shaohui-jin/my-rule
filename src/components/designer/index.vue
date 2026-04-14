@@ -19,11 +19,17 @@
         <span>1 折叠/展开</span>
         <span>2 适应视图</span>
         <span>3 一键排列</span>
-        <span>4 一键排列</span>
+        <span>4 视图浏览</span>
+        <span>ctrl + c 复制</span>
+        <span>ctrl + v 粘贴</span>
+        <span>ctrl + z 撤销</span>
         <span>ctrl + y 重做</span>
+        <span>delete 删除</span>
         <span>ctrl + delete 清空</span>
-        <span>ctrl + i 导入</span>
-        <span>ctrl + o 导出</span>
+        <span>g 分组</span>
+        <span>ctrl + g 取消分组</span>
+        <span>i 导入</span>
+        <span>o 导出</span>
         <span>t 测试</span>
       </div>
     </div>
@@ -1553,6 +1559,7 @@ function findUpstreamNonConditionNodes(nodeId: string, workflowData: any): strin
       flex-direction: column;
       align-items: end;
       color: dimgray;
+      opacity: 0.3;
       span {
         user-select: none;
       }
