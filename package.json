@@ -1,6 +1,6 @@
 {
-  "name": "designonline-base-rule-web",
-  "version": "1.5.0",
+  "name": "design-rule",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "cross-env NODE_OPTIONS=--max-old-space-size=4096 vite",
