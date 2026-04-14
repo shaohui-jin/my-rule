@@ -10,7 +10,7 @@ export interface ValidationError {
   type: 'workflow' | 'edge'
 }
 
-export class WorkflowValidator {
+export class ValidatorManager {
   private workflowData: WorkflowData
   private errors: ValidationError[] = []
   private warnings: string[] = []
@@ -371,7 +371,7 @@ export class WorkflowValidator {
       const targetTypeInfo = this.extractCustomSubType(targetSubType)
       const effectiveTargetSubType = targetTypeInfo.custom || targetTypeInfo.original
 
-      return WorkflowValidator.compareType(
+      return ValidatorManager.compareType(
         mainType,
         effectiveSubType,
         targetMainType,

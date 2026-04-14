@@ -1,5 +1,5 @@
-import { LogicType, OutputData, type WorkflowNode } from '@/types/workflow'
-import { COLORS, PORT_ATTRS } from '../workflow/constants/StyleConstants'
+import { InputData, LogicType, OutputData, type WorkflowNode } from '@/types/workflow'
+import { COLORS, PORT_ATTRS } from '../config/StyleConstants'
 const { VITE_PUBLIC_PATH } = import.meta.env
 import { Graph, Node } from '@antv/x6'
 import { type WorkflowData } from '@/types/workflow'
@@ -7,64 +7,15 @@ import type { Ref } from 'vue'
 import { NODE_CONFIG_BASE_HEIGHT, NODE_CONFIG_TITLE_HEIGHT, NODE_CONFIG_WIDTH } from '@/config/node'
 import { truncateText } from '@/utils/common/TextTruncate'
 
-// 端口属性配置 - 使用导入的常量
-
-/**
- * 创建端口配置
- * @param id 端口ID
- * @param group 端口组（in/out）
- * @param position 端口位置
- * @returns 端口配置对象
- */
-function createPortConfig(
-  id: string,
-  group: 'in' | 'out',
-  position: any,
-  portTitle = '',
-  desc = '',
-  typeText = ''
-) {
-  return {
-    id,
-    group,
-    args: position,
-    zIndex: 10,
-    attrs: {
-      ...PORT_ATTRS,
-      text: {
-        text: truncateText(portTitle, NODE_CONFIG_WIDTH / 2, 14) + '\n' + typeText,
-        fontSize: 14,
-        textWrap: {
-          width: NODE_CONFIG_WIDTH / 2,
-          height: 80,
-          overflow: 'hidden',
-          ellipsis: true
-        }
-      },
-      // 用于出入桩文字提示
-      portTitle: portTitle,
-      desc: desc
-    },
-    uniqueId: 'port_' + Date.now() + Math.random().toString(36).substring(2, 15)
-  }
-}
-
-/**
- * 自定义port分布函数，让port在边上均匀分布
- */
-function getPortPosition(side: 'left' | 'right', total: number, idx: number, nodeHeight: number) {
-  const available = nodeHeight - NODE_CONFIG_TITLE_HEIGHT
-  let y
-  if (total == 1) {
-    y = NODE_CONFIG_TITLE_HEIGHT + available / 2
-  } else {
-    const step = available / (total + 1)
-    y = NODE_CONFIG_TITLE_HEIGHT + step * (idx + 1)
-  }
-  return {
-    x: side === 'left' ? 0 : NODE_CONFIG_WIDTH,
-    y
-  }
+const DEFAULT_PORT = {
+  portId: 'in_1',
+  attributes: {
+    paramType: 'string',
+    inputType: 'text',
+    label: '节点Id',
+    desc: ''
+  },
+  options: []
 }
 
 // 生成端口配置
@@ -72,55 +23,68 @@ function generatePorts(node: WorkflowNode, nodeHeight: number) {
   let inputPorts = []
   let outputPorts = []
 
+  // 创建端口配置
+  function createPortConfig(item: InputData | OutputData, group: 'in' | 'out', position: any) {
+    const {
+      portId: id,
+      attributes: { label: portTitle, desc, paramType: typeText }
+    } = item
+    return {
+      id,
+      group,
+      args: position,
+      portTitle,
+      desc,
+      zIndex: 10,
+      attrs: {
+        ...PORT_ATTRS,
+        text: {
+          text: truncateText(portTitle, NODE_CONFIG_WIDTH / 2, 14) + '\n' + typeText,
+          fontSize: 14,
+          textWrap: {
+            width: NODE_CONFIG_WIDTH / 2,
+            height: 80,
+            overflow: 'hidden',
+            ellipsis: true
+          }
+        }
+      },
+      uniqueId: 'port_' + Date.now() + Math.random().toString(36).substring(2, 15)
+    }
+  }
+
+  // 自定义port分布函数，让port在边上均匀分布
+  function getPortPosition(side: 'left' | 'right', total: number, idx: number, nodeHeight: number) {
+    const available = nodeHeight - NODE_CONFIG_TITLE_HEIGHT
+    let y
+    if (total == 1) {
+      y = NODE_CONFIG_TITLE_HEIGHT + available / 2
+    } else {
+      const step = available / (total + 1)
+      y = NODE_CONFIG_TITLE_HEIGHT + step * (idx + 1)
+    }
+    return {
+      x: side === 'left' ? 0 : NODE_CONFIG_WIDTH,
+      y
+    }
+  }
+
   const inputNodeList = node.inputData.filter(e => e.sourceType == 'node')
   const isOnlyGlobal =
     node.inputData.length === 1 && node.inputData.find(e => e.sourceType === 'global')
-  const inputData = inputNodeList.length
-    ? inputNodeList
-    : isOnlyGlobal
-    ? []
-    : [
-        {
-          portId: 'in_1',
-          attributes: {
-            paramType: 'string',
-            inputType: 'text',
-            label: '节点Id',
-            desc: ''
-          },
-          options: []
-        }
-      ]
+  const inputData = inputNodeList.length ? inputNodeList : isOnlyGlobal ? [] : [DEFAULT_PORT]
   let inputPortCount = inputData.length || 1
 
   inputData.forEach((item, i) => {
     const inPos = getPortPosition('left', inputPortCount, i, nodeHeight)
-    inputPorts.push(
-      createPortConfig(
-        item.portId,
-        'in',
-        inPos,
-        item.attributes.label,
-        item.attributes.desc,
-        item.attributes.paramType
-      )
-    )
+    inputPorts.push(createPortConfig(item, 'in', inPos))
   })
 
   const outputData = node.outputData
   let outputPortCount = outputData.length || 1
   outputData.forEach((item, i) => {
     const outPos = getPortPosition('right', outputPortCount, i, nodeHeight)
-    outputPorts.push(
-      createPortConfig(
-        item.portId,
-        'out',
-        outPos,
-        item.attributes.label,
-        item.attributes.desc,
-        item.attributes.paramType
-      )
-    )
+    outputPorts.push(createPortConfig(item, 'out', outPos))
   })
 
   return { inputPorts, outputPorts }

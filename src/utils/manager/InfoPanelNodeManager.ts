@@ -8,11 +8,10 @@ const BASE_FONT_SIZE = 14
 const BASE_LINE_HEIGHT = 16
 
 export class InfoPanelNode extends Node {
-  constructor(options: any) {
-    super(options)
+  constructor() {
+    super()
   }
 
-  // 更新属性
   public setInfoContent(content: any) {
     if (!content || !content.desc) return false
 
@@ -50,76 +49,72 @@ export class InfoPanelNode extends Node {
   }
 }
 
+InfoPanelNode.config({
+  shape: 'infoPanelNode',
+  width: MAX_WIDTH,
+  height: MAX_WIDTH,
+  markup: [
+    {
+      tagName: 'rect',
+      selector: 'body'
+    },
+    {
+      tagName: 'polygon',
+      selector: 'arrow'
+    },
+    {
+      tagName: 'text',
+      selector: 'description'
+    }
+  ],
+  attrs: {
+    body: {
+      refWidth: '100%',
+      refHeight: '100%',
+      fill: '#303133',
+      stroke: '#303133',
+      strokeWidth: 1,
+      rx: 8,
+      ry: 8,
+      filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.15))',
+      zIndex: 1000
+    },
+    arrow: {
+      points: '-4,0 4,0 0,8',
+      fill: '#303133',
+      strokeWidth: 1,
+      refX: -8, // 相对于body的x偏移
+      refY: 20, // 相对于body的y偏移
+      zIndex: 999
+    },
+    description: {
+      text: '',
+      fontSize: BASE_FONT_SIZE,
+      height: BASE_LINE_HEIGHT,
+      lineHeight: BASE_LINE_HEIGHT,
+      fill: '#ffffff',
+      refX: TOOLTIP_DOUBLE_PADDING / 2,
+      refY: TOOLTIP_DOUBLE_PADDING / 2,
+      textAnchor: 'start',
+      textVerticalAnchor: 'top',
+      // textWrap: {
+      //   width: '100%',
+      //   height: '100%',
+      //   breakWord: 'break-all'
+      // },
+      zIndex: 1002
+    }
+  },
+  ports: {
+    groups: {
+      // 信息面板不需要端口
+    },
+    items: []
+  }
+})
+
 export class InfoPanelNodeManager extends Node {
   public initRegister(): void {
     Graph.registerNode('infoPanelNode', InfoPanelNode, true)
   }
-}
-
-// 创建信息面板节点的工厂函数
-export function createInfoPanelNode(options: any = {}) {
-  return new InfoPanelNode({
-    shape: 'infoPanelNode',
-    width: MAX_WIDTH,
-    height: MAX_WIDTH,
-    data: options.data || {},
-    markup: [
-      {
-        tagName: 'rect',
-        selector: 'body'
-      },
-      {
-        tagName: 'polygon',
-        selector: 'arrow'
-      },
-      {
-        tagName: 'text',
-        selector: 'description'
-      }
-    ],
-    attrs: {
-      body: {
-        refWidth: '100%',
-        refHeight: '100%',
-        fill: '#303133',
-        stroke: '#303133',
-        strokeWidth: 1,
-        rx: 8,
-        ry: 8,
-        filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.15))',
-        zIndex: 1000
-      },
-      arrow: {
-        points: '-4,0 4,0 0,8',
-        fill: '#303133',
-        strokeWidth: 1,
-        refX: -8, // 相对于body的x偏移
-        refY: 20, // 相对于body的y偏移
-        zIndex: 999
-      },
-      description: {
-        text: '',
-        fontSize: BASE_FONT_SIZE,
-        height: BASE_LINE_HEIGHT,
-        lineHeight: BASE_LINE_HEIGHT,
-        fill: '#ffffff',
-        refX: TOOLTIP_DOUBLE_PADDING / 2,
-        refY: TOOLTIP_DOUBLE_PADDING / 2,
-        textAnchor: 'start',
-        textVerticalAnchor: 'top',
-        // textWrap: {
-        //   width: '100%',
-        //   height: '100%',
-        //   breakWord: 'break-all'
-        // },
-        zIndex: 1002
-      }
-    },
-    ports: {
-      groups: {
-        // 信息面板不需要端口
-      },
-      items: []
-    }
-  })
 }

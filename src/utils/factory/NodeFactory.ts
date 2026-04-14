@@ -1,7 +1,6 @@
 import nodeIdFactory from './NodeIdFactory'
 import { type WorkflowNode, LogicType, GroupNodeData } from '@/types/workflow'
 import { CustomNode, getCustomNodeConfig } from '@/utils/manager/CustomNodeManager'
-import { GroupNode } from '../workflow/GroupNode'
 
 export const createNewNode = (nodeData: WorkflowNode): CustomNode | WorkflowNode => {
   const newId = nodeIdFactory.next()
@@ -81,21 +80,6 @@ export const createX6Node = (nodeData: WorkflowNode, isPreview = false): CustomN
     rectNode.toggleCollapse()
   }
   return rectNode
-}
-
-export function createGroupNode(groupData: GroupNodeData) {
-  return new GroupNode({
-    id: groupData.id || nodeIdFactory.next(),
-    x: groupData.pos.x,
-    y: groupData.pos.y,
-    width: groupData.width,
-    height: groupData.height,
-    zIndex: -1, // 确保在最底层
-    attrs: {
-      label: { text: groupData.title }
-    },
-    isCollapsed: groupData.isCollapsed || false
-  })
 }
 
 export {}

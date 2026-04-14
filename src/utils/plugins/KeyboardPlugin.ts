@@ -3,7 +3,7 @@ import type { Graph } from '@antv/x6'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { createNewNode } from '@/utils/factory/NodeFactory'
 import { type WorkflowData } from '@/types/workflow'
-import type { GroupManager } from '@/utils/manager/GroupManager'
+import type { GroupNodeManager } from '@/utils/manager/GroupNodeManager'
 import { unref, Ref } from 'vue'
 import nodeIdFactory from '@/utils/factory/NodeIdFactory'
 import { EmitFn } from 'vue'
@@ -12,7 +12,7 @@ import * as dagre from 'dagre'
 type KeyboardPlugin = {
   graphData: {
     graph: Graph
-    groupManager: GroupManager
+    groupManager: GroupNodeManager
   }
   workflowData: {
     workflowData: Ref<WorkflowData>

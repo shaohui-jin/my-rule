@@ -1,5 +1,5 @@
 import { LogicType, WorkflowData, WorkflowNode } from '@/types/workflow'
-import { WorkflowAnalyzer } from '../json2lua/WorkflowAnalyzer'
+import { AnalyzerManager } from '../manager/AnalyzerManager'
 import { GlobalParam } from '../parserFunc/GlobalParam'
 import { Calculator } from '../parserFunc/Calculator'
 import { GlobalVariable } from '../parserFunc/GlobalVariable'
@@ -21,7 +21,7 @@ export class JsCodeParser {
   private funcData: any
   private modules: Map<string, ModuleInfo>
   private codeMap: Record<string, string>
-  private analyzer: WorkflowAnalyzer
+  private analyzer: AnalyzerManager
   private nodeAnalysis: Map<string, NodeAnalysis>
   private branchInfoMap: Map<string, BranchInfo>
   private executionOrder: string[]
@@ -51,7 +51,7 @@ export class JsCodeParser {
     this.workflow = workflow
     this.funcData = funcData
     this.codeMap = getFunctionCode(workflow.nodeList).codeMap
-    this.analyzer = new WorkflowAnalyzer(workflow)
+    this.analyzer = new AnalyzerManager(workflow)
     const analysisResult = this.analyzer.analyze()
     this.nodeAnalysis = analysisResult.nodeAnalysis
     this.branchInfoMap = analysisResult.branchInfoMap

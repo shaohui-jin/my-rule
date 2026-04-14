@@ -1,9 +1,9 @@
 import { Ref, h } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getCustomNodeConfig } from '@/utils/manager/CustomNodeManager'
-import { WorkflowValidator } from '../workflow/WorkflowValidator'
+import { ValidatorManager } from './ValidatorManager'
 import { LogicType, type WorkflowData } from '@/types/workflow'
-import { EDGE_STYLES } from '../workflow/constants/StyleConstants'
+import { EDGE_STYLES } from '../config/StyleConstants'
 
 // 类型定义
 interface SearchTarget {
@@ -499,7 +499,7 @@ export class EdgeCorrectionManager {
     if (!node) {
       return undefined
     }
-    return WorkflowValidator.getNodePortType(node, portId, isSource)
+    return ValidatorManager.getNodePortType(node, portId, isSource)
   }
 
   /**
@@ -509,6 +509,6 @@ export class EdgeCorrectionManager {
    * @returns 是否兼容
    */
   private validateTypeCompatibility(sourceType: string[][], targetType: string[][]): boolean {
-    return WorkflowValidator.validateTypeCompatibility(sourceType[0], targetType)
+    return ValidatorManager.validateTypeCompatibility(sourceType[0], targetType)
   }
 }

@@ -7,7 +7,7 @@ interface ExecutionOrderResult {
   main: string[] // 主链路执行路径
 }
 
-export class WorkflowAnalyzer {
+export class AnalyzerManager {
   private workflow: WorkflowData
   private nodeAnalysis: Map<string, NodeAnalysis>
   private branchInfoMap: Map<string, BranchInfo>

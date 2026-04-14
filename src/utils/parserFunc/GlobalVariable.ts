@@ -1,13 +1,12 @@
 import { WorkflowNode } from '@/types/workflow'
 import { CodeFactory } from '../factory/CodeFactory'
-import { NodeAnalysis } from '@/types/JsCodeParser'
-import { WorkflowAnalyzer } from '@/utils/json2lua/WorkflowAnalyzer'
+import { AnalyzerManager } from '@/utils/manager/AnalyzerManager'
 
 export class GlobalVariable {
   constructor() {}
 
   // 生成全局变量节点代码
-  public generateCode(node: WorkflowNode, indent: number, analyzer: WorkflowAnalyzer): string {
+  public generateCode(node: WorkflowNode, indent: number, analyzer: AnalyzerManager): string {
     let code = ''
 
     // 获取输入参数

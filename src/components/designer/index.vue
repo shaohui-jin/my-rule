@@ -59,10 +59,10 @@ import WorkflowValidationModal from '@/components/panels/WorkflowValidationModal
 import { JsCodeParser } from '@/utils/parser/JsCodeParser'
 import { FunctionNode } from '@/api/workflow/WorkFlowApi'
 
-import { WorkflowValidator, type ValidationError } from '@/utils/workflow/WorkflowValidator'
+import { ValidatorManager, type ValidationError } from '@/utils/manager/ValidatorManager'
 import { EdgeCorrectionManager } from '@/utils/manager/EdgeCorrectionManager'
-import { createInfoPanelNode, InfoPanelNodeManager } from '@/utils/manager/InfoPanelNodeManager'
-import { GroupManager } from '@/utils/manager/GroupManager'
+import { InfoPanelNode, InfoPanelNodeManager } from '@/utils/manager/InfoPanelNodeManager'
+import { GroupNodeManager } from '@/utils/manager/GroupNodeManager'
 
 import { createNewNode, createX6Node } from '@/utils/factory/NodeFactory'
 import nodeIdFactory from '@/utils/factory/NodeIdFactory'
@@ -117,7 +117,7 @@ let dnd: any = null
 // 错误边管理器
 let edgeCorrectionManager: EdgeCorrectionManager
 // 分组管理器
-let groupManager: GroupManager
+let groupManager: GroupNodeManager
 
 // 折叠状态
 const collapse = ref(false)
@@ -290,7 +290,7 @@ const initGraph = () => {
   initNodesAndEdges(graph, workflowData.value)
 
   // 初始化分组管理器
-  groupManager = new GroupManager(graph, workflowData)
+  groupManager = new GroupNodeManager(graph, workflowData)
 
   // 注册插件
   registerX6Plugins(graph, container.value, minimapContainer.value)
@@ -1356,7 +1356,7 @@ function showInfoPanel(
     infoPanelNode.value = null
   }
   // 创建信息面板节点
-  const infoPanel = createInfoPanelNode({})
+  const infoPanel = new InfoPanelNode()
   // 标题行的所有 默认都在线上
   let bool = infoPanel.setInfoContent({
     node,
@@ -1413,7 +1413,7 @@ function validateWorkflow() {
     node.isCollapsed = _node.isCollapsed
   })
 
-  const validator = new WorkflowValidator(workflowData.value)
+  const validator = new ValidatorManager(workflowData.value)
   const result = validator.validate()
   if (!result.isValid) {
     onNodeSelected(null)

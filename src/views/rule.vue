@@ -50,7 +50,7 @@ import {
   getAvailableTargetOptionsKey,
   getOutputTargetInfoKey
 } from '@/injectKeys'
-import { WorkflowValidator } from '@/utils/workflow/WorkflowValidator'
+import { ValidatorManager } from '@/utils/manager/ValidatorManager'
 
 defineOptions({
   name: 'ruleEdit'
@@ -298,7 +298,7 @@ const getAvailableSourceOptions = (param: any) => {
       //table 类型 需要校验subType
       const sourceType = [param.type, param.subType]
       const targetType = [[outPort.type, outPort.subType]]
-      if (WorkflowValidator.validateTypeCompatibility(sourceType, targetType)) {
+      if (ValidatorManager.validateTypeCompatibility(sourceType, targetType)) {
         options.push({
           label: sourceNode?.title || e.source,
           value: e.source,
